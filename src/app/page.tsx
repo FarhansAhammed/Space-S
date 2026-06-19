@@ -23,7 +23,9 @@ import {
   LayoutGrid, 
   MousePointerClick,
   Menu,
-  X
+  X,
+  GitBranch,
+  Share2
 } from 'lucide-react';
 
 // Shared helper: build auth headers from Clerk token
@@ -316,126 +318,126 @@ export default function LandingPage() {
           <div className="absolute top-[20%] left-[20%] w-[350px] h-[350px] bg-[#7c4dff]/5 dark:bg-[#7c4dff]/3 blur-3xl rounded-full pointer-events-none" />
           <div className="absolute bottom-[20%] right-[15%] w-[400px] h-[400px] bg-[#ff9100]/4 dark:bg-[#ff9100]/2 blur-3xl rounded-full pointer-events-none" />
 
-          {/* Absolute Floating SVG Curves (Desktop Only) */}
-          <div className="absolute inset-0 w-full h-full pointer-events-none hidden lg:block z-10">
-            <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <marker id="arrow-violet" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#c0a6ff" />
-                </marker>
-                <marker id="arrow-orange" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#ffd4b2" />
-                </marker>
-                <marker id="arrow-yellow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#ffe066" />
-                </marker>
-                <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#bbf7d0" />
-                </marker>
-              </defs>
+          {/* Core Hero Wrap (Max-w-7xl) - Provides wide canvas spacing to prevent overlap */}
+          <div className="max-w-7xl w-full mx-auto relative min-h-[580px] flex flex-col items-center justify-center z-10">
+            
+            {/* Absolute Floating SVG Curves (Desktop Only) */}
+            <div className="absolute inset-0 w-full h-full pointer-events-none hidden lg:block z-0">
+              <svg className="w-full h-full" viewBox="0 0 1200 600" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <marker id="arrow-violet" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#c0a6ff" />
+                  </marker>
+                  <marker id="arrow-orange" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#ffd4b2" />
+                  </marker>
+                  <marker id="arrow-yellow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#ffe066" />
+                  </marker>
+                  <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#bbf7d0" />
+                  </marker>
+                </defs>
+                
+                {/* Curve 1: Top-Left Card ("Ask anything") to Center Button */}
+                <path 
+                  d="M 280 180 C 360 210, 420 370, 480 395" 
+                  fill="none" 
+                  stroke="#c0a6ff" 
+                  strokeWidth="1.5" 
+                  strokeDasharray="4 4" 
+                  markerEnd="url(#arrow-violet)" 
+                  className="opacity-70 dark:opacity-40"
+                />
+
+                {/* Curve 2: Bottom-Left Card ("Connect ideas") to Center Button */}
+                <path 
+                  d="M 330 460 C 400 460, 420 420, 480 410" 
+                  fill="none" 
+                  stroke="#ffd4b2" 
+                  strokeWidth="1.5" 
+                  strokeDasharray="4 4" 
+                  markerEnd="url(#arrow-orange)" 
+                  className="opacity-70 dark:opacity-40"
+                />
+
+                {/* Curve 3: Top-Right Card ("Go deeper") to Center Button */}
+                <path 
+                  d="M 920 220 C 840 250, 800 370, 720 395" 
+                  fill="none" 
+                  stroke="#ffe066" 
+                  strokeWidth="1.5" 
+                  strokeDasharray="4 4" 
+                  markerStart="url(#arrow-yellow)" 
+                  className="opacity-70 dark:opacity-40"
+                />
+
+                {/* Curve 4: Bottom-Right Card ("Everything in one place") to Center Button */}
+                <path 
+                  d="M 870 480 C 800 480, 780 420, 720 410" 
+                  fill="none" 
+                  stroke="#bbf7d0" 
+                  strokeWidth="1.5" 
+                  strokeDasharray="4 4" 
+                  markerStart="url(#arrow-green)" 
+                  className="opacity-70 dark:opacity-40"
+                />
+              </svg>
+            </div>
+
+            {/* Central Hero Text Content (Centered, Max-w-2xl to prevent overlap) */}
+            <div className="relative z-20 max-w-2xl w-full text-center flex flex-col items-center py-6 px-4">
               
-              {/* Curve 1: Top-Left Card ("Ask anything") to Center Button */}
-              {/* Start: ~(20% width, 30% height), End: ~(40% width, 68% height) */}
-              <path 
-                d="M 280 230 C 350 260, 360 400, 480 430" 
-                fill="none" 
-                stroke="#c0a6ff" 
-                strokeWidth="1.5" 
-                strokeDasharray="4 4" 
-                markerEnd="url(#arrow-violet)" 
-                className="opacity-70 dark:opacity-40"
-              />
+              {/* Pill Badge */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-zinc-200 dark:border-zinc-800 bg-[#fbf9f6] dark:bg-[#181716] shadow-sm mb-8 animate-fade-in duration-300">
+                <Sparkles className="w-3.5 h-3.5 text-[#7c4dff] dark:text-[#a080ff] animate-pulse" />
+                <span className="text-[12px] font-medium tracking-tight text-[#1c1b18]/80 dark:text-[#f3f0ea]/80">Your ideas deserve space.</span>
+              </div>
 
-              {/* Curve 2: Bottom-Left Card ("Connect ideas") to Center Button */}
-              {/* Start: ~(25% width, 75% height), End: ~(38% width, 71% height) */}
-              <path 
-                d="M 280 500 C 340 500, 360 480, 480 450" 
-                fill="none" 
-                stroke="#ffd4b2" 
-                strokeWidth="1.5" 
-                strokeDasharray="4 4" 
-                markerEnd="url(#arrow-orange)" 
-                className="opacity-70 dark:opacity-40"
-              />
+              {/* Main Serif Heading */}
+              <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif text-[#0d1233] dark:text-zinc-50 leading-[1.1] tracking-tight mb-6 max-w-3xl">
+                Think in <span className="italic font-medium text-[#7c4dff] dark:text-[#9c7eff]">space</span>.<br />Not in lines.
+              </h1>
 
-              {/* Curve 3: Top-Right Card ("Go deeper") to Center Button */}
-              {/* Start: ~(78% width, 30% height), End: ~(62% width, 68% height) */}
-              <path 
-                d="M 760 300 C 720 340, 710 400, 680 430" 
-                fill="none" 
-                stroke="#ffe066" 
-                strokeWidth="1.5" 
-                strokeDasharray="4 4" 
-                markerStart="url(#arrow-yellow)" 
-                className="opacity-70 dark:opacity-40"
-              />
+              {/* Description Subtext */}
+              <p className="text-sm sm:text-lg text-[#1c1b18]/70 dark:text-[#f3f0ea]/70 max-w-2xl leading-relaxed mb-10 px-2 sm:px-6">
+                Space-S is an infinite AI canvas where ideas become nodes, answers become branches, and connections create insight.
+              </p>
 
-              {/* Curve 4: Bottom-Right Card ("Everything in one place") to Center Button */}
-              {/* Start: ~(75% width, 75% height), End: ~(62% width, 71% height) */}
-              <path 
-                d="M 760 520 C 690 540, 670 480, 680 450" 
-                fill="none" 
-                stroke="#bbf7d0" 
-                strokeWidth="1.5" 
-                strokeDasharray="4 4" 
-                markerStart="url(#arrow-green)" 
-                className="opacity-70 dark:opacity-40"
-              />
-            </svg>
-          </div>
+              {/* Center Buttons */}
+              <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
+                <button
+                  id="hero-create-canvas-btn-primary"
+                  onClick={handleCreateCanvas}
+                  disabled={creating}
+                  className="group relative h-[52px] px-8 rounded-2xl font-bold text-sm text-white bg-[#0d1233] dark:bg-[#7c4dff] hover:bg-[#192257] dark:hover:bg-[#6b3bfc] shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 overflow-hidden"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{creating ? 'Creating Canvas...' : 'Create New Canvas'}</span>
+                </button>
 
-          {/* Hero Content Container */}
-          <div className="relative z-20 max-w-4xl w-full text-center flex flex-col items-center">
-            
-            {/* Pill Badge */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-zinc-200 dark:border-zinc-800 bg-[#fbf9f6] dark:bg-[#181716] shadow-sm mb-8 animate-fade-in duration-300">
-              <Sparkles className="w-3.5 h-3.5 text-[#7c4dff] dark:text-[#a080ff] animate-pulse" />
-              <span className="text-[12px] font-medium tracking-tight text-[#1c1b18]/80 dark:text-[#f3f0ea]/80">Your ideas deserve space.</span>
+                <a
+                  href="#demo"
+                  className="h-[52px] px-6 rounded-2xl font-semibold text-sm border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                >
+                  <span>Watch 2-min demo</span>
+                  <div className="w-6 h-6 rounded-full border border-[#0d1233]/15 dark:border-white/15 flex items-center justify-center">
+                    <Play className="w-2.5 h-2.5 fill-current text-[#0d1233] dark:text-zinc-50 ml-0.5" />
+                  </div>
+                </a>
+              </div>
+
+              {/* Watch demo link wrapper */}
+              <div className="text-xs text-zinc-400 dark:text-zinc-500 mt-2">
+                No credit card required. Free to start.
+              </div>
+
             </div>
 
-            {/* Main Serif Heading */}
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif text-[#0d1233] dark:text-zinc-50 leading-[1.1] tracking-tight mb-6 max-w-3xl">
-              Think in <span className="italic font-medium text-[#7c4dff] dark:text-[#9c7eff]">space</span>.<br />Not in lines.
-            </h1>
-
-            {/* Description Subtext */}
-            <p className="text-sm sm:text-lg text-[#1c1b18]/70 dark:text-[#f3f0ea]/70 max-w-2xl leading-relaxed mb-10 px-2 sm:px-6">
-              Space-S is an infinite AI canvas where ideas become nodes, answers become branches, and connections create insight.
-            </p>
-
-            {/* Center Buttons */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
-              <button
-                onClick={handleCreateCanvas}
-                disabled={creating}
-                className="group relative h-[52px] px-8 rounded-2xl font-bold text-sm text-white bg-[#0d1233] dark:bg-[#7c4dff] hover:bg-[#192257] dark:hover:bg-[#6b3bfc] shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 overflow-hidden"
-              >
-                <Plus className="w-4 h-4" />
-                <span>{creating ? 'Creating Canvas...' : 'Create New Canvas'}</span>
-              </button>
-
-              <a
-                href="#demo"
-                className="h-[52px] px-6 rounded-2xl font-semibold text-sm border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
-              >
-                <span>Watch 2-min demo</span>
-                <div className="w-6 h-6 rounded-full border border-[#0d1233]/15 dark:border-white/15 flex items-center justify-center">
-                  <Play className="w-2.5 h-2.5 fill-current text-[#0d1233] dark:text-zinc-50 ml-0.5" />
-                </div>
-              </a>
-            </div>
-
-            {/* Watch demo link wrapper */}
-            <div className="text-xs text-zinc-400 dark:text-zinc-500 mt-2 mb-16">
-              No credit card required. Free to start.
-            </div>
-
-            {/* Floating Cards (Shown inline in Grid on Mobile, Absolute on Desktop) */}
-            
-            {/* Desktop layout: absolutely positioned around the text */}
+            {/* Floating Cards (Shown absolute relative to max-w-7xl, hidden on mobile/tablet) */}
             <div className="hidden lg:block">
               {/* Card 1: Ask Anything (Top Left) */}
-              <div className="absolute top-[10%] left-[-4%] w-[240px] p-5 rounded-2xl bg-[#f5f3ff] dark:bg-[#1a122e]/60 border border-[#7c4dff]/15 shadow-sm text-left hover:shadow transition-all group">
+              <div className="absolute top-[8%] left-[2%] xl:left-[4%] w-[240px] p-5 rounded-2xl bg-[#f5f3ff] dark:bg-[#1a122e]/60 border border-[#7c4dff]/15 shadow-sm text-left hover:shadow transition-all group">
                 <div className="w-8 h-8 rounded-xl bg-purple-500/10 dark:bg-purple-500/20 flex items-center justify-center text-[#7c4dff] dark:text-[#a080ff] mb-3">
                   <FileText className="w-4 h-4" />
                 </div>
@@ -445,7 +447,7 @@ export default function LandingPage() {
               </div>
 
               {/* Card 2: Connect Ideas (Bottom Left) */}
-              <div className="absolute bottom-[20%] left-[0%] w-[240px] p-5 rounded-2xl bg-[#fff7ed] dark:bg-[#2e1710]/40 border border-[#ff9100]/15 shadow-sm text-left hover:shadow transition-all group">
+              <div className="absolute bottom-[12%] left-[6%] xl:left-[8%] w-[240px] p-5 rounded-2xl bg-[#fff7ed] dark:bg-[#2e1710]/40 border border-[#ff9100]/15 shadow-sm text-left hover:shadow transition-all group">
                 <div className="w-8 h-8 rounded-xl bg-orange-500/10 dark:bg-orange-500/20 flex items-center justify-center text-[#ff9100] dark:text-[#ffb042] mb-3">
                   <Link2 className="w-4 h-4" />
                 </div>
@@ -455,7 +457,7 @@ export default function LandingPage() {
               </div>
 
               {/* Card 3: Go Deeper (Top Right) */}
-              <div className="absolute top-[20%] right-[-4%] w-[240px] p-5 rounded-2xl bg-[#fefce8] dark:bg-[#282410]/50 border border-[#eab308]/15 shadow-sm text-left hover:shadow transition-all group">
+              <div className="absolute top-[14%] right-[2%] xl:right-[4%] w-[240px] p-5 rounded-2xl bg-[#fefce8] dark:bg-[#282410]/50 border border-[#eab308]/15 shadow-sm text-left hover:shadow transition-all group">
                 <div className="w-8 h-8 rounded-xl bg-yellow-500/10 dark:bg-yellow-500/20 flex items-center justify-center text-yellow-600 dark:text-[#eab308] mb-3">
                   <MousePointerClick className="w-4 h-4" />
                 </div>
@@ -465,7 +467,7 @@ export default function LandingPage() {
               </div>
 
               {/* Card 4: Everything in One Place (Bottom Right) */}
-              <div className="absolute bottom-[10%] right-[0%] w-[240px] p-5 rounded-2xl bg-[#f0fdf4] dark:bg-[#112415]/60 border border-[#22c55e]/15 shadow-sm text-left hover:shadow transition-all group">
+              <div className="absolute bottom-[10%] right-[6%] xl:right-[8%] w-[240px] p-5 rounded-2xl bg-[#f0fdf4] dark:bg-[#112415]/60 border border-[#22c55e]/15 shadow-sm text-left hover:shadow transition-all group">
                 <div className="w-8 h-8 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-[#4ade80] mb-3">
                   <Folder className="w-4 h-4" />
                 </div>
@@ -475,53 +477,53 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Mobile Grid Layout: displays the 4 feature cards in a grid underneath */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mt-8 lg:hidden max-w-2xl px-2">
-              
-              {/* Mobile Card 1 */}
-              <div className="p-5 rounded-2xl bg-[#f5f3ff] dark:bg-[#1a122e]/60 border border-[#7c4dff]/15 text-left flex items-start gap-4">
-                <div className="w-10 h-10 shrink-0 rounded-xl bg-[#7c4dff]/10 flex items-center justify-center text-[#7c4dff] dark:text-[#a080ff]">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-display font-bold text-sm text-[#0d1233] dark:text-zinc-50 mb-0.5">Ask anything</h4>
-                  <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">AI answers become nodes.</p>
-                </div>
-              </div>
+          </div>
 
-              {/* Mobile Card 2 */}
-              <div className="p-5 rounded-2xl bg-[#fff7ed] dark:bg-[#2e1710]/40 border border-[#ff9100]/15 text-left flex items-start gap-4">
-                <div className="w-10 h-10 shrink-0 rounded-xl bg-[#ff9100]/10 flex items-center justify-center text-[#ff9100]">
-                  <Link2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-display font-bold text-sm text-[#0d1233] dark:text-zinc-50 mb-0.5">Connect ideas</h4>
-                  <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">Combine topics and discover new insight.</p>
-                </div>
+          {/* Mobile Grid Layout: displays the 4 feature cards in a grid underneath */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mt-8 lg:hidden max-w-2xl px-2">
+            
+            {/* Mobile Card 1 */}
+            <div className="p-5 rounded-2xl bg-[#f5f3ff] dark:bg-[#1a122e]/60 border border-[#7c4dff]/15 text-left flex items-start gap-4">
+              <div className="w-10 h-10 shrink-0 rounded-xl bg-[#7c4dff]/10 flex items-center justify-center text-[#7c4dff] dark:text-[#a080ff]">
+                <FileText className="w-5 h-5" />
               </div>
-
-              {/* Mobile Card 3 */}
-              <div className="p-5 rounded-2xl bg-[#fefce8] dark:bg-[#282410]/50 border border-[#eab308]/15 text-left flex items-start gap-4">
-                <div className="w-10 h-10 shrink-0 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-600 dark:text-[#eab308]">
-                  <MousePointerClick className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-display font-bold text-sm text-[#0d1233] dark:text-zinc-50 mb-0.5">Go deeper</h4>
-                  <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">Select any text to create a new branch.</p>
-                </div>
+              <div>
+                <h4 className="font-display font-bold text-sm text-[#0d1233] dark:text-zinc-50 mb-0.5">Ask anything</h4>
+                <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">AI answers become nodes.</p>
               </div>
+            </div>
 
-              {/* Mobile Card 4 */}
-              <div className="p-5 rounded-2xl bg-[#f0fdf4] dark:bg-[#112415]/60 border border-[#22c55e]/15 text-left flex items-start gap-4">
-                <div className="w-10 h-10 shrink-0 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-[#4ade80]">
-                  <Folder className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-display font-bold text-sm text-[#0d1233] dark:text-zinc-50 mb-0.5">Everything in one place</h4>
-                  <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">Docs, images, links, questions and more.</p>
-                </div>
+            {/* Mobile Card 2 */}
+            <div className="p-5 rounded-2xl bg-[#fff7ed] dark:bg-[#2e1710]/40 border border-[#ff9100]/15 text-left flex items-start gap-4">
+              <div className="w-10 h-10 shrink-0 rounded-xl bg-[#ff9100]/10 flex items-center justify-center text-[#ff9100]">
+                <Link2 className="w-5 h-5" />
               </div>
+              <div>
+                <h4 className="font-display font-bold text-sm text-[#0d1233] dark:text-zinc-50 mb-0.5">Connect ideas</h4>
+                <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">Combine topics and discover new insight.</p>
+              </div>
+            </div>
 
+            {/* Mobile Card 3 */}
+            <div className="p-5 rounded-2xl bg-[#fefce8] dark:bg-[#282410]/50 border border-[#eab308]/15 text-left flex items-start gap-4">
+              <div className="w-10 h-10 shrink-0 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-600 dark:text-[#eab308]">
+                <MousePointerClick className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-display font-bold text-sm text-[#0d1233] dark:text-zinc-50 mb-0.5">Go deeper</h4>
+                <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">Select any text to create a new branch.</p>
+              </div>
+            </div>
+
+            {/* Mobile Card 4 */}
+            <div className="p-5 rounded-2xl bg-[#f0fdf4] dark:bg-[#112415]/60 border border-[#22c55e]/15 text-left flex items-start gap-4">
+              <div className="w-10 h-10 shrink-0 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-[#4ade80]">
+                <Folder className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-display font-bold text-sm text-[#0d1233] dark:text-zinc-50 mb-0.5">Everything in one place</h4>
+                <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">Docs, images, links, questions and more.</p>
+              </div>
             </div>
 
           </div>
@@ -668,9 +670,7 @@ export default function LandingPage() {
               <div className="p-6 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/60 shadow-sm hover:border-[#7c4dff] dark:hover:border-[#7c4dff] hover:translate-y-[-2px] transition-all flex flex-col justify-between">
                 <div>
                   <div className="w-10 h-10 rounded-xl bg-purple-500/10 dark:bg-purple-500/20 flex items-center justify-center text-[#7c4dff] dark:text-[#a080ff] mb-6">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a6 6 0 00-3.44-4.72M21 12H9m12 0l-3-3m3 3l-3 3M6 18c-1.105 0-2-.895-2-2V8c0-1.105.895-2 2-2h3m0 12h3" />
-                    </svg>
+                    <GitBranch className="w-5 h-5" />
                   </div>
                   <h3 className="font-display font-bold text-[16px] text-[#0d1233] dark:text-zinc-50 mb-2.5">Branch any idea</h3>
                   <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">
@@ -683,9 +683,7 @@ export default function LandingPage() {
               <div className="p-6 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/60 shadow-sm hover:border-[#7c4dff] dark:hover:border-[#7c4dff] hover:translate-y-[-2px] transition-all flex flex-col justify-between">
                 <div>
                   <div className="w-10 h-10 rounded-xl bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center text-red-500 dark:text-red-400 mb-6">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 10.742L15 8m0 0l-6.316-2.742m6.316 2.742V14m0 0l-6.316 2.742m6.316-2.742L8.684 12" />
-                    </svg>
+                    <Share2 className="w-5 h-5" />
                   </div>
                   <h3 className="font-display font-bold text-[16px] text-[#0d1233] dark:text-zinc-50 mb-2.5">Connect everything</h3>
                   <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">
@@ -711,9 +709,7 @@ export default function LandingPage() {
               <div className="p-6 rounded-2xl border border-zinc-200/60 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/60 shadow-sm hover:border-[#7c4dff] dark:hover:border-[#7c4dff] hover:translate-y-[-2px] transition-all flex flex-col justify-between">
                 <div>
                   <div className="w-10 h-10 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-6">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
+                    <FileText className="w-5 h-5" />
                   </div>
                   <h3 className="font-display font-bold text-[16px] text-[#0d1233] dark:text-zinc-50 mb-2.5">Bring in anything</h3>
                   <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">
