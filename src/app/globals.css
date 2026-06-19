@@ -61,3 +61,20 @@ body {
   }
 }
 
+/* Hide Clerk Branding & Development Mode Footer */
+.cl-footer,
+.cl-userButtonPopoverFooter,
+.cl-footerAction,
+.cl-internal-b38t62,
+.cl-internal-15ur3z,
+.cl-internal-1sfsgzn,
+.cl-internal-1da6g5k,
+.cl-internal-182303,
+.cl-internal-1j71dce,
+.cl-internal-1dfd247,
+.cl-internal-75j4c9,
+.cl-internal-ph3499,
+[data-localization-key="footer"] {
+  display: none !important;
+}
+

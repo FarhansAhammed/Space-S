@@ -23,13 +23,39 @@ export const metadata: Metadata = {
   },
 };
 
+const clerkAppearance = {
+  variables: {
+    colorPrimary: "#7c4dff",
+    fontFamily: "var(--font-outfit), sans-serif",
+  },
+  elements: {
+    footer: { display: "none" },
+    userButtonPopoverFooter: { display: "none" }
+  }
+};
+
+const clerkLocalization = {
+  signIn: {
+    start: {
+      title: "Sign in to Space-S",
+      subtitle: "to continue to Space-S",
+    },
+  },
+  signUp: {
+    start: {
+      title: "Create your Space-S account",
+      subtitle: "to continue to Space-S",
+    },
+  },
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider appearance={clerkAppearance} localization={clerkLocalization}>
       <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
         <body className="antialiased bg-[#f8f5f0]">
           {children}
