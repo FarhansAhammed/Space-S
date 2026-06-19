@@ -27,7 +27,7 @@ export default function HowItWorksSection() {
               Click anywhere. Ask anything.
             </h3>
             <p className="font-inter text-xs text-[#1c1b18]/65 dark:text-[#f3f0ea]/65 leading-relaxed">
-              The canvas is yours. Click an empty spot and type your question — your AI response appears right there as a node, exactly where you placed it. Not in a thread. On a board. Spaces is the ultimate <strong className="font-medium text-[#7c4dff] dark:text-[#a080ff]">infinite canvas AI tool</strong>.
+              The canvas is yours. Click an empty spot and type your question. Your AI response appears right there as a node, exactly where you placed it. Not in a thread. On a board. Spaces is the ultimate <strong className="font-medium text-[#7c4dff] dark:text-[#a080ff]">infinite canvas AI tool</strong>.
             </p>
           </div>
         </div>
@@ -42,7 +42,7 @@ export default function HowItWorksSection() {
               Branch from what matters.
             </h3>
             <p className="font-inter text-xs text-[#1c1b18]/65 dark:text-[#f3f0ea]/65 leading-relaxed">
-              Select any sentence in any node. Hit Branch. A new connected node expands outward, diving into just that sub idea — with a red thread connecting it to where it came from. Your train of thought is visualized in a true <strong className="font-medium text-[#7c4dff] dark:text-[#a080ff]">non linear AI conversation tool</strong>.
+              Select any sentence in any node. Hit Branch. A new connected node expands outward, diving into just that sub idea with a red thread connecting it to where it came from. Your train of thought is visualized in a true <strong className="font-medium text-[#7c4dff] dark:text-[#a080ff]">non linear AI conversation tool</strong>.
             </p>
           </div>
         </div>
@@ -57,7 +57,7 @@ export default function HowItWorksSection() {
               Connect the unconnected.
             </h3>
             <p className="font-inter text-xs text-[#1c1b18]/65 dark:text-[#f3f0ea]/65 leading-relaxed">
-              Draw a line between two nodes — even ones from completely different topics. Hit Synthesize. Spaces reads both and generates a third node that finds the actual bridge between them. It lets you <strong className="font-medium text-[#7c4dff] dark:text-[#a080ff]">connect ideas across AI conversations</strong> instantly.
+              Draw a line between two nodes, even ones from completely different topics. Hit Synthesize. Spaces reads both and generates a third node that finds the actual bridge between them. It lets you <strong className="font-medium text-[#7c4dff] dark:text-[#a080ff]">connect ideas across AI conversations</strong> instantly.
             </p>
           </div>
         </div>

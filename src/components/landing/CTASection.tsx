@@ -44,7 +44,7 @@ export default function CTASection({
           className="group relative h-[52px] px-8 rounded-xl font-space-grotesk font-semibold text-sm text-white bg-[#0d1233] dark:bg-[#7c4dff] hover:bg-[#182156] dark:hover:bg-[#6b3bfc] shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 overflow-hidden"
         >
           <Plus className="w-4 h-4" />
-          <span>{creating ? 'Creating Canvas...' : "Open your first canvas — it's free"}</span>
+          <span>{creating ? 'Creating Canvas...' : "Open your first canvas free"}</span>
         </button>
 
         <div className="text-[11px] text-[#1c1b18]/45 dark:text-[#f3f0ea]/45 flex flex-wrap justify-center gap-x-3 gap-y-1 mt-4">

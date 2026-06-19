@@ -45,7 +45,7 @@ export default function HeroSection({
             
             {/* Curve 1: Top-Left Card ("Ask anything") → Create New Canvas button */}
             <path
-              d="M 262 148 C 340 220, 420 360, 490 416"
+              d="M 262 148 C 340 225, 420 365, 488 430"
               fill="none"
               stroke="#c0a6ff"
               strokeWidth="1.5"
@@ -56,7 +56,7 @@ export default function HeroSection({
 
             {/* Curve 2: Bottom-Left Card ("Connect ideas") → Create New Canvas button */}
             <path
-              d="M 305 452 C 370 452, 440 430, 490 422"
+              d="M 305 452 C 370 454, 430 456, 488 456"
               fill="none"
               stroke="#ffd4b2"
               strokeWidth="1.5"
@@ -67,7 +67,7 @@ export default function HeroSection({
 
             {/* Curve 3: Top-Right Card ("Go deeper") → Create New Canvas button */}
             <path
-              d="M 938 148 C 860 220, 780 360, 710 416"
+              d="M 938 148 C 860 225, 780 365, 712 430"
               fill="none"
               stroke="#ffe066"
               strokeWidth="1.5"
@@ -78,7 +78,7 @@ export default function HeroSection({
 
             {/* Curve 4: Bottom-Right Card ("Keep ideas organized") → Create New Canvas button */}
             <path
-              d="M 895 452 C 830 452, 760 430, 710 422"
+              d="M 895 452 C 830 454, 770 456, 712 456"
               fill="none"
               stroke="#bbf7d0"
               strokeWidth="1.5"

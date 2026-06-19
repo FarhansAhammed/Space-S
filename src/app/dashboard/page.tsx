@@ -276,7 +276,7 @@ export default function DashboardPage() {
                 theme === 'dark'
                   ? 'text-[#a080ff] border-[#7c4dff]/30 bg-[#7c4dff]/10'
                   : 'text-[#7c4dff] border-[#7c4dff]/20 bg-[#7c4dff]/5'
-              }`}>Space S — AI Thinking Canvas</span>
+              }`}>Space S AI Thinking Canvas</span>
             </div>
 
             <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight font-display mb-2 bg-clip-text text-transparent bg-gradient-to-r from-zinc-900 via-[#7c4dff] to-[#ff5722] dark:from-zinc-50 dark:via-[#9e75ff] dark:to-[#ff7a47]">
@@ -285,7 +285,7 @@ export default function DashboardPage() {
             <p className={`text-sm mb-8 max-w-[480px] leading-relaxed ${
               theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'
             }`}>
-              Create infinite, interconnected AI canvases. Branch ideas, synthesize insights, and collaborate in real time — all in one non linear workspace.
+              Create infinite, interconnected AI canvases. Branch ideas, synthesize insights, and collaborate in real time in one non linear workspace.
             </p>
 
             <div className="flex items-center gap-3 flex-wrap">

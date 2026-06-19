@@ -15,10 +15,10 @@ export default function ProblemSection() {
         {/* Pull Quote */}
         <blockquote className="border-l-4 border-[#7c4dff] dark:border-[#a080ff] pl-6 md:pl-8 py-2">
           <p className="font-space-grotesk font-semibold text-lg sm:text-2xl lg:text-3xl text-[#1c1b18] dark:text-zinc-50 leading-relaxed max-w-3xl">
-            "It's like being forced to have a complex brainstorming session through a narrow hallway — you can only talk about one thing at a time, in order."
+            "It's like being forced to have a complex brainstorming session through a narrow hallway. You can only talk about one thing at a time, in order."
           </p>
           <cite className="block font-inter text-xs text-[#1c1b18]/50 dark:text-[#f3f0ea]/50 mt-4 not-italic font-medium">
-            — r/ChatGPT user, 2025
+            r/ChatGPT user, 2025
           </cite>
         </blockquote>
       </div>
@@ -51,7 +51,7 @@ export default function ProblemSection() {
               Connections that never happen
             </h3>
             <p className="font-inter text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">
-              You run three separate AI chats on different angles of a problem. They never talk to each other. The synthesis lives only in your head — if you remember to make it.
+              You run three separate AI chats on different angles of a problem. They never talk to each other. The synthesis lives only in your head, if you remember to make it.
             </p>
           </div>
         </div>

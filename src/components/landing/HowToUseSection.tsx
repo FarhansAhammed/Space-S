@@ -9,13 +9,13 @@ export default function HowToUseSection() {
       num: "1",
       icon: <MousePointerClick className="w-5 h-5 text-[#7c4dff]" />,
       title: "Open your canvas",
-      body: "You see a big empty space — like a blank piece of paper, but infinite. This is where your thinking will happen."
+      body: "You see a big empty space, like a blank piece of paper, but infinite. This is where your thinking will happen."
     },
     {
       num: "2",
       icon: <MessageSquare className="w-5 h-5 text-[#7c4dff]" />,
       title: "Ask a question anywhere",
-      body: "Click anywhere on the canvas and type a question — just like texting. The AI answers you, and that answer appears as a card right where you clicked."
+      body: "Click anywhere on the canvas and type a question, just like texting. The AI answers you, and that answer appears as a card right where you clicked."
     },
     {
       num: "3",
@@ -33,7 +33,7 @@ export default function HowToUseSection() {
       num: "5",
       icon: <Users className="w-5 h-5 text-[#7c4dff]" />,
       title: "Invite a friend",
-      body: "Click Invite and share the link. Your friend joins the same canvas. You can both add cards at the same time — like a smart shared whiteboard."
+      body: "Click Invite and share the link. Your friend joins the same canvas. You can both add cards at the same time, like a smart shared whiteboard."
     }
   ];
 
@@ -79,7 +79,7 @@ export default function HowToUseSection() {
       <div className="max-w-4xl mx-auto">
         <div className="bg-white dark:bg-[#121110] border border-zinc-200/60 dark:border-zinc-800 p-5 sm:p-6 rounded-2xl text-center shadow-sm">
           <p className="font-inter text-xs sm:text-sm text-[#1c1b18]/80 dark:text-[#f3f0ea]/80 leading-relaxed">
-            🎓 <strong className="font-semibold text-[#7c4dff] dark:text-[#a080ff]">Teachers:</strong> Space S works great for classroom brainstorming sessions. Students can work on the same canvas during a lesson — every student's thinking is visible in real time.
+            Teachers: <strong className="font-semibold text-[#7c4dff] dark:text-[#a080ff]">Space S works great for classroom brainstorming sessions.</strong> Students can work on the same canvas during a lesson, and every student's thinking is visible in real time.
           </p>
         </div>
       </div>

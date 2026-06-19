@@ -15,7 +15,7 @@ export default function FeaturesSection() {
   const features: Feature[] = [
     {
       title: "Prompt to Node Canvas",
-      body: "Click anywhere on the blank canvas and type a prompt. Spaces creates a rich AI answer as a floating card right there. No more linear threads — your ideas appear spatially, ready to be arranged and expanded on your AI thinking workspace.",
+      body: "Click anywhere on the blank canvas and type a prompt. Spaces creates a rich AI answer as a floating card right there. No more linear threads. Your ideas appear spatially, ready to be arranged and expanded on your AI thinking workspace.",
       badge: "AI POWERED",
       badgeColor: "bg-[#7c4dff]/10 text-[#7c4dff] dark:text-[#a080ff]",
       mockup: (
@@ -35,7 +35,7 @@ export default function FeaturesSection() {
     },
     {
       title: "Branch From Any Idea",
-      body: "Select any part of an AI response. Hit Branch. Spaces splits that sub idea into its own connected node — drilling into one branch without losing the context of where it came from. True non linear AI conversation, not a chat restart.",
+      body: "Select any part of an AI response. Hit Branch. Spaces splits that sub idea into its own connected node, drilling into one branch without losing the context of where it came from. True non linear AI conversation, not a chat restart.",
       mockup: (
         <div className="flex items-center gap-4 relative py-4 w-full max-w-sm justify-center">
           <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/60 dark:border-zinc-850 shadow-sm text-center">
@@ -54,7 +54,7 @@ export default function FeaturesSection() {
     },
     {
       title: "Synthesize Across Topics",
-      body: "Draw a connection between two completely unrelated nodes and tap Synthesize. The AI reads both and generates a new node that finds real connections between them. This is AI knowledge visualization working in your favor — unexpected insight, automatically surfaced.",
+      body: "Draw a connection between two completely unrelated nodes and tap Synthesize. The AI reads both and generates a new node that finds real connections between them. This is AI knowledge visualization working in your favor, with unexpected insight automatically surfaced.",
       badge: "✦ MOST UNIQUE",
       badgeColor: "bg-red-500/10 text-red-500 dark:text-red-400",
       mockup: (
@@ -74,7 +74,7 @@ export default function FeaturesSection() {
     },
     {
       title: "Real Time Collaborative Canvas",
-      body: "Invite your team via a single link. Each person joins the collaborative AI brainstorming board with their own colored cursor and username. Add nodes, branch ideas, and synthesize together — simultaneously. The canvas is the room.",
+      body: "Invite your team via a single link. Each person joins the collaborative AI brainstorming board with their own colored cursor and username. Add nodes, branch ideas, and synthesize together simultaneously. The canvas is the room.",
       mockup: (
         <div className="flex flex-col gap-2 p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/60 dark:border-zinc-800 shadow-sm w-full max-w-sm relative overflow-hidden h-28">
           <div className="flex gap-1.5 items-center">

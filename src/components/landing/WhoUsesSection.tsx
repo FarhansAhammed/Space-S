@@ -6,7 +6,7 @@ export default function WhoUsesSection() {
   const users = [
     {
       role: "RESEARCHERS",
-      body: "Researchers use Space S to run AI powered literature reviews. They paste text findings and papers directly onto the canvas, branch findings by theme, and synthesize contradictions — all inside one visual AI research assistant."
+      body: "Researchers use Space S to run AI powered literature reviews. They paste text findings and papers directly onto the canvas, branch findings by theme, and synthesize contradictions inside one visual AI research assistant."
     },
     {
       role: "FOUNDERS & PMs",
