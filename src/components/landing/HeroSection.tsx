@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Plus, Sparkles, FileText, Link2, MousePointerClick, Folder, Play } from 'lucide-react';
+import { Plus, Sparkles, FileText, Link2, MousePointerClick, Folder } from 'lucide-react';
 
 interface HeroSectionProps {
   creating: boolean;
@@ -45,7 +45,7 @@ export default function HeroSection({
             
             {/* Curve 1: Top-Left Card ("Ask anything") → Create New Canvas button */}
             <path
-              d="M 265 155 C 340 200, 450 330, 548 388"
+              d="M 262 148 C 340 220, 420 360, 490 416"
               fill="none"
               stroke="#c0a6ff"
               strokeWidth="1.5"
@@ -56,7 +56,7 @@ export default function HeroSection({
 
             {/* Curve 2: Bottom-Left Card ("Connect ideas") → Create New Canvas button */}
             <path
-              d="M 300 448 C 380 448, 468 420, 548 400"
+              d="M 305 452 C 370 452, 440 430, 490 422"
               fill="none"
               stroke="#ffd4b2"
               strokeWidth="1.5"
@@ -67,7 +67,7 @@ export default function HeroSection({
 
             {/* Curve 3: Top-Right Card ("Go deeper") → Create New Canvas button */}
             <path
-              d="M 935 155 C 860 200, 750 330, 652 388"
+              d="M 938 148 C 860 220, 780 360, 710 416"
               fill="none"
               stroke="#ffe066"
               strokeWidth="1.5"
@@ -78,7 +78,7 @@ export default function HeroSection({
 
             {/* Curve 4: Bottom-Right Card ("Keep ideas organized") → Create New Canvas button */}
             <path
-              d="M 900 448 C 820 448, 732 420, 652 400"
+              d="M 895 452 C 830 452, 760 430, 710 422"
               fill="none"
               stroke="#bbf7d0"
               strokeWidth="1.5"
@@ -118,15 +118,6 @@ export default function HeroSection({
               <Plus className="w-4 h-4" />
               <span>{creating ? 'Creating Canvas...' : 'Create New Canvas'}</span>
             </button>
-
-            {/* Play link */}
-            <a 
-              href="#how-it-works"
-              className="flex items-center gap-2 text-xs font-bold text-[#0d1233]/70 dark:text-[#f3f0ea]/70 hover:text-[#0d1233] dark:hover:text-zinc-50 transition-colors mt-2"
-            >
-              <span>Watch 2 min demo</span>
-              <Play className="w-4 h-4 text-[#0d1233] dark:text-[#a080ff] bg-[#0d1233]/5 dark:bg-white/5 rounded-full p-1 border border-[#0d1233]/15 dark:border-white/10" />
-            </a>
           </div>
 
         </div>
