@@ -309,7 +309,7 @@ export default function LandingPage() {
       <div className="pt-[72px]">
         
         {/* 2. Hero Section (Visuals from landing.png) */}
-        <section id="product" className="relative min-h-[calc(100vh-72px)] flex flex-col items-center justify-center px-4 sm:px-6 py-12 md:py-24 overflow-hidden">
+        <section id="product" className="relative min-h-[calc(85vh-72px)] flex flex-col items-center justify-start px-4 sm:px-6 pt-4 md:pt-8 pb-12 overflow-hidden">
           
           {/* Subtle dotted background grid matching the canvas */}
           <div className="absolute inset-0 bg-[radial-gradient(#d0cbbf_1px,transparent_1px)] dark:bg-[radial-gradient(#403d39_1px,transparent_1px)] [background-size:20px_20px] opacity-40 pointer-events-none z-0" />
@@ -405,7 +405,7 @@ export default function LandingPage() {
               </p>
 
               {/* Center Buttons */}
-              <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
+              <div className="flex items-center justify-center mb-2">
                 <button
                   id="hero-create-canvas-btn-primary"
                   onClick={handleCreateCanvas}
@@ -415,21 +415,6 @@ export default function LandingPage() {
                   <Plus className="w-4 h-4" />
                   <span>{creating ? 'Creating Canvas...' : 'Create New Canvas'}</span>
                 </button>
-
-                <a
-                  href="#demo"
-                  className="h-[52px] px-6 rounded-2xl font-semibold text-sm border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
-                >
-                  <span>Watch 2-min demo</span>
-                  <div className="w-6 h-6 rounded-full border border-[#0d1233]/15 dark:border-white/15 flex items-center justify-center">
-                    <Play className="w-2.5 h-2.5 fill-current text-[#0d1233] dark:text-zinc-50 ml-0.5" />
-                  </div>
-                </a>
-              </div>
-
-              {/* Watch demo link wrapper */}
-              <div className="text-xs text-zinc-400 dark:text-zinc-500 mt-2">
-                No credit card required. Free to start.
               </div>
 
             </div>
