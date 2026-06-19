@@ -178,7 +178,7 @@ export default function CanvasListSection({
               className="h-10 px-6 rounded-xl font-semibold text-xs text-white bg-[#0d1233] dark:bg-[#7c4dff] hover:bg-[#182156] dark:hover:bg-[#6b3bfc] shadow transition-all flex items-center gap-1.5"
             >
               <Zap className="w-3.5 h-3.5" />
-              <span>Sign in to Space-S</span>
+              <span>Sign in to Space S</span>
             </button>
           </div>
         )}

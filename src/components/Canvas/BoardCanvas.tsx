@@ -391,13 +391,13 @@ export const BoardCanvas = () => {
         }`}>
           {/* Brand/Logo Icon */}
           <div className="w-16 h-16 flex items-center justify-center mx-auto mb-4 hover:scale-105 transition-transform duration-300">
-            <img src="/logo.png" alt="Space-S Logo" className="w-16 h-16 object-contain" />
+            <img src="/logo.png" alt="Space S Logo" className="w-16 h-16 object-contain" />
           </div>
           <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 font-display mb-3 bg-clip-text text-transparent bg-gradient-to-r from-zinc-900 via-[#7c4dff] to-[#ff5722] dark:from-zinc-50 dark:via-[#9e75ff] dark:to-[#ff7a47]">
-            Space-S
+            Space S
           </h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-[360px] mx-auto font-sans leading-relaxed">
-            A free-form AI canvas for non-linear thinking. Type your first topic or question below to visualize it.
+            A free-form AI canvas for non linear thinking. Type your first topic or question below to visualize it.
           </p>
         </div>
  

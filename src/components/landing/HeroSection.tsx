@@ -124,7 +124,7 @@ export default function HeroSection({
               href="#how-it-works"
               className="flex items-center gap-2 text-xs font-bold text-[#0d1233]/70 dark:text-[#f3f0ea]/70 hover:text-[#0d1233] dark:hover:text-zinc-50 transition-colors mt-2"
             >
-              <span>Watch 2-min demo</span>
+              <span>Watch 2 min demo</span>
               <Play className="w-4 h-4 text-[#0d1233] dark:text-[#a080ff] bg-[#0d1233]/5 dark:bg-white/5 rounded-full p-1 border border-[#0d1233]/15 dark:border-white/10" />
             </a>
           </div>
@@ -166,8 +166,8 @@ export default function HeroSection({
             <div className="w-8 h-8 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-[#4ade80] mb-3">
               <Folder className="w-4 h-4" />
             </div>
-            <h4 className="font-space-grotesk font-bold text-[15px] text-[#0d1233] dark:text-zinc-50 mb-1">Everything in one place</h4>
-            <p className="text-[12px] text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-normal">Docs, images, links, questions and more.</p>
+            <h4 className="font-space-grotesk font-bold text-[15px] text-[#0d1233] dark:text-zinc-50 mb-1">Keep ideas organized</h4>
+            <p className="text-[12px] text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-normal">Notes, links, questions, and insights all in one place.</p>
           </div>
 
         </div>
@@ -216,8 +216,8 @@ export default function HeroSection({
             <Folder className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="font-space-grotesk font-bold text-sm text-[#0d1233] dark:text-zinc-50 mb-0.5">Everything in one place</h4>
-            <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">Docs, images, links, questions and more.</p>
+            <h4 className="font-space-grotesk font-bold text-sm text-[#0d1233] dark:text-zinc-50 mb-0.5">Keep ideas organized</h4>
+            <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">Notes, links, questions, and insights all in one place.</p>
           </div>
         </div>
 

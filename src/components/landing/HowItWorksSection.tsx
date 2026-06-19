@@ -42,7 +42,7 @@ export default function HowItWorksSection() {
               Branch from what matters.
             </h3>
             <p className="font-inter text-xs text-[#1c1b18]/65 dark:text-[#f3f0ea]/65 leading-relaxed">
-              Select any sentence in any node. Hit Branch. A new connected node expands outward, diving into just that sub-idea — with a red thread connecting it to where it came from. Your train of thought is visualized in a true <strong className="font-medium text-[#7c4dff] dark:text-[#a080ff]">non-linear AI conversation tool</strong>.
+              Select any sentence in any node. Hit Branch. A new connected node expands outward, diving into just that sub idea — with a red thread connecting it to where it came from. Your train of thought is visualized in a true <strong className="font-medium text-[#7c4dff] dark:text-[#a080ff]">non linear AI conversation tool</strong>.
             </p>
           </div>
         </div>

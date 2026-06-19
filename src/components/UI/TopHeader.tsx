@@ -119,8 +119,8 @@ export const TopHeader = () => {
           className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer border border-transparent hover:border-zinc-200/50 dark:hover:border-zinc-800/80 transition-all"
         >
           {/* Logo image */}
-          <img src="/logo.png" alt="Space-S Logo" className="w-5 h-5 object-contain" />
-          <span className="font-semibold text-sm font-display text-zinc-800 dark:text-zinc-200 hidden sm:inline">Space-S</span>
+          <img src="/logo.png" alt="Space S Logo" className="w-5 h-5 object-contain" />
+          <span className="font-semibold text-sm font-display text-zinc-800 dark:text-zinc-200 hidden sm:inline">Space S</span>
           <ChevronDown className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 hidden sm:inline" />
         </Link>
 

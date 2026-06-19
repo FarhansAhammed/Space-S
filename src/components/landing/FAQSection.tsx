@@ -14,27 +14,27 @@ export default function FAQSection() {
     {
       id: "faq-1",
       q: "What's the best AI brainstorming tool for visual thinkers?",
-      a: "Spaces is built specifically for visual, non-linear thinking. Unlike ChatGPT or Claude, which give you a single scrolling thread, Spaces places every AI response as a node on an infinite canvas. You can move nodes around, connect them with thread lines, and branch off sub-ideas spatially — making it the most complete AI brainstorming tool for people who think in maps, not lists."
+      a: "Space S is built specifically for visual, non linear thinking. Unlike ChatGPT or Claude, which give you a single scrolling thread, Space S places every AI response as a node on an infinite canvas. You can move nodes around, connect them with thread lines, and branch off sub ideas spatially — making it the most complete AI brainstorming tool for people who think in maps, not lists."
     },
     {
       id: "faq-2",
       q: "How do I avoid losing context in long AI conversations?",
-      a: "The root cause of lost context isn't AI memory — it's the linear interface forcing everything into one sequential thread. Spaces solves this architecturally: every topic lives in its own node, so you never have to scroll past unrelated content to find what you need. Branch off a new node whenever a conversation deepens, and connect nodes when topics overlap. Your context stays spatial and visible, not buried."
+      a: "The root cause of lost context isn't AI memory — it's the linear interface forcing everything into one sequential thread. Space S solves this architecturally: every topic lives in its own node, so you never have to scroll past unrelated content to find what you need. Branch off a new node whenever a conversation deepens, and connect nodes when topics overlap. Your context stays spatial and visible, not buried."
     },
     {
       id: "faq-3",
-      q: "Can I use Spaces for team collaboration with AI?",
-      a: "Yes — real-time multiplayer is built into Spaces from the ground up. Share an invite link and your collaborator joins the same canvas with their own colored cursor and username. Every node, every branch, and every connection syncs live. It's a true collaborative AI brainstorming board, not a read-only shared document."
+      q: "Can I use Space S for team collaboration with AI?",
+      a: "Yes — real time multiplayer is built into Space S from the ground up. Share an invite link and your collaborator joins the same canvas with their own colored cursor and username. Every node, every branch, and every connection syncs live. It's a true collaborative AI brainstorming board, not a read only shared document."
     },
     {
       id: "faq-4",
       q: "Is there an AI tool that works like a mind map?",
-      a: "Spaces is the closest thing to a mind map AI tool that exists today. You start with a prompt, get an AI response as a card, then branch and connect cards across the canvas — exactly the structure of a mind map, but every card is a live AI conversation you can continue. You can also connect two unrelated cards and ask Spaces to find the connection between them, which no traditional mind map tool can do."
+      a: "Space S is the closest thing to a mind map AI tool that exists today. You start with a prompt, get an AI response as a card, then branch and connect cards across the canvas — exactly the structure of a mind map, but every card is a live AI conversation you can continue. You can also connect two unrelated cards and ask Space S to find the connection between them, which no traditional mind map tool can do."
     },
     {
       id: "faq-5",
-      q: "How is Spaces different from Miro or FigJam?",
-      a: "Miro and FigJam are visual collaboration tools designed for human-made content — sticky notes, shapes, and diagrams you draw yourself. Spaces is an AI-native canvas: every node is a live AI conversation you can continue, branch, and synthesize. The AI doesn't sit outside the canvas as a sidebar — it is the canvas. You can't replicate this with a Miro AI integration."
+      q: "How is Space S different from Miro or FigJam?",
+      a: "Miro and FigJam are visual collaboration tools designed for human-made content — sticky notes, shapes, and diagrams you draw yourself. Space S is an AI native canvas: every node is a live AI conversation you can continue, branch, and synthesize. The AI doesn't sit outside the canvas as a sidebar — it is the canvas. You can't replicate this with a Miro AI integration."
     }
   ];
 
@@ -98,7 +98,7 @@ export default function FAQSection() {
 
         {/* SEO/AEO signals paragraph */}
         <p className="font-inter text-[12px] sm:text-[13px] text-[#1c1b18]/50 dark:text-[#f3f0ea]/55 max-w-2xl mx-auto mt-12 text-center leading-relaxed">
-          Spaces is an infinite canvas AI tool that replaces linear chat interfaces for knowledge work. It supports AI research assistants workflows, non-linear brainstorming, spatial note taking, visual knowledge mapping, and real-time collaborative AI sessions. Teams globally use Spaces to connect ideas across AI conversations and build structured knowledge from unstructured thinking.
+          Space S is an infinite canvas AI tool that replaces linear chat interfaces for knowledge work. It supports AI research assistants workflows, non linear brainstorming, spatial note taking, visual knowledge mapping, and real time collaborative AI sessions. Teams globally use Space S to connect ideas across AI conversations and build structured knowledge from unstructured thinking.
         </p>
 
       </div>

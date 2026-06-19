@@ -13,13 +13,13 @@ export default function Footer() {
         {/* Col 1 */}
         <div className="md:col-span-4 flex flex-col items-start">
           <div className="flex items-center gap-2 cursor-pointer mb-4" onClick={() => router.push('/')}>
-            <img src="/logo.png" alt="Space-S Logo" className="w-5 h-5 object-contain" />
+            <img src="/logo.png" alt="Space S Logo" className="w-5 h-5 object-contain" />
             <span className="font-space-grotesk font-semibold text-base tracking-tight text-[#0d1233] dark:text-zinc-50">
               space<span className="text-[#7c4dff] dark:text-[#a080ff] font-bold">•</span>
             </span>
           </div>
           <p className="text-[#1c1b18]/60 dark:text-[#f3f0ea]/55 text-xs max-w-xs leading-relaxed">
-            The infinite canvas AI workspace for non-linear thinkers.
+            The infinite canvas AI workspace for non linear thinkers.
           </p>
         </div>
 
@@ -54,14 +54,14 @@ export default function Footer() {
       {/* SEO Paragraph */}
       <div className="max-w-3xl mx-auto border-t border-zinc-200/40 dark:border-zinc-900/40 pt-8 mb-8 text-center">
         <p className="text-[11px] text-zinc-400/80 dark:text-zinc-500/85 leading-relaxed max-w-2xl mx-auto">
-          Spaces is an AI thinking workspace — a visual, infinite canvas where knowledge workers, researchers, students, and remote teams connect ideas across AI conversations. Features include spatial note taking, collaborative AI brainstorming boards, non-linear AI conversation tools, AI mind mapping, and real-time multiplayer canvas editing.
+          Space S is an AI thinking workspace — a visual, infinite canvas where knowledge workers, researchers, students, and remote teams connect ideas across AI conversations. Features include spatial note taking, collaborative AI brainstorming boards, non linear AI conversation tools, AI mind mapping, and real time multiplayer canvas editing.
         </p>
       </div>
 
       {/* Bottom copyright bar */}
       <div className="max-w-7xl mx-auto border-t border-zinc-200/20 dark:border-zinc-900/20 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-zinc-400 dark:text-zinc-500 text-[11px] font-medium">
         <div>
-          &copy; {new Date().getFullYear()} Space-S. All rights reserved.
+          &copy; {new Date().getFullYear()} Space S. All rights reserved.
         </div>
         <div className="flex gap-4">
           <span className="hover:underline cursor-pointer opacity-80 hover:opacity-100">Privacy Policy</span>

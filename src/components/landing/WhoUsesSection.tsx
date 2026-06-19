@@ -6,15 +6,15 @@ export default function WhoUsesSection() {
   const users = [
     {
       role: "RESEARCHERS",
-      body: "Researchers use Space-S to run AI-powered literature reviews. They upload papers directly onto the canvas, branch findings by theme, and synthesize contradictions — all inside one visual AI research assistant."
+      body: "Researchers use Space S to run AI powered literature reviews. They paste text findings and papers directly onto the canvas, branch findings by theme, and synthesize contradictions — all inside one visual AI research assistant."
     },
     {
       role: "FOUNDERS & PMs",
-      body: "Founders and product managers use Space-S to map strategy. They run AI brainstorming sessions across multiple angles of a problem, connect insights from different contexts, and share the canvas with their team as a live working document."
+      body: "Founders and product managers use Space S to map strategy. They run AI brainstorming sessions across multiple angles of a problem, connect insights from different contexts, and share the canvas with their team as a live working document."
     },
     {
       role: "STUDENTS",
-      body: "Students working on complex papers or projects build their entire research structure on Space-S. They break topics into connected cards, draw relationships like a mind map AI would generate, and never lose the thread of a long study session."
+      body: "Students working on complex papers or projects build their entire research structure on Space S. They break topics into connected cards, draw relationships like a mind map AI would generate, and never lose the thread of a long study session."
     }
   ];
 
@@ -22,7 +22,7 @@ export default function WhoUsesSection() {
     <section className="py-20 px-4 sm:px-8 bg-[#f8f5f0] dark:bg-[#121110] transition-colors duration-200">
       <div className="max-w-7xl mx-auto text-center mb-16">
         <h2 className="font-space-grotesk font-bold text-3xl sm:text-4xl md:text-5xl text-[#0d1233] dark:text-zinc-50 mb-4">
-          Who Uses Space-S
+          Who Uses Space S
         </h2>
         <p className="font-inter text-sm sm:text-base text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 max-w-xl mx-auto">
           Built for people whose thinking doesn't fit in a box.

@@ -66,7 +66,7 @@ export default function ProblemSection() {
               Collaboration is an afterthought
             </h3>
             <p className="font-inter text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">
-              "I can't believe there is no way to collaborate. It makes no sense." Every major AI chat tool is single-player by design. Your team is left stitching outputs together manually.
+              "I can't believe there is no way to collaborate. It makes no sense." Every major AI chat tool is single player by design. Your team is left stitching outputs together manually.
             </p>
           </div>
         </div>

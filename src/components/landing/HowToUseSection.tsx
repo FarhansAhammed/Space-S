@@ -27,7 +27,7 @@ export default function HowToUseSection() {
       num: "4",
       icon: <Link2 className="w-5 h-5 text-[#7c4dff]" />,
       title: "Connect two different ideas",
-      body: "Say you have cards about black holes and philosophy. Draw a line between them and click Synthesize. Space-S will find a surprising connection."
+      body: "Say you have cards about black holes and philosophy. Draw a line between them and click Synthesize. Space S will find a surprising connection."
     },
     {
       num: "5",
@@ -41,7 +41,7 @@ export default function HowToUseSection() {
     <section className="py-24 px-4 sm:px-8 bg-[#f5ebd9] dark:bg-[#1a1918] border-t-2 border-b-2 border-dashed border-[#e4dfd5] dark:border-[#2d2c29] transition-colors duration-200">
       <div className="max-w-7xl mx-auto text-center mb-16">
         <h2 className="font-space-grotesk font-bold text-3xl sm:text-4xl md:text-5xl text-[#0d1233] dark:text-zinc-50 mb-4">
-          How to Use Space-S
+          How to Use Space S
         </h2>
         <p className="font-inter text-sm sm:text-base text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 max-w-xl mx-auto">
           Even if you've never used an AI tool before, you'll understand this in 60 seconds.
@@ -79,7 +79,7 @@ export default function HowToUseSection() {
       <div className="max-w-4xl mx-auto">
         <div className="bg-white dark:bg-[#121110] border border-zinc-200/60 dark:border-zinc-800 p-5 sm:p-6 rounded-2xl text-center shadow-sm">
           <p className="font-inter text-xs sm:text-sm text-[#1c1b18]/80 dark:text-[#f3f0ea]/80 leading-relaxed">
-            🎓 <strong className="font-semibold text-[#7c4dff] dark:text-[#a080ff]">Teachers:</strong> Space-S works great for classroom brainstorming sessions. Students can work on the same canvas during a lesson — every student's thinking is visible in real time.
+            🎓 <strong className="font-semibold text-[#7c4dff] dark:text-[#a080ff]">Teachers:</strong> Space S works great for classroom brainstorming sessions. Students can work on the same canvas during a lesson — every student's thinking is visible in real time.
           </p>
         </div>
       </div>

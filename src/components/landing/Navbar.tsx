@@ -36,7 +36,7 @@ export default function Navbar({
           
           {/* Logo & Brand */}
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
-            <img src="/logo.png" alt="Space-S Logo" className="w-5 h-5 object-contain" />
+            <img src="/logo.png" alt="Space S Logo" className="w-5 h-5 object-contain" />
             <span className="font-space-grotesk font-semibold text-lg tracking-tight text-[#0d1233] dark:text-zinc-50">
               space<span className="text-[#7c4dff] dark:text-[#a080ff] font-bold">•</span>
             </span>

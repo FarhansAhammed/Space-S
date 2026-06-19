@@ -144,7 +144,7 @@ export const RightSidebar = () => {
                         <Sparkles className="w-3.5 h-3.5" />
                       </div>
                       <div className="flex flex-col items-start">
-                        <span className="text-[9px] font-semibold text-zinc-400 mb-1">Space-S AI</span>
+                        <span className="text-[9px] font-semibold text-zinc-400 mb-1">Space S AI</span>
                         <div className="rounded-xl px-3 py-2 text-[11px] leading-relaxed shadow-sm border bg-zinc-50/70 dark:bg-zinc-900/60 border-zinc-100 dark:border-zinc-800/80 text-zinc-655 dark:text-zinc-300 rounded-tl-none select-text">
                           {renderMarkdown(msg.content)}
                         </div>
@@ -162,7 +162,7 @@ export const RightSidebar = () => {
                   <Sparkles className="w-3.5 h-3.5" />
                 </div>
                 <div className="flex flex-col items-start">
-                  <span className="text-[9px] font-semibold text-zinc-400 mb-1">Space-S AI</span>
+                  <span className="text-[9px] font-semibold text-zinc-400 mb-1">Space S AI</span>
                   <div className="rounded-xl rounded-tl-none px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800/80 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#7c4dff] animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-[#7c4dff] animate-bounce" style={{ animationDelay: '150ms' }} />

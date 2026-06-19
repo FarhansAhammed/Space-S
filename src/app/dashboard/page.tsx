@@ -212,8 +212,8 @@ export default function DashboardPage() {
       <header className="h-[64px] border-b border-zinc-200/60 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-md flex items-center justify-between px-4 sm:px-8 fixed top-0 left-0 right-0 z-40 transition-colors duration-200">
         <div className="flex items-center gap-2">
           {/* Logo image */}
-          <img src="/logo.png" alt="Space-S Logo" className="w-5 h-5 object-contain" />
-          <span className="font-semibold text-sm font-display text-zinc-900 dark:text-zinc-50">Space-S</span>
+          <img src="/logo.png" alt="Space S Logo" className="w-5 h-5 object-contain" />
+          <span className="font-semibold text-sm font-display text-zinc-900 dark:text-zinc-50">Space S</span>
           <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono px-1.5 py-0.5 rounded border border-zinc-200/60 dark:border-zinc-800/80 ml-2 hidden sm:inline">Dashboard</span>
         </div>
 
@@ -270,13 +270,13 @@ export default function DashboardPage() {
           <div className="relative px-4 py-8 sm:px-8 sm:py-10">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-5 h-5 flex items-center justify-center">
-                <img src="/logo.png" alt="Space-S" className="w-5 h-5 object-contain" />
+                <img src="/logo.png" alt="Space S" className="w-5 h-5 object-contain" />
               </div>
               <span className={`text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full border ${
                 theme === 'dark'
                   ? 'text-[#a080ff] border-[#7c4dff]/30 bg-[#7c4dff]/10'
                   : 'text-[#7c4dff] border-[#7c4dff]/20 bg-[#7c4dff]/5'
-              }`}>Space-S — AI Thinking Canvas</span>
+              }`}>Space S — AI Thinking Canvas</span>
             </div>
 
             <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight font-display mb-2 bg-clip-text text-transparent bg-gradient-to-r from-zinc-900 via-[#7c4dff] to-[#ff5722] dark:from-zinc-50 dark:via-[#9e75ff] dark:to-[#ff7a47]">
@@ -285,7 +285,7 @@ export default function DashboardPage() {
             <p className={`text-sm mb-8 max-w-[480px] leading-relaxed ${
               theme === 'dark' ? 'text-zinc-400' : 'text-zinc-500'
             }`}>
-              Create infinite, interconnected AI canvases. Branch ideas, synthesize insights, and collaborate in real-time — all in one non-linear workspace.
+              Create infinite, interconnected AI canvases. Branch ideas, synthesize insights, and collaborate in real time — all in one non linear workspace.
             </p>
 
             <div className="flex items-center gap-3 flex-wrap">

@@ -14,9 +14,9 @@ interface Feature {
 export default function FeaturesSection() {
   const features: Feature[] = [
     {
-      title: "Prompt-to-Node Canvas",
+      title: "Prompt to Node Canvas",
       body: "Click anywhere on the blank canvas and type a prompt. Spaces creates a rich AI answer as a floating card right there. No more linear threads — your ideas appear spatially, ready to be arranged and expanded on your AI thinking workspace.",
-      badge: "AI-POWERED",
+      badge: "AI POWERED",
       badgeColor: "bg-[#7c4dff]/10 text-[#7c4dff] dark:text-[#a080ff]",
       mockup: (
         <div className="flex flex-col gap-3 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/60 dark:border-zinc-800 shadow-sm w-full max-w-sm">
@@ -35,7 +35,7 @@ export default function FeaturesSection() {
     },
     {
       title: "Branch From Any Idea",
-      body: "Select any part of an AI response. Hit Branch. Spaces splits that sub-idea into its own connected node — drilling into one branch without losing the context of where it came from. True non-linear AI conversation, not a chat restart.",
+      body: "Select any part of an AI response. Hit Branch. Spaces splits that sub idea into its own connected node — drilling into one branch without losing the context of where it came from. True non linear AI conversation, not a chat restart.",
       mockup: (
         <div className="flex items-center gap-4 relative py-4 w-full max-w-sm justify-center">
           <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/60 dark:border-zinc-850 shadow-sm text-center">
@@ -73,7 +73,7 @@ export default function FeaturesSection() {
       )
     },
     {
-      title: "Real-Time Collaborative Canvas",
+      title: "Real Time Collaborative Canvas",
       body: "Invite your team via a single link. Each person joins the collaborative AI brainstorming board with their own colored cursor and username. Add nodes, branch ideas, and synthesize together — simultaneously. The canvas is the room.",
       mockup: (
         <div className="flex flex-col gap-2 p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/60 dark:border-zinc-800 shadow-sm w-full max-w-sm relative overflow-hidden h-28">
@@ -92,24 +92,6 @@ export default function FeaturesSection() {
             <div className="w-2 h-2 rounded-full bg-[#ff9100]" />
             <span className="text-[8px] bg-zinc-900 text-white px-1 py-0.5 rounded shadow">Alex</span>
           </div>
-        </div>
-      )
-    },
-    {
-      title: "Upload Anything. Understand Everything.",
-      body: "Drag in a PDF, image, or screenshot. Spaces reads and transcribes it into a text node automatically. Your research papers, meeting notes, and diagrams live on the same canvas as your AI conversations — a true spatial note taking app powered by AI.",
-      mockup: (
-        <div className="flex items-center gap-3 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/60 dark:border-zinc-850 shadow-sm w-full max-w-sm">
-          <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600">
-            <FileText className="w-6 h-6" />
-          </div>
-          <div className="flex-1">
-            <h4 className="text-[10px] font-bold text-zinc-800 dark:text-zinc-150 mb-0.5">research_paper.pdf</h4>
-            <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
-              <div className="bg-emerald-500 h-full rounded-full w-[80%]" />
-            </div>
-          </div>
-          <span className="text-[9px] font-mono text-zinc-400">80%</span>
         </div>
       )
     }

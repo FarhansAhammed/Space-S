@@ -27,7 +27,7 @@ export default function CTASection({
         
         {/* Logo Monogram */}
         <div className="w-14 h-14 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/80 shadow-md flex items-center justify-center p-2.5 mb-8">
-          <img src="/logo.png" alt="Space-S Monogram" className="w-full h-full object-contain" />
+          <img src="/logo.png" alt="Space S Monogram" className="w-full h-full object-contain" />
         </div>
 
         <h2 className="font-space-grotesk font-bold text-3xl sm:text-4xl md:text-5xl text-[#0d1233] dark:text-zinc-50 mb-6 tracking-tight leading-tight">
