@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import React from 'react';
+import { Plus, Sparkles, FileText, Link2, MousePointerClick, Folder, Play } from 'lucide-react';
 
 interface HeroSectionProps {
   creating: boolean;
@@ -12,189 +12,213 @@ export default function HeroSection({
   creating,
   handleCreateCanvas,
 }: HeroSectionProps) {
-  // Animation state (0 to 5 steps)
-  const [step, setStep] = useState(0);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-
-  useEffect(() => {
-    // Check for prefers-reduced-motion media query
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
-
-    const listener = (e: MediaQueryListEvent) => {
-      setPrefersReducedMotion(e.matches);
-    };
-    mediaQuery.addEventListener('change', listener);
-    return () => mediaQuery.removeEventListener('change', listener);
-  }, []);
-
-  useEffect(() => {
-    if (prefersReducedMotion) {
-      setStep(5); // Show final layout immediately
-      return;
-    }
-
-    const timer1 = setTimeout(() => setStep(1), 400);   // Node 1 fades in
-    const timer2 = setTimeout(() => setStep(2), 1200);  // Node 2 fades in
-    const timer3 = setTimeout(() => setStep(3), 1800);  // Thread 1 draws
-    const timer4 = setTimeout(() => setStep(4), 2600);  // Node 3 fades in
-    const timer5 = setTimeout(() => setStep(5), 3400);  // Thread 2 draws
-    const timer6 = setTimeout(() => setStep(6), 4500);  // Cursor Rahim appears/moves
-    const timerReset = setTimeout(() => {
-      setStep(0);
-    }, 9000); // 9-second loop duration
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-      clearTimeout(timer4);
-      clearTimeout(timer5);
-      clearTimeout(timer6);
-      clearTimeout(timerReset);
-    };
-  }, [step, prefersReducedMotion]);
-
   return (
-    <section id="product" className="relative min-h-[calc(90vh-72px)] flex flex-col items-center justify-center px-4 sm:px-8 py-16 overflow-hidden">
-      {/* Grid Pattern */}
-      <div className="absolute inset-0 bg-[radial-gradient(#e4dfd5_1px,transparent_1px)] dark:bg-[radial-gradient(#2d2c29_1px,transparent_1px)] [background-size:20px_20px] opacity-60 pointer-events-none z-0" />
+    <section id="product" className="relative min-h-[calc(90vh-72px)] flex flex-col items-center justify-center px-4 sm:px-6 pt-4 md:pt-8 pb-12 overflow-hidden">
       
-      {/* Decorative soft glowing orbs */}
-      <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-[#7c4dff]/5 dark:bg-[#7c4dff]/3 blur-3xl rounded-full pointer-events-none" />
-      <div className="absolute bottom-[20%] right-[10%] w-[300px] h-[300px] bg-[#ff9100]/4 dark:bg-[#ff9100]/2 blur-3xl rounded-full pointer-events-none" />
+      {/* Dotted grid background */}
+      <div className="absolute inset-0 bg-[radial-gradient(#d0cbbf_1.2px,transparent_1.2px)] dark:bg-[radial-gradient(#403d39_1.2px,transparent_1.2px)] [background-size:22px_22px] opacity-45 pointer-events-none z-0" />
+      
+      {/* Soft background glow orbs */}
+      <div className="absolute top-[20%] left-[20%] w-[350px] h-[350px] bg-[#7c4dff]/5 dark:bg-[#7c4dff]/3 blur-3xl rounded-full pointer-events-none" />
+      <div className="absolute bottom-[20%] right-[15%] w-[400px] h-[400px] bg-[#ff9100]/4 dark:bg-[#ff9100]/2 blur-3xl rounded-full pointer-events-none" />
 
-      <div className="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
+      {/* Core Wrap */}
+      <div className="max-w-7xl w-full mx-auto relative min-h-[580px] flex flex-col items-center justify-center z-10">
         
-        {/* Left Column (55% equivalent: 7 cols) */}
-        <div className="lg:col-span-7 text-left flex flex-col items-start">
-          <span className="text-[11px] font-bold tracking-widest text-[#7c4dff] dark:text-[#a080ff] uppercase mb-4">
-            AI THINKING WORKSPACE
-          </span>
+        {/* Absolute Floating SVG Curves (Desktop Only) */}
+        <div className="absolute inset-0 w-full h-full pointer-events-none hidden lg:block z-0">
+          <svg className="w-full h-full" viewBox="0 0 1200 600" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <marker id="arrow-violet" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#c0a6ff" />
+              </marker>
+              <marker id="arrow-orange" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#ffd4b2" />
+              </marker>
+              <marker id="arrow-yellow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#ffe066" />
+              </marker>
+              <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#bbf7d0" />
+              </marker>
+            </defs>
+            
+            {/* Curve 1: Top-Left Card ("Ask anything") to Center Button */}
+            <path 
+              d="M 280 180 C 360 210, 420 370, 480 395" 
+              fill="none" 
+              stroke="#c0a6ff" 
+              strokeWidth="1.5" 
+              strokeDasharray="4 4" 
+              markerEnd="url(#arrow-violet)" 
+              className="opacity-70 dark:opacity-40"
+            />
+
+            {/* Curve 2: Bottom-Left Card ("Connect ideas") to Center Button */}
+            <path 
+              d="M 330 460 C 400 460, 420 420, 480 410" 
+              fill="none" 
+              stroke="#ffd4b2" 
+              strokeWidth="1.5" 
+              strokeDasharray="4 4" 
+              markerEnd="url(#arrow-orange)" 
+              className="opacity-70 dark:opacity-40"
+            />
+
+            {/* Curve 3: Top-Right Card ("Go deeper") to Center Button */}
+            <path 
+              d="M 920 220 C 840 250, 800 370, 720 395" 
+              fill="none" 
+              stroke="#ffe066" 
+              strokeWidth="1.5" 
+              strokeDasharray="4 4" 
+              markerStart="url(#arrow-yellow)" 
+              className="opacity-70 dark:opacity-40"
+            />
+
+            {/* Curve 4: Bottom-Right Card ("Everything in one place") to Center Button */}
+            <path 
+              d="M 870 480 C 800 480, 780 420, 720 410" 
+              fill="none" 
+              stroke="#bbf7d0" 
+              strokeWidth="1.5" 
+              strokeDasharray="4 4" 
+              markerStart="url(#arrow-green)" 
+              className="opacity-70 dark:opacity-40"
+            />
+          </svg>
+        </div>
+
+        {/* Central Hero Content */}
+        <div className="relative z-20 max-w-2xl w-full text-center flex flex-col items-center py-6 px-4">
           
-          <h1 className="font-space-grotesk font-bold text-4xl sm:text-5xl lg:text-6xl text-[#0d1233] dark:text-zinc-50 leading-[1.1] tracking-tight mb-6">
-            Infinite <span className="underline decoration-[#7c4dff] dark:decoration-[#a080ff] decoration-wavy decoration-2">Canvas</span> AI Workspace
+          {/* Badge */}
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-[#fdfaf5] dark:bg-[#161514] shadow-sm mb-8">
+            <Sparkles className="w-3.5 h-3.5 text-[#7c4dff] dark:text-[#a080ff]" />
+            <span className="text-[12px] font-semibold text-[#1c1b18]/70 dark:text-[#f3f0ea]/70">Your ideas deserve space.</span>
+          </div>
+
+          {/* Heading */}
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-serif text-[#0d1233] dark:text-zinc-50 leading-[1.1] tracking-tight mb-6 max-w-3xl font-medium">
+            Infinite <span className="italic font-normal text-[#7c4dff] dark:text-[#9c7eff]">Canvas</span><br />AI Workspace
           </h1>
-          
-          <p className="font-inter text-sm sm:text-base lg:text-lg text-[#1c1b18]/70 dark:text-[#f3f0ea]/70 leading-relaxed mb-8 max-w-xl">
+
+          {/* Paragraph */}
+          <p className="text-sm sm:text-base text-[#1c1b18]/70 dark:text-[#f3f0ea]/75 max-w-xl leading-relaxed mb-10 px-4">
             Replace linear AI chat threads with a limitless AI brainstorming tool. Drop prompts anywhere, branch ideas into connected nodes, and see your research take shape on a visual thinking canvas.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 w-full sm:w-auto mb-4">
+          {/* Big Center Button */}
+          <div className="flex flex-col items-center gap-4 mb-2">
             <button
               onClick={handleCreateCanvas}
               disabled={creating}
-              className="h-12 px-7 rounded-xl font-semibold text-sm text-white bg-[#0d1233] dark:bg-[#7c4dff] hover:bg-[#182156] dark:hover:bg-[#6b3bfc] shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+              className="group relative h-14 px-8 rounded-2xl font-bold text-sm text-white bg-[#0d1233] dark:bg-[#7c4dff] hover:bg-[#192257] dark:hover:bg-[#6b3bfc] shadow-[0_8px_30px_rgb(13,18,51,0.18)] dark:shadow-[0_8px_30px_rgb(124,77,255,0.25)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 overflow-hidden"
             >
-              <span>Start for free</span>
-              <ArrowRight className="w-4 h-4" />
+              <Plus className="w-4 h-4" />
+              <span>{creating ? 'Creating Canvas...' : 'Create New Canvas'}</span>
             </button>
-            <a
+
+            {/* Play link */}
+            <a 
               href="#how-it-works"
-              className="h-12 px-7 rounded-xl font-semibold text-sm border border-[#0d1233]/15 dark:border-white/10 hover:bg-[#0d1233]/5 dark:hover:bg-white/5 text-[#0d1233] dark:text-zinc-50 transition-all flex items-center justify-center"
+              className="flex items-center gap-2 text-xs font-bold text-[#0d1233]/70 dark:text-[#f3f0ea]/70 hover:text-[#0d1233] dark:hover:text-zinc-50 transition-colors mt-2"
             >
-              See how it works
+              <span>Watch 2-min demo</span>
+              <Play className="w-4 h-4 text-[#0d1233] dark:text-[#a080ff] bg-[#0d1233]/5 dark:bg-white/5 rounded-full p-1 border border-[#0d1233]/15 dark:border-white/10" />
             </a>
           </div>
 
-          <div className="text-[11px] text-[#1c1b18]/50 dark:text-[#f3f0ea]/50 flex flex-wrap gap-x-3 gap-y-1">
-            <span>No credit card required</span>
-            <span>•</span>
-            <span>Works in your browser</span>
-            <span>•</span>
-            <span>Free forever plan</span>
+        </div>
+
+        {/* Floating Cards (Shown absolute relative to max-w-7xl, hidden on mobile/tablet) */}
+        <div className="hidden lg:block">
+          
+          {/* Card 1: Ask Anything (Top Left) */}
+          <div className="absolute top-[8%] left-[2%] xl:left-[4%] w-[240px] p-5 rounded-2xl bg-[#f5f3ff] dark:bg-[#1a122e]/60 border border-[#7c4dff]/15 shadow-sm text-left hover:shadow transition-all group">
+            <div className="w-8 h-8 rounded-xl bg-purple-500/10 dark:bg-purple-500/20 flex items-center justify-center text-[#7c4dff] dark:text-[#a080ff] mb-3">
+              <FileText className="w-4 h-4" />
+            </div>
+            <h4 className="font-space-grotesk font-bold text-[15px] text-[#0d1233] dark:text-zinc-50 mb-1">Ask anything</h4>
+            <p className="text-[12px] text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-normal">AI answers become nodes.</p>
+          </div>
+
+          {/* Card 2: Connect Ideas (Bottom Left) */}
+          <div className="absolute bottom-[12%] left-[6%] xl:left-[8%] w-[240px] p-5 rounded-2xl bg-[#fff7ed] dark:bg-[#2e1710]/40 border border-[#ff9100]/15 shadow-sm text-left hover:shadow transition-all group">
+            <div className="w-8 h-8 rounded-xl bg-orange-500/10 dark:bg-orange-500/20 flex items-center justify-center text-[#ff9100] dark:text-[#ffb042] mb-3">
+              <Link2 className="w-4 h-4" />
+            </div>
+            <h4 className="font-space-grotesk font-bold text-[15px] text-[#0d1233] dark:text-zinc-50 mb-1">Connect ideas</h4>
+            <p className="text-[12px] text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-normal">Combine topics and discover new insight.</p>
+          </div>
+
+          {/* Card 3: Go Deeper (Top Right) */}
+          <div className="absolute top-[14%] right-[2%] xl:right-[4%] w-[240px] p-5 rounded-2xl bg-[#fefce8] dark:bg-[#282410]/50 border border-[#eab308]/15 shadow-sm text-left hover:shadow transition-all group">
+            <div className="w-8 h-8 rounded-xl bg-yellow-500/10 dark:bg-yellow-500/20 flex items-center justify-center text-yellow-600 dark:text-[#eab308] mb-3">
+              <MousePointerClick className="w-4 h-4" />
+            </div>
+            <h4 className="font-space-grotesk font-bold text-[15px] text-[#0d1233] dark:text-zinc-50 mb-1">Go deeper</h4>
+            <p className="text-[12px] text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-normal">Select any text to create a new branch.</p>
+          </div>
+
+          {/* Card 4: Everything in One Place (Bottom Right) */}
+          <div className="absolute bottom-[10%] right-[6%] xl:right-[8%] w-[240px] p-5 rounded-2xl bg-[#f0fdf4] dark:bg-[#112415]/60 border border-[#22c55e]/15 shadow-sm text-left hover:shadow transition-all group">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-[#4ade80] mb-3">
+              <Folder className="w-4 h-4" />
+            </div>
+            <h4 className="font-space-grotesk font-bold text-[15px] text-[#0d1233] dark:text-zinc-50 mb-1">Everything in one place</h4>
+            <p className="text-[12px] text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-normal">Docs, images, links, questions and more.</p>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* Mobile Grid Layout: displays the 4 feature cards in a grid underneath */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mt-8 lg:hidden max-w-2xl px-2">
+        
+        {/* Mobile Card 1 */}
+        <div className="p-5 rounded-2xl bg-[#f5f3ff] dark:bg-[#1a122e]/60 border border-[#7c4dff]/15 text-left flex items-start gap-4">
+          <div className="w-10 h-10 shrink-0 rounded-xl bg-[#7c4dff]/10 flex items-center justify-center text-[#7c4dff] dark:text-[#a080ff]">
+            <FileText className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="font-space-grotesk font-bold text-sm text-[#0d1233] dark:text-zinc-50 mb-0.5">Ask anything</h4>
+            <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">AI answers become nodes.</p>
           </div>
         </div>
 
-        {/* Right Column (45% equivalent: 5 cols) */}
-        <div className="lg:col-span-5 w-full flex flex-col">
-          <div className="w-full h-[400px] rounded-2xl border border-zinc-200/60 dark:border-zinc-800 bg-[#fdfcf9] dark:bg-[#161514] overflow-hidden relative shadow-sm">
-            {/* Inner dotted grid */}
-            <div className="absolute inset-0 bg-[radial-gradient(#e4dfd5_1px,transparent_1px)] dark:bg-[radial-gradient(#2d2c29_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none" />
-
-            {/* SVG Connection Lines Layer */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" xmlns="http://www.w3.org/2000/svg">
-              {/* Line 1 -> 2 */}
-              <path
-                d="M 120 115 Q 150 180, 195 190"
-                fill="none"
-                stroke="#7c4dff"
-                strokeWidth="1.5"
-                strokeDasharray="4 3"
-                className={`transition-all duration-700 ${step >= 3 ? 'opacity-100 stroke-dashoffset-animate' : 'opacity-0'}`}
-              />
-              {/* Line 2 -> 3 */}
-              <path
-                d="M 230 185 Q 260 110, 275 95"
-                fill="none"
-                stroke="#7c4dff"
-                strokeWidth="1.5"
-                strokeDasharray="4 3"
-                className={`transition-all duration-700 ${step >= 5 ? 'opacity-100' : 'opacity-0'}`}
-              />
-            </svg>
-
-            {/* Node 1 */}
-            <div
-              className={`absolute top-[40px] left-[20px] w-[180px] p-3.5 rounded-xl border border-zinc-200/70 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 shadow-sm z-20 transition-all duration-500 ${
-                step >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
-              <div className="w-1.5 h-1.5 rounded-full bg-[#7c4dff] absolute top-2.5 left-2.5" />
-              <h4 className="text-[10px] font-bold text-[#7c4dff] dark:text-[#a080ff] uppercase tracking-wider pl-3 mb-1">
-                What is quantum entanglement?
-              </h4>
-              <p className="text-[9px] text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-normal">
-                A phenomenon where two particles share quantum state instantly regardless of distance...
-              </p>
-            </div>
-
-            {/* Node 2 */}
-            <div
-              className={`absolute top-[180px] left-[130px] w-[180px] p-3.5 rounded-xl border border-zinc-200/70 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 shadow-sm z-20 transition-all duration-500 ${
-                step >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
-              <div className="w-1.5 h-1.5 rounded-full bg-[#ff9100] absolute top-2.5 left-2.5" />
-              <h4 className="text-[10px] font-bold text-[#ff9100] uppercase tracking-wider pl-3 mb-1">
-                Applications in cryptography
-              </h4>
-              <p className="text-[9px] text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-normal">
-                Quantum key distribution uses entanglement to create theoretically unbreakable encryption...
-              </p>
-            </div>
-
-            {/* Node 3 (Synthesis) */}
-            <div
-              className={`absolute top-[50px] right-[20px] w-[160px] p-3.5 rounded-xl border border-[#7c4dff]/40 dark:border-[#a080ff]/30 bg-white dark:bg-zinc-900 shadow-sm z-20 transition-all duration-500 ${
-                step >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-              }`}
-            >
-              <span className="text-[8px] font-bold text-white bg-[#7c4dff] px-1.5 py-0.5 rounded mb-1.5 inline-block">
-                SYNTHESIS
-              </span>
-              <p className="text-[9px] font-semibold text-[#1c1b18] dark:text-zinc-50 leading-normal">
-                Quantum entanglement enables cryptography by creating unbreakable linked encryption keys.
-              </p>
-            </div>
-
-            {/* User Cursor Rahim */}
-            <div
-              className={`absolute flex items-center gap-1.5 z-30 transition-all duration-[1500ms] ease-out pointer-events-none ${
-                step >= 6
-                  ? 'top-[160px] left-[80px] opacity-100'
-                  : 'top-[350px] left-[250px] opacity-0'
-              }`}
-            >
-              <div className="w-2.5 h-2.5 rounded-full bg-[#7c4dff] border border-white dark:border-zinc-950 shadow-sm animate-pulse" />
-              <span className="text-[9px] font-semibold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-1.5 py-0.5 rounded shadow">
-                Rahim
-              </span>
-            </div>
+        {/* Mobile Card 2 */}
+        <div className="p-5 rounded-2xl bg-[#fff7ed] dark:bg-[#2e1710]/40 border border-[#ff9100]/15 text-left flex items-start gap-4">
+          <div className="w-10 h-10 shrink-0 rounded-xl bg-[#ff9100]/10 flex items-center justify-center text-[#ff9100]">
+            <Link2 className="w-5 h-5" />
           </div>
-          <span className="text-[11px] text-[#1c1b18]/40 dark:text-[#f3f0ea]/45 text-center mt-3 block">
-            Live canvas preview — every response is a node you control.
-          </span>
+          <div>
+            <h4 className="font-space-grotesk font-bold text-sm text-[#0d1233] dark:text-zinc-50 mb-0.5">Connect ideas</h4>
+            <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">Combine topics and discover new insight.</p>
+          </div>
+        </div>
+
+        {/* Mobile Card 3 */}
+        <div className="p-5 rounded-2xl bg-[#fefce8] dark:bg-[#282410]/50 border border-[#eab308]/15 text-left flex items-start gap-4">
+          <div className="w-10 h-10 shrink-0 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-600 dark:text-[#eab308]">
+            <MousePointerClick className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="font-space-grotesk font-bold text-sm text-[#0d1233] dark:text-zinc-50 mb-0.5">Go deeper</h4>
+            <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">Select any text to create a new branch.</p>
+          </div>
+        </div>
+
+        {/* Mobile Card 4 */}
+        <div className="p-5 rounded-2xl bg-[#f0fdf4] dark:bg-[#112415]/60 border border-[#22c55e]/15 text-left flex items-start gap-4">
+          <div className="w-10 h-10 shrink-0 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-[#4ade80]">
+            <Folder className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="font-space-grotesk font-bold text-sm text-[#0d1233] dark:text-zinc-50 mb-0.5">Everything in one place</h4>
+            <p className="text-xs text-[#1c1b18]/60 dark:text-[#f3f0ea]/60 leading-relaxed">Docs, images, links, questions and more.</p>
+          </div>
         </div>
 
       </div>
