@@ -36,7 +36,8 @@ export const BoardCanvas = () => {
     newlyCreatedNodeId,
     setNewlyCreatedNodeId,
     isLoadingCanvas,
-    selectNode
+    selectNode,
+    organizeCanvas
   } = useCanvasStore();
  
   const [bottomPrompt, setBottomPrompt] = useState('');
@@ -62,7 +63,7 @@ export const BoardCanvas = () => {
   }, [sortedNodes]);
 
  
-  const { screenToFlowPosition, setCenter } = useReactFlow();
+  const { screenToFlowPosition, setCenter, fitView } = useReactFlow();
 
   React.useEffect(() => {
     if (newlyCreatedNodeId) {
@@ -135,6 +136,11 @@ export const BoardCanvas = () => {
     }
     addMergeNode(selectedNodeIds, "Synthesize connections between selected topics.");
   };
+
+  const handleOrganizeAction = async () => {
+    await organizeCanvas();
+    fitView({ duration: 1000, padding: 0.1 });
+  };
  
   // Skeleton node configs: position, size and color accent to mimic real varied nodes
   const skeletonNodes = [
@@ -171,19 +177,32 @@ export const BoardCanvas = () => {
           variant={BackgroundVariant.Dots} 
         />
  
-        {/* Custom Panel: node merge trigger */}
-        {nodes.length >= 2 && (
+        {/* Custom Panel: Toolbar at top-left */}
+        {nodes.length >= 1 && (
           <Panel position="top-left" className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-zinc-200/50 dark:border-zinc-800/80 p-2.5 rounded-xl shadow-sm flex items-center gap-2 m-4 transition-colors">
             <button 
-              onClick={handleMergeAction}
-              className="px-3 py-1.5 rounded-lg bg-[#7c4dff] text-white hover:bg-[#6200ea] text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
+              onClick={handleOrganizeAction}
+              className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#ff5722] to-[#ff9100] text-white hover:from-[#f4511e] hover:to-[#ff8000] active:scale-95 text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
             >
-              <Link2 className="w-3.5 h-3.5" />
-              <span>Merge Nodes</span>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Organize Canvas</span>
             </button>
-            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 max-w-[150px] leading-tight">
-              Hold Ctrl and click to select nodes, then merge
-            </span>
+
+            {nodes.length >= 2 && (
+              <>
+                <div className="h-4 w-px bg-zinc-250 dark:bg-zinc-800" />
+                <button 
+                  onClick={handleMergeAction}
+                  className="px-3 py-1.5 rounded-lg bg-[#7c4dff] text-white hover:bg-[#6200ea] active:scale-95 text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
+                >
+                  <Link2 className="w-3.5 h-3.5" />
+                  <span>Merge Nodes</span>
+                </button>
+                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 max-w-[150px] leading-tight hidden sm:inline">
+                  Hold Ctrl & click to select multiple, then merge
+                </span>
+              </>
+            )}
           </Panel>
         )}
 

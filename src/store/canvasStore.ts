@@ -106,6 +106,7 @@ interface CanvasStore {
   otherUsersCursors: Record<string, { username: string; avatarColor: string; x: number; y: number }>;
   userRole: 'owner' | 'editor' | null;
   currentUserInfo: { userId: string; username: string; avatarColor: string } | null;
+  maxZIndex: number;
 
   // Actions
   toggleTheme: () => void;
@@ -134,6 +135,7 @@ interface CanvasStore {
   addSelectionBranchNode: (parentNodeId: string, selectedText: string) => void;
   triggerNodeOperation: (nodeId: string, operation: 'explain' | 'expand' | 'shorten') => Promise<void>;
   broadcastCursor: (x: number, y: number) => void;
+  organizeCanvas: () => Promise<void>;
 }
 
 // Helpers
@@ -239,6 +241,140 @@ const updateEdgesColor = (edges: Edge[], nodes: Node<NodeData>[]): Edge[] => {
   });
 };
 
+const organizeNodes = (nodes: Node<NodeData>[], edges: Edge[]): Map<string, { x: number; y: number }> => {
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  const roots: string[] = [];
+  const childrenMap = new Map<string, string[]>();
+  const hasParent = new Set<string>();
+
+  // Prioritize parentNodeId defined in data
+  nodes.forEach(node => {
+    const parentId = node.data.parentNodeId;
+    if (parentId && nodeMap.has(parentId)) {
+      hasParent.add(node.id);
+      if (!childrenMap.has(parentId)) {
+        childrenMap.set(parentId, []);
+      }
+      childrenMap.get(parentId)!.push(node.id);
+    }
+  });
+
+  // Use edges to resolve other parent-child relationships where target has no parent yet
+  edges.forEach(edge => {
+    if (nodeMap.has(edge.source) && nodeMap.has(edge.target)) {
+      if (!hasParent.has(edge.target)) {
+        hasParent.add(edge.target);
+        if (!childrenMap.has(edge.source)) {
+          childrenMap.set(edge.source, []);
+        }
+        childrenMap.get(edge.source)!.push(edge.target);
+      }
+    }
+  });
+
+  // Root nodes are those with no parent
+  nodes.forEach(node => {
+    if (!hasParent.has(node.id)) {
+      roots.push(node.id);
+    }
+  });
+
+  // Sort roots by original Y position to preserve vertical ordering intent
+  roots.sort((a, b) => {
+    const nodeA = nodeMap.get(a)!;
+    const nodeB = nodeMap.get(b)!;
+    return nodeA.position.y - nodeB.position.y;
+  });
+
+  // Sort children by original Y position
+  for (const [parentId, childIds] of childrenMap.entries()) {
+    childIds.sort((a, b) => {
+      const nodeA = nodeMap.get(a)!;
+      const nodeB = nodeMap.get(b)!;
+      return nodeA.position.y - nodeB.position.y;
+    });
+  }
+
+  const finalPositions = new Map<string, { x: number; y: number }>();
+
+  // Helper to recursively lay out a single subtree
+  function layoutSubtree(nodeId: string, x: number): { height: number; positions: Map<string, { x: number; y: number }> } {
+    const children = childrenMap.get(nodeId) || [];
+    const node = nodeMap.get(nodeId);
+    const nodeHeight = node?.height || 160;
+    const nodeWidth = node?.width || 300;
+
+    if (children.length === 0) {
+      const positions = new Map<string, { x: number; y: number }>();
+      positions.set(nodeId, { x, y: 0 });
+      return { height: nodeHeight, positions };
+    }
+
+    const childLayouts = children.map(childId => {
+      const nextX = x + Math.max(nodeWidth + 80, 380);
+      return { childId, layout: layoutSubtree(childId, nextX) };
+    });
+
+    let totalChildrenHeight = 0;
+    for (let i = 0; i < childLayouts.length; i++) {
+      totalChildrenHeight += childLayouts[i].layout.height;
+      if (i < childLayouts.length - 1) {
+        totalChildrenHeight += 60; // vertical spacing between child subtrees
+      }
+    }
+
+    const subtreeHeight = Math.max(nodeHeight, totalChildrenHeight);
+    const positions = new Map<string, { x: number; y: number }>();
+
+    let currentChildY = -totalChildrenHeight / 2;
+    const childCenters: number[] = [];
+
+    for (const { childId, layout } of childLayouts) {
+      const childSubtreeCenter = currentChildY + layout.height / 2;
+      childCenters.push(childSubtreeCenter);
+
+      for (const [id, pos] of layout.positions.entries()) {
+        positions.set(id, { x: pos.x, y: pos.y + childSubtreeCenter });
+      }
+
+      currentChildY += layout.height + 60;
+    }
+
+    let parentY = 0;
+    if (childCenters.length > 0) {
+      const minCenter = childCenters[0];
+      const maxCenter = childCenters[childCenters.length - 1];
+      parentY = (minCenter + maxCenter) / 2;
+    }
+
+    positions.set(nodeId, { x, y: parentY });
+    return { height: subtreeHeight, positions };
+  }
+
+  // Layout all roots vertically separated
+  let currentY = 100;
+  roots.forEach(rootId => {
+    const rootLayout = layoutSubtree(rootId, 100);
+
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (const [id, pos] of rootLayout.positions.entries()) {
+      if (pos.y < minY) minY = pos.y;
+      if (pos.y > maxY) maxY = pos.y;
+    }
+
+    const shiftY = currentY - minY;
+    for (const [id, pos] of rootLayout.positions.entries()) {
+      finalPositions.set(id, { x: pos.x, y: pos.y + shiftY });
+    }
+
+    const treeHeight = maxY - minY;
+    currentY += Math.max(treeHeight, rootLayout.height) + 150; // gap between separate trees
+  });
+
+  return finalPositions;
+};
+
 // Module-level map for throttling node updates
 const pendingUpdates = new Map<string, {
   x: number;
@@ -263,6 +399,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   userRole: null,
   currentUserInfo: null,
   newlyCreatedNodeId: null,
+  maxZIndex: 10,
   setNewlyCreatedNodeId: (nodeId: string | null) => set({ newlyCreatedNodeId: nodeId }),
 
   toggleTheme: () => {
@@ -356,6 +493,14 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   selectNode: async (nodeId: string | null) => {
     set({ activeNodeId: nodeId });
 
+    if (nodeId) {
+      const nextZIndex = get().maxZIndex + 1;
+      set(state => ({
+        maxZIndex: nextZIndex,
+        nodes: state.nodes.map(n => n.id === nodeId ? { ...n, zIndex: nextZIndex } : n)
+      }));
+    }
+
     if (nodeId && get().boardId !== 'sample-board' && get().supabaseClient) {
       const supabase = get().supabaseClient;
       if (!supabase) return;
@@ -447,10 +592,12 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         sender_id: get().currentUserInfo?.userId
       });
 
+      const nextZIndex = get().maxZIndex + 1;
       const parentNode: Node<NodeData> = {
         id: nodeId,
         type: 'llmNode',
         position,
+        zIndex: nextZIndex,
         data: {
           type: 'llm',
           title: prompt,
@@ -474,7 +621,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       set(state => ({
         nodes: computeGenerations([...state.nodes, parentNode]),
         activeNodeId: nodeId,
-        newlyCreatedNodeId: nodeId
+        newlyCreatedNodeId: nodeId,
+        maxZIndex: nextZIndex
       }));
 
       try {
@@ -561,10 +709,12 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }
 
     } else {
+      const nextZIndex = get().maxZIndex + 1;
       const parentNode: Node<NodeData> = {
         id: nodeId,
         type: 'llmNode',
         position,
+        zIndex: nextZIndex,
         data: {
           type: 'llm',
           title: prompt,
@@ -580,7 +730,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       set(state => ({
         nodes: [...state.nodes, parentNode],
         activeNodeId: nodeId,
-        newlyCreatedNodeId: nodeId
+        newlyCreatedNodeId: nodeId,
+        maxZIndex: nextZIndex
       }));
 
       try {
@@ -718,10 +869,12 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         });
       }
 
+      const nextZIndex = get().maxZIndex + 1;
       const childNode: Node<NodeData> = {
         id: childId,
         type: 'llmNode',
         position,
+        zIndex: nextZIndex,
         data: {
           type,
           title: title || prompt,
@@ -761,7 +914,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           nodes: updatedNodes,
           edges: updatedEdges,
           activeNodeId: childId,
-          newlyCreatedNodeId: childId
+          newlyCreatedNodeId: childId,
+          maxZIndex: nextZIndex
         };
       });
 
@@ -851,10 +1005,12 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }
 
     } else {
+      const nextZIndex = get().maxZIndex + 1;
       const childNode: Node<NodeData> = {
         id: childId,
         type: 'llmNode',
         position,
+        zIndex: nextZIndex,
         data: {
           type,
           title: title || prompt,
@@ -883,7 +1039,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         nodes: [...state.nodes, childNode],
         edges: [...state.edges, newEdge],
         activeNodeId: childId,
-        newlyCreatedNodeId: childId
+        newlyCreatedNodeId: childId,
+        maxZIndex: nextZIndex
       }));
 
       if (type === 'note') return;
@@ -1138,10 +1295,12 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
             .select()
             .single()
             .then(({ data: dbEdge }) => {
+              const nextZIndex = get().maxZIndex + 1;
               const childNode: Node<NodeData> = {
                 id: childId,
                 type: 'llmNode',
                 position,
+                zIndex: nextZIndex,
                 data: {
                   type: 'branch',
                   title: selectedText,
@@ -1174,17 +1333,20 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                   nodes: updatedNodes,
                   edges: updatedEdges,
                   activeNodeId: childId,
-                  newlyCreatedNodeId: childId
+                  newlyCreatedNodeId: childId,
+                  maxZIndex: nextZIndex
                 };
               });
             });
           }
         });
     } else {
+      const nextZIndex = get().maxZIndex + 1;
       const childNode: Node<NodeData> = {
         id: childId,
         type: 'llmNode',
         position,
+        zIndex: nextZIndex,
         data: {
           type: 'branch',
           title: selectedText,
@@ -1214,7 +1376,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         nodes: [...state.nodes, childNode],
         edges: [...state.edges, newEdge],
         activeNodeId: childId,
-        newlyCreatedNodeId: childId
+        newlyCreatedNodeId: childId,
+        maxZIndex: nextZIndex
       }));
     }
   },
@@ -1500,10 +1663,12 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         .insert(edgeInserts)
         .select();
 
+      const nextZIndex = get().maxZIndex + 1;
       const mergeNode: Node<NodeData> = {
         id: mergeId,
         type: 'llmNode',
         position,
+        zIndex: nextZIndex,
         data: {
           type: 'merge',
           title: 'Merged Synthesis',
@@ -1537,7 +1702,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           nodes: updatedNodes,
           edges: updatedEdges,
           activeNodeId: mergeId,
-          newlyCreatedNodeId: mergeId
+          newlyCreatedNodeId: mergeId,
+          maxZIndex: nextZIndex
         };
       });
 
@@ -1625,10 +1791,12 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }
 
     } else {
+      const nextZIndex = get().maxZIndex + 1;
       const mergeNode: Node<NodeData> = {
         id: mergeId,
         type: 'llmNode',
         position,
+        zIndex: nextZIndex,
         data: {
           type: 'merge',
           title: 'Merged Synthesis',
@@ -1655,7 +1823,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         nodes: [...state.nodes, mergeNode],
         edges: [...state.edges, ...newEdges],
         activeNodeId: mergeId,
-        newlyCreatedNodeId: mergeId
+        newlyCreatedNodeId: mergeId,
+        maxZIndex: nextZIndex
       }));
 
       try {
@@ -1852,7 +2021,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         edges: mappedEdges,
         userRole,
         isSaving: false,
-        isLoadingCanvas: false
+        isLoadingCanvas: false,
+        maxZIndex: 10 + nodesWithGen.length
       });
     } catch (e) {
       console.error('Failed to load board from DB:', e);
@@ -1943,8 +2113,10 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
               .eq('node_id', dbNode.id)
               .order('created_at', { ascending: true });
 
+            const nextZIndex = get().maxZIndex + 1;
             const newRFNode = mapDbNodeToReactFlow(dbNode, msgs || []);
-            console.log('REALTIME EVENT nodes INSERT. Created React Flow Node:', newRFNode);
+            newRFNode.zIndex = nextZIndex;
+            console.log('REALTIME EVENT nodes INSERT. Created React Flow Node with zIndex:', newRFNode);
             
             set(state => {
               const updatedNodes = computeGenerations([...state.nodes, newRFNode]);
@@ -1952,7 +2124,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
               console.log('REALTIME EVENT nodes INSERT. Setting state. nodes count:', updatedNodes.length, 'edges count:', updatedEdges.length);
               return {
                 nodes: updatedNodes,
-                edges: updatedEdges
+                edges: updatedEdges,
+                maxZIndex: nextZIndex
               };
             });
           } else if (eventType === 'UPDATE') {
@@ -2288,6 +2461,51 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         timeoutId,
         lastSentTime: now
       });
+    }
+  },
+
+  organizeCanvas: async () => {
+    const nodes = get().nodes;
+    const edges = get().edges;
+    const boardId = get().boardId;
+    const supabase = get().supabaseClient;
+
+    if (nodes.length === 0) return;
+
+    const newPositions = organizeNodes(nodes, edges);
+
+    const updatedNodes = nodes.map(n => {
+      const pos = newPositions.get(n.id);
+      if (pos) {
+        return {
+          ...n,
+          position: pos
+        };
+      }
+      return n;
+    });
+
+    set({ nodes: updatedNodes });
+
+    if (boardId && boardId !== 'sample-board' && supabase) {
+      const updates = Array.from(newPositions.entries()).map(([nodeId, pos]) => ({
+        nodeId,
+        positionX: pos.x,
+        positionY: pos.y
+      }));
+
+      try {
+        await fetch('/api/canvas/update-position', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            canvasId: boardId,
+            updates
+          })
+        });
+      } catch (e) {
+        console.error('Failed to persist organized canvas positions:', e);
+      }
     }
   }
 }));
