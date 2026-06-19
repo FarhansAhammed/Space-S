@@ -69,7 +69,7 @@ export default function BoardPage() {
           <LeftSidebar />
 
           {/* Board Canvas Workspace */}
-          <div className="flex-1 w-full h-full pl-[72px]">
+          <div className="flex-1 w-full h-full pl-0 md:pl-[72px]">
             <BoardCanvas />
           </div>
 

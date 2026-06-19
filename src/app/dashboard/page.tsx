@@ -209,15 +209,15 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#f8f5f0] dark:bg-[#121110] text-zinc-800 dark:text-zinc-200 transition-colors duration-200">
       {/* Dashboard Top Header */}
-      <header className="h-[64px] border-b border-zinc-200/60 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-md flex items-center justify-between px-8 fixed top-0 left-0 right-0 z-40 transition-colors duration-200">
+      <header className="h-[64px] border-b border-zinc-200/60 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-md flex items-center justify-between px-4 sm:px-8 fixed top-0 left-0 right-0 z-40 transition-colors duration-200">
         <div className="flex items-center gap-2">
           {/* Logo image */}
           <img src="/logo.png" alt="Space-S Logo" className="w-5 h-5 object-contain" />
           <span className="font-semibold text-sm font-display text-zinc-900 dark:text-zinc-50">Space-S</span>
-          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono px-1.5 py-0.5 rounded border border-zinc-200/60 dark:border-zinc-800/80 ml-2">Dashboard</span>
+          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono px-1.5 py-0.5 rounded border border-zinc-200/60 dark:border-zinc-800/80 ml-2 hidden sm:inline">Dashboard</span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           {/* Refresh button */}
           <button
             onClick={fetchCanvases}
@@ -244,7 +244,7 @@ export default function DashboardPage() {
       </header>
 
       {/* Main Workspace Dashboard Content */}
-      <main className="max-w-7xl mx-auto px-6 pt-[96px] pb-16">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-[96px] pb-16">
 
         {/* Hero CTA Banner */}
         <div className={`relative overflow-hidden rounded-3xl mb-10 border ${
@@ -267,7 +267,7 @@ export default function DashboardPage() {
             <line x1="56" y1="96" x2="112" y2="96" stroke="#7c4dff" strokeWidth="1.5" strokeDasharray="4 3" />
           </svg>
 
-          <div className="relative px-8 py-10">
+          <div className="relative px-4 py-8 sm:px-8 sm:py-10">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-5 h-5 flex items-center justify-center">
                 <img src="/logo.png" alt="Space-S" className="w-5 h-5 object-contain" />
@@ -279,7 +279,7 @@ export default function DashboardPage() {
               }`}>Space-S — AI Thinking Canvas</span>
             </div>
 
-            <h1 className="text-3xl font-extrabold tracking-tight font-display mb-2 bg-clip-text text-transparent bg-gradient-to-r from-zinc-900 via-[#7c4dff] to-[#ff5722] dark:from-zinc-50 dark:via-[#9e75ff] dark:to-[#ff7a47]">
+            <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight font-display mb-2 bg-clip-text text-transparent bg-gradient-to-r from-zinc-900 via-[#7c4dff] to-[#ff5722] dark:from-zinc-50 dark:via-[#9e75ff] dark:to-[#ff7a47]">
               Map Your Ideas. Explore with AI.
             </h1>
             <p className={`text-sm mb-8 max-w-[480px] leading-relaxed ${

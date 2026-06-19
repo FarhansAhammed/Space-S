@@ -54,7 +54,7 @@ export const LeftSidebar = () => {
   };
 
   return (
-    <aside className="w-[72px] border-r border-zinc-200/60 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-md flex flex-col items-center py-6 fixed left-0 top-[64px] bottom-0 z-40 justify-between transition-colors duration-200">
+    <aside className="hidden md:flex w-[72px] border-r border-zinc-200/60 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-md flex-col items-center py-6 fixed left-0 top-[64px] bottom-0 z-40 justify-between transition-colors duration-200">
       
       {/* Top Buttons & Tabs */}
       <div className="flex flex-col items-center gap-6 w-full">

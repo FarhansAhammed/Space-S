@@ -110,18 +110,18 @@ export const TopHeader = () => {
   };
 
   return (
-    <header className="h-[64px] border-b border-zinc-200/60 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-md flex items-center justify-between px-6 z-40 fixed top-0 left-0 right-0 transition-colors duration-200">
+    <header className="h-[64px] border-b border-zinc-200/60 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-md flex items-center justify-between px-3 sm:px-6 z-40 fixed top-0 left-0 right-0 transition-colors duration-200">
       
       {/* Brand & Left Navigation */}
       <div className="flex items-center gap-3">
         <Link 
           href="/dashboard" 
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer border border-transparent hover:border-zinc-200/50 dark:hover:border-zinc-800/80 transition-all"
+          className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer border border-transparent hover:border-zinc-200/50 dark:hover:border-zinc-800/80 transition-all"
         >
           {/* Logo image */}
           <img src="/logo.png" alt="Space-S Logo" className="w-5 h-5 object-contain" />
-          <span className="font-semibold text-sm font-display text-zinc-800 dark:text-zinc-200">Space-S</span>
-          <ChevronDown className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
+          <span className="font-semibold text-sm font-display text-zinc-800 dark:text-zinc-200 hidden sm:inline">Space-S</span>
+          <ChevronDown className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 hidden sm:inline" />
         </Link>
 
         {/* Back navigation */}
@@ -137,7 +137,7 @@ export const TopHeader = () => {
       {/* Main Search Bar (Creating Parent Nodes) */}
       <form 
         onSubmit={handleSearchSubmit} 
-        className="flex-1 max-w-[480px] mx-8 relative"
+        className="hidden md:block flex-1 max-w-[480px] mx-4 lg:mx-8 relative"
       >
         <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
         <input 
@@ -153,9 +153,9 @@ export const TopHeader = () => {
       </form>
 
       {/* Right Controls / Profiles */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         {/* View Grid Layout Icon */}
-        <button className="w-9 h-9 rounded-lg border border-zinc-200/50 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-850 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all flex items-center justify-center">
+        <button className="hidden sm:flex w-9 h-9 rounded-lg border border-zinc-200/50 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-850 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all flex items-center justify-center">
           <LayoutGrid className="w-4 h-4" />
         </button>
 
@@ -200,10 +200,10 @@ export const TopHeader = () => {
             {boardId && boardId !== 'sample-board' && (
               <button 
                 onClick={() => setShowInviteModal(true)}
-                className="h-9 px-3.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 text-white font-medium text-xs hover:bg-zinc-800 dark:hover:bg-zinc-200 shadow-sm hover:shadow transition-all flex items-center gap-1.5"
+                className="h-9 px-2.5 sm:px-3.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 text-white font-medium text-xs hover:bg-zinc-800 dark:hover:bg-zinc-200 shadow-sm hover:shadow transition-all flex items-center gap-1.5"
               >
                 <Users className="w-3.5 h-3.5" />
-                <span>Invite</span>
+                <span className="hidden sm:inline">Invite</span>
               </button>
             )}
             

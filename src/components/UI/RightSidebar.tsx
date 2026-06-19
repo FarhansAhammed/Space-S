@@ -55,7 +55,7 @@ export const RightSidebar = () => {
   };
  
   return (
-    <aside className="w-[360px] bg-white/95 dark:bg-[#1a1917]/95 border border-zinc-200/60 dark:border-zinc-800/80 shadow-glass rounded-2xl flex flex-col fixed top-[84px] bottom-[24px] right-[24px] z-40 overflow-hidden transition-all duration-300 dark:text-zinc-200">
+    <aside className="w-full md:w-[360px] bg-white/95 dark:bg-[#1a1917]/95 border-t md:border border-zinc-200/60 dark:border-zinc-800/80 shadow-glass rounded-t-2xl md:rounded-2xl flex flex-col fixed bottom-0 md:bottom-[24px] left-0 md:left-auto right-0 md:right-[24px] top-auto md:top-[84px] h-[60vh] md:h-auto z-40 overflow-hidden transition-all duration-300 dark:text-zinc-200">
       
       {/* Header Info */}
       <div className="p-5 border-b border-zinc-100/80 dark:border-zinc-800/80 flex flex-col gap-2">

@@ -185,7 +185,8 @@ export const BoardCanvas = () => {
               className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#ff5722] to-[#ff9100] text-white hover:from-[#f4511e] hover:to-[#ff8000] active:scale-95 text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Organize Canvas</span>
+              <span className="hidden sm:inline">Organize Canvas</span>
+              <span className="inline sm:hidden">Organize</span>
             </button>
 
             {nodes.length >= 2 && (
@@ -196,7 +197,8 @@ export const BoardCanvas = () => {
                   className="px-3 py-1.5 rounded-lg bg-[#7c4dff] text-white hover:bg-[#6200ea] active:scale-95 text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
                 >
                   <Link2 className="w-3.5 h-3.5" />
-                  <span>Merge Nodes</span>
+                  <span className="hidden sm:inline">Merge Nodes</span>
+                  <span className="inline sm:hidden">Merge</span>
                 </button>
                 <span className="text-[10px] text-zinc-400 dark:text-zinc-500 max-w-[150px] leading-tight hidden sm:inline">
                   Hold Ctrl & click to select multiple, then merge
@@ -415,10 +417,10 @@ export const BoardCanvas = () => {
                 key={idx}
                 type="button"
                 title={btn.label}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-[10px] font-semibold"
+                className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-[10px] font-semibold"
               >
                 {btn.icon}
-                <span>{btn.label}</span>
+                <span className="hidden sm:inline">{btn.label}</span>
               </button>
             ))}
           </div>
