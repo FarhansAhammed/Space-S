@@ -151,6 +151,8 @@ const mapDbNodeToReactFlow = (dbNode: DbNode, messages: DbMessage[] = []): Node<
     id: dbNode.id,
     type: 'llmNode',
     position: { x: dbNode.position_x, y: dbNode.position_y },
+    width: dbNode.width || undefined,
+    height: dbNode.height || undefined,
     style: {
       width: dbNode.width || undefined,
       height: dbNode.height || undefined
@@ -1405,6 +1407,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
     if (boardId && boardId !== 'sample-board' && supabase) {
       const dbUpdates: Partial<DbNode> = {};
+      if (updates.type !== undefined) dbUpdates.type = updates.type;
       if (updates.title !== undefined) dbUpdates.title = updates.title;
       if (updates.content !== undefined) dbUpdates.content = updates.content;
       if (updates.isCollapsed !== undefined) dbUpdates.is_collapsed = updates.isCollapsed;
@@ -1953,9 +1956,10 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
                   // Detect if this change is a self-echo (local state is already matching the database)
                   const isPosSame = Math.abs(n.position.x - dbNode.position_x) < 1 && Math.abs(n.position.y - dbNode.position_y) < 1;
-                  const isWidthSame = (!n.style?.width && !dbNode.width) || (n.style?.width && dbNode.width && Math.abs((n.style.width as number) - dbNode.width) < 1);
-                  const isHeightSame = (!n.style?.height && !dbNode.height) || (n.style?.height && dbNode.height && Math.abs((n.style.height as number) - dbNode.height) < 1);
-                  const isMetadataSame = n.data.title === dbNode.title && 
+                  const isWidthSame = (!n.width && !dbNode.width) || (n.width && dbNode.width && Math.abs((n.width as number) - dbNode.width) < 1);
+                  const isHeightSame = (!n.height && !dbNode.height) || (n.height && dbNode.height && Math.abs((n.height as number) - dbNode.height) < 1);
+                  const isMetadataSame = n.data.type === dbNode.type && 
+                                         n.data.title === dbNode.title && 
                                          n.data.content === dbNode.content && 
                                          n.data.isCollapsed === dbNode.is_collapsed && 
                                          n.data.imageUrl === dbNode.image_url && 
@@ -1966,13 +1970,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                   }
 
                   // If dragging locally, do not overwrite coordinates or sizes
+                  const nextWidth = n.dragging ? (n.width ?? undefined) : (dbNode.width ?? undefined);
+                  const nextHeight = n.dragging ? (n.height ?? undefined) : (dbNode.is_collapsed ? undefined : (dbNode.height ?? undefined));
                   const nextPosition = n.dragging ? n.position : { x: dbNode.position_x, y: dbNode.position_y };
-                  const nextWidth = n.dragging ? n.style?.width : (dbNode.width || undefined);
-                  const nextHeight = n.dragging ? n.style?.height : (dbNode.height || undefined);
 
                   return {
                     ...n,
                     position: nextPosition,
+                    width: nextWidth,
+                    height: nextHeight,
                     style: {
                       ...n.style,
                       width: nextWidth,
@@ -1980,6 +1986,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                     },
                     data: {
                       ...n.data,
+                      type: dbNode.type as NodeType,
                       title: dbNode.title,
                       content: dbNode.content,
                       isCollapsed: dbNode.is_collapsed,
@@ -2182,6 +2189,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         if (n.id === nodeId) {
           return {
             ...n,
+            width,
+            height,
             style: {
               ...n.style,
               width,
