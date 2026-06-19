@@ -1944,19 +1944,39 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
               };
             });
           } else if (eventType === 'UPDATE') {
+            let wasSelfEcho = false;
             set(state => {
-              // Add a temporal indicator cue on node update
               const updatedNodes = state.nodes.map(n => {
                 if (n.id === dbNode.id) {
                   const isLoading = n.data.isLoading;
                   const conversationHistory = n.data.conversationHistory;
+
+                  // Detect if this change is a self-echo (local state is already matching the database)
+                  const isPosSame = Math.abs(n.position.x - dbNode.position_x) < 1 && Math.abs(n.position.y - dbNode.position_y) < 1;
+                  const isWidthSame = (!n.style?.width && !dbNode.width) || (n.style?.width && dbNode.width && Math.abs((n.style.width as number) - dbNode.width) < 1);
+                  const isHeightSame = (!n.style?.height && !dbNode.height) || (n.style?.height && dbNode.height && Math.abs((n.style.height as number) - dbNode.height) < 1);
+                  const isMetadataSame = n.data.title === dbNode.title && 
+                                         n.data.content === dbNode.content && 
+                                         n.data.isCollapsed === dbNode.is_collapsed && 
+                                         n.data.imageUrl === dbNode.image_url && 
+                                         n.data.sourceFile === dbNode.source_file;
+                  
+                  if (isPosSame && isWidthSame && isHeightSame && isMetadataSame) {
+                    wasSelfEcho = true;
+                  }
+
+                  // If dragging locally, do not overwrite coordinates or sizes
+                  const nextPosition = n.dragging ? n.position : { x: dbNode.position_x, y: dbNode.position_y };
+                  const nextWidth = n.dragging ? n.style?.width : (dbNode.width || undefined);
+                  const nextHeight = n.dragging ? n.style?.height : (dbNode.height || undefined);
+
                   return {
                     ...n,
-                    position: { x: dbNode.position_x, y: dbNode.position_y },
+                    position: nextPosition,
                     style: {
                       ...n.style,
-                      width: dbNode.width || undefined,
-                      height: dbNode.height || undefined
+                      width: nextWidth,
+                      height: nextHeight
                     },
                     data: {
                       ...n.data,
@@ -1968,7 +1988,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                       sourceFile: dbNode.source_file || undefined,
                       isLoading,
                       conversationHistory,
-                      justUpdated: true
+                      justUpdated: !wasSelfEcho && !n.dragging
                     }
                   };
                 }
@@ -1983,20 +2003,22 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
               };
             });
 
-            // Remove node update visual indicator after 2 seconds
-            setTimeout(() => {
-              set(state => ({
-                nodes: state.nodes.map(n => {
-                  if (n.id === dbNode.id) {
-                    return {
-                      ...n,
-                      data: { ...n.data, justUpdated: false }
-                    };
-                  }
-                  return n;
-                })
-              }));
-            }, 2000);
+            // Remove node update visual indicator after 2 seconds (only if we flashed it)
+            if (!wasSelfEcho) {
+              setTimeout(() => {
+                set(state => ({
+                  nodes: state.nodes.map(n => {
+                    if (n.id === dbNode.id) {
+                      return {
+                        ...n,
+                        data: { ...n.data, justUpdated: false }
+                      };
+                    }
+                    return n;
+                  })
+                }));
+              }, 2000);
+            }
 
           } else if (eventType === 'DELETE') {
             set(state => {
@@ -2097,6 +2119,16 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           }
         }));
       });
+
+    // Set authentication token on the realtime client explicitly before subscribing
+    try {
+      const token = await getToken();
+      if (token) {
+        await supabase.realtime.setAuth(token);
+      }
+    } catch (err) {
+      console.error('Failed to set realtime connection auth token:', err);
+    }
 
     channel.subscribe(async (status) => {
       if (status === 'SUBSCRIBED' && userInfo) {

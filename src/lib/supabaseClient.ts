@@ -28,7 +28,7 @@ export const getSupabaseClient = (getToken?: () => Promise<string | null>): Supa
     });
   };
 
-  return createClient(supabaseUrl, supabaseAnonKey, {
+  const options: any = {
     global: {
       fetch: customFetch
     },
@@ -36,5 +36,20 @@ export const getSupabaseClient = (getToken?: () => Promise<string | null>): Supa
       persistSession: false,
       autoRefreshToken: false
     }
-  });
+  };
+
+  if (getToken) {
+    options.accessToken = async () => {
+      try {
+        const token = await getToken();
+        return token ?? null;
+      } catch (e) {
+        console.error('Error in accessToken callback:', e);
+        return null;
+      }
+    };
+  }
+
+  return createClient(supabaseUrl, supabaseAnonKey, options);
 };
+
