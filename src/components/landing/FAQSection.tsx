@@ -34,7 +34,7 @@ export default function FAQSection() {
     {
       id: "faq-5",
       q: "How is Space S different from Miro or FigJam?",
-      a: "Miro and FigJam are visual collaboration tools designed for human-made content — sticky notes, shapes, and diagrams you draw yourself. Space S is an AI native canvas: every node is a live AI conversation you can continue, branch, and synthesize. The AI doesn't sit outside the canvas as a sidebar — it is the canvas. You can't replicate this with a Miro AI integration."
+      a: "Miro and FigJam are visual collaboration tools designed for human made content — sticky notes, shapes, and diagrams you draw yourself. Space S is an AI native canvas: every node is a live AI conversation you can continue, branch, and synthesize. The AI doesn't sit outside the canvas as a sidebar — it is the canvas. You can't replicate this with a Miro AI integration."
     }
   ];
 

@@ -43,47 +43,47 @@ export default function HeroSection({
               </marker>
             </defs>
             
-            {/* Curve 1: Top-Left Card ("Ask anything") to Center Button */}
-            <path 
-              d="M 280 180 C 360 210, 420 370, 480 395" 
-              fill="none" 
-              stroke="#c0a6ff" 
-              strokeWidth="1.5" 
-              strokeDasharray="4 4" 
-              markerEnd="url(#arrow-violet)" 
+            {/* Curve 1: Top-Left Card ("Ask anything") → Create New Canvas button */}
+            <path
+              d="M 265 155 C 340 200, 450 330, 548 388"
+              fill="none"
+              stroke="#c0a6ff"
+              strokeWidth="1.5"
+              strokeDasharray="4 4"
+              markerEnd="url(#arrow-violet)"
               className="opacity-70 dark:opacity-40"
             />
 
-            {/* Curve 2: Bottom-Left Card ("Connect ideas") to Center Button */}
-            <path 
-              d="M 330 460 C 400 460, 420 420, 480 410" 
-              fill="none" 
-              stroke="#ffd4b2" 
-              strokeWidth="1.5" 
-              strokeDasharray="4 4" 
-              markerEnd="url(#arrow-orange)" 
+            {/* Curve 2: Bottom-Left Card ("Connect ideas") → Create New Canvas button */}
+            <path
+              d="M 300 448 C 380 448, 468 420, 548 400"
+              fill="none"
+              stroke="#ffd4b2"
+              strokeWidth="1.5"
+              strokeDasharray="4 4"
+              markerEnd="url(#arrow-orange)"
               className="opacity-70 dark:opacity-40"
             />
 
-            {/* Curve 3: Top-Right Card ("Go deeper") to Center Button */}
-            <path 
-              d="M 920 220 C 840 250, 800 370, 720 395" 
-              fill="none" 
-              stroke="#ffe066" 
-              strokeWidth="1.5" 
-              strokeDasharray="4 4" 
-              markerStart="url(#arrow-yellow)" 
+            {/* Curve 3: Top-Right Card ("Go deeper") → Create New Canvas button */}
+            <path
+              d="M 935 155 C 860 200, 750 330, 652 388"
+              fill="none"
+              stroke="#ffe066"
+              strokeWidth="1.5"
+              strokeDasharray="4 4"
+              markerEnd="url(#arrow-yellow)"
               className="opacity-70 dark:opacity-40"
             />
 
-            {/* Curve 4: Bottom-Right Card ("Everything in one place") to Center Button */}
-            <path 
-              d="M 870 480 C 800 480, 780 420, 720 410" 
-              fill="none" 
-              stroke="#bbf7d0" 
-              strokeWidth="1.5" 
-              strokeDasharray="4 4" 
-              markerStart="url(#arrow-green)" 
+            {/* Curve 4: Bottom-Right Card ("Keep ideas organized") → Create New Canvas button */}
+            <path
+              d="M 900 448 C 820 448, 732 420, 652 400"
+              fill="none"
+              stroke="#bbf7d0"
+              strokeWidth="1.5"
+              strokeDasharray="4 4"
+              markerEnd="url(#arrow-green)"
               className="opacity-70 dark:opacity-40"
             />
           </svg>
