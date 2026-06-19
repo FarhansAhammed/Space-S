@@ -30,6 +30,18 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
     updateNodeSize
   } = useCanvasStore();
 
+  const nodes = useCanvasStore(state => state.nodes);
+
+  const nodeIndex = React.useMemo(() => {
+    const sorted = [...nodes].sort((a, b) => {
+      const timeA = a.data.createdAt ? new Date(a.data.createdAt).getTime() : 0;
+      const timeB = b.data.createdAt ? new Date(b.data.createdAt).getTime() : 0;
+      if (timeA !== timeB) return timeA - timeB;
+      return a.id.localeCompare(b.id);
+    });
+    return sorted.findIndex(n => n.id === id) + 1;
+  }, [nodes, id]);
+
   const rfStyle = useCanvasStore(state => state.nodes.find(n => n.id === id)?.style);
   
   // Compute a text scale factor proportional to the node's current width
@@ -85,13 +97,21 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
           tag: 'Question',
           icon: <HelpCircle className="w-3 h-3 text-[#c62828]" />
         };
+      case 'branch':
+        return {
+          bg: 'bg-[#fafdff] dark:bg-[#12222b]',
+          border: selected ? 'border-[#00b8d4] ring-2 ring-[#00b8d4]/20' : 'border-[#00b8d4]/20 dark:border-[#00b8d4]/30',
+          accent: '#00b8d4',
+          tag: 'Branch',
+          icon: <GitBranch className="w-3.5 h-3.5 text-[#00b8d4]" />
+        };
       case 'merge':
         return {
           bg: 'bg-[#faf9ff] dark:bg-[#1b122b]',
           border: selected ? 'border-[#6200ea] ring-2 ring-[#6200ea]/20' : 'border-dashed border-[#7c4dff]/40 dark:border-dashed dark:border-[#7c4dff]/50',
           accent: '#6200ea',
           tag: 'AI Synthesis',
-          icon: <Sparkles className="w-3 h-3 text-[#6200ea]" />
+          icon: <Sparkles className="w-3.5 h-3.5 text-[#6200ea]" />
         };
       default:
         return {
@@ -99,7 +119,7 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
           border: selected ? 'border-zinc-800 dark:border-zinc-200 ring-2 ring-zinc-800/10' : 'border-zinc-200 dark:border-zinc-800',
           accent: '#18181b',
           tag: 'Node',
-          icon: <Bot className="w-3 h-3 text-zinc-800 dark:text-zinc-200" />
+          icon: <Bot className="w-3.5 h-3.5 text-zinc-800 dark:text-zinc-200" />
         };
     }
   };
@@ -145,7 +165,7 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
         <div className="flex items-center gap-1.5">
           {typeStyle.icon}
           <span className="text-[10px] font-semibold tracking-wide uppercase text-zinc-500 dark:text-zinc-400 font-display">
-            {typeStyle.tag}
+            NODE {nodeIndex}
           </span>
         </div>
         
@@ -166,7 +186,7 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
       {!data.isCollapsed && (
         <div className="p-4 flex-1 flex flex-col min-h-0 relative">
           <h3
-            className="font-semibold text-zinc-800 dark:text-zinc-200 font-display mb-1.5 truncate"
+            className="font-semibold text-zinc-800 dark:text-zinc-200 font-display mb-1.5 break-words whitespace-pre-wrap"
             style={{ fontSize: `${Math.round(12 * textScale)}px` }}
           >
             {data.title}

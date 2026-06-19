@@ -40,6 +40,7 @@ export interface NodeData {
   sourceFile?: string;
   isBranchSelection?: boolean;
   justUpdated?: boolean;
+  createdAt?: string;
 }
 
 interface DbNode {
@@ -56,6 +57,7 @@ interface DbNode {
   parent_node_id?: string | null;
   image_url?: string | null;
   source_file?: string | null;
+  created_at?: string;
 }
 
 interface DbEdge {
@@ -167,6 +169,7 @@ const mapDbNodeToReactFlow = (dbNode: DbNode, messages: DbMessage[] = []): Node<
       parentNodeId: dbNode.parent_node_id || undefined,
       imageUrl: dbNode.image_url || undefined,
       sourceFile: dbNode.source_file || undefined,
+      createdAt: dbNode.created_at,
       conversationHistory: messages.map(m => ({
         role: m.role,
         content: m.content,
@@ -412,7 +415,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           type: 'llm',
           position_x: position.x,
           position_y: position.y,
-          title: prompt.length > 25 ? prompt.slice(0, 25) + '...' : prompt,
+          title: prompt,
           content: ''
         })
         .select()
@@ -450,11 +453,12 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         position,
         data: {
           type: 'llm',
-          title: prompt.length > 25 ? prompt.slice(0, 25) + '...' : prompt,
+          title: prompt,
           content: '',
           generation: 0,
           isLoading: true,
           isCollapsed: false,
+          createdAt: dbNode.created_at || new Date().toISOString(),
           conversationHistory: [{
             role: 'user',
             content: prompt,
@@ -563,11 +567,12 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         position,
         data: {
           type: 'llm',
-          title: prompt.length > 25 ? prompt.slice(0, 25) + '...' : prompt,
+          title: prompt,
           content: '',
           generation: 0,
           isLoading: true,
           isCollapsed: false,
+          createdAt: new Date().toISOString(),
           conversationHistory: [{ role: 'user', content: prompt }]
         }
       };
@@ -680,7 +685,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           type: dbType,
           position_x: position.x,
           position_y: position.y,
-          title: title || (prompt.length > 25 ? prompt.slice(0, 25) + '...' : prompt),
+          title: title || prompt,
           content: type === 'note' ? prompt : '',
           parent_node_id: parentNodeId
         })
@@ -719,12 +724,13 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         position,
         data: {
           type,
-          title: title || (prompt.length > 25 ? prompt.slice(0, 25) + '...' : prompt),
+          title: title || prompt,
           content: type === 'note' ? prompt : '',
           generation: childGen,
           isLoading: type !== 'note',
           isCollapsed: false,
           parentNodeId,
+          createdAt: dbNode.created_at || new Date().toISOString(),
           conversationHistory: type === 'note' ? [] : [{
             role: 'user',
             content: prompt,
@@ -851,12 +857,13 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         position,
         data: {
           type,
-          title: title || (prompt.length > 25 ? prompt.slice(0, 25) + '...' : prompt),
+          title: title || prompt,
           content: type === 'note' ? prompt : '',
           generation: childGen,
           isLoading: type !== 'note',
           isCollapsed: false,
           parentNodeId,
+          createdAt: new Date().toISOString(),
           conversationHistory: type === 'note' ? [] : [{ role: 'user', content: prompt }]
         }
       };
@@ -1114,7 +1121,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           type: 'branch',
           position_x: position.x,
           position_y: position.y,
-          title: selectedText.length > 25 ? selectedText.slice(0, 25) + '...' : selectedText,
+          title: selectedText,
           content: selectedText,
           parent_node_id: parentNodeId
         })
@@ -1137,12 +1144,13 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                 position,
                 data: {
                   type: 'branch',
-                  title: selectedText.length > 25 ? selectedText.slice(0, 25) + '...' : selectedText,
+                  title: selectedText,
                   content: selectedText,
                   generation: childGen,
                   isLoading: false,
                   isCollapsed: false,
                   parentNodeId,
+                  createdAt: dbNode.created_at || new Date().toISOString(),
                   conversationHistory: [],
                   isBranchSelection: true
                 }
@@ -1179,12 +1187,13 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         position,
         data: {
           type: 'branch',
-          title: selectedText.length > 25 ? selectedText.slice(0, 25) + '...' : selectedText,
+          title: selectedText,
           content: selectedText,
           generation: childGen,
           isLoading: false,
           isCollapsed: false,
           parentNodeId,
+          createdAt: new Date().toISOString(),
           conversationHistory: [],
           isBranchSelection: true
         }
@@ -1221,15 +1230,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     switch (operation) {
       case 'explain':
         prompt = `Explain this concept in simple terms: "${selectedText}"`;
-        promptTitle = `Explanation: ${selectedText.length > 15 ? selectedText.slice(0, 15) + '...' : selectedText}`;
+        promptTitle = `Explanation: ${selectedText}`;
         break;
       case 'expand':
         prompt = `Expand on this in detail, providing key aspects: "${selectedText}"`;
-        promptTitle = `Expansion: ${selectedText.length > 15 ? selectedText.slice(0, 15) + '...' : selectedText}`;
+        promptTitle = `Expansion: ${selectedText}`;
         break;
       case 'shorten':
         prompt = `Summarize this concept concisely in a single sentence: "${selectedText}"`;
-        promptTitle = `Summary: ${selectedText.length > 15 ? selectedText.slice(0, 15) + '...' : selectedText}`;
+        promptTitle = `Summary: ${selectedText}`;
         break;
     }
 

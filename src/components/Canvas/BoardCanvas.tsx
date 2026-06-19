@@ -35,11 +35,32 @@ export const BoardCanvas = () => {
     otherUsersCursors,
     newlyCreatedNodeId,
     setNewlyCreatedNodeId,
-    isLoadingCanvas
+    isLoadingCanvas,
+    selectNode
   } = useCanvasStore();
  
   const [bottomPrompt, setBottomPrompt] = useState('');
+  const [showNodeList, setShowNodeList] = useState(false);
   const hasNodes = nodes.length > 0;
+
+  const sortedNodes = useMemo(() => {
+    return [...nodes].sort((a, b) => {
+      const timeA = a.data.createdAt ? new Date(a.data.createdAt).getTime() : 0;
+      const timeB = b.data.createdAt ? new Date(b.data.createdAt).getTime() : 0;
+      if (timeA !== timeB) return timeA - timeB;
+      return a.id.localeCompare(b.id);
+    });
+  }, [nodes]);
+
+  const nodeItems = useMemo(() => {
+    return sortedNodes.map((n, idx) => ({
+      id: n.id,
+      number: idx + 1,
+      title: n.data.title,
+      position: n.position
+    }));
+  }, [sortedNodes]);
+
  
   const { screenToFlowPosition, setCenter } = useReactFlow();
 
@@ -166,9 +187,51 @@ export const BoardCanvas = () => {
           </Panel>
         )}
 
-        {/* Debug panel to verify node count in store */}
-        <Panel position="top-right" className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-zinc-200/50 dark:border-zinc-800/80 px-3 py-1.5 rounded-lg shadow-sm m-4 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 z-50 transition-colors">
-          Nodes: {nodes.length}
+        {/* Node count box which opens a sorted node list popover on click */}
+        <Panel position="top-right" className="z-50 m-4 relative select-none">
+          <div className="flex flex-col items-end">
+            <button 
+              type="button"
+              onClick={() => setShowNodeList(!showNodeList)}
+              className="bg-white/80 dark:bg-zinc-900/80 hover:bg-white dark:hover:bg-zinc-800 active:scale-95 transition-all backdrop-blur-sm border border-zinc-200/50 dark:border-zinc-800/80 px-3 py-1.5 rounded-lg shadow-sm text-[10px] font-semibold text-zinc-650 dark:text-zinc-350 flex items-center gap-1.5"
+            >
+              <FileText className="w-3.5 h-3.5 text-[#7c4dff]" />
+              <span>Nodes: {nodes.length}</span>
+            </button>
+
+            {showNodeList && nodes.length > 0 && (
+              <div className="mt-2 w-64 bg-white/95 dark:bg-zinc-900/95 border border-zinc-200/60 dark:border-zinc-800/80 rounded-xl shadow-glass backdrop-blur-md overflow-hidden flex flex-col z-50 text-left">
+                <div className="px-3.5 py-2.5 border-b border-zinc-100 dark:border-zinc-850 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-950/20">
+                  <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Node List</span>
+                  <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500">Order of Creation</span>
+                </div>
+                <div className="max-h-60 overflow-y-auto divide-y divide-zinc-50 dark:divide-zinc-850 no-canvas-wheel nodrag">
+                  {nodeItems.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        selectNode(item.id);
+                        setCenter(item.position.x + 130, item.position.y + 100, {
+                          zoom: 1.05,
+                          duration: 800
+                        });
+                        setShowNodeList(false);
+                      }}
+                      className="w-full px-3.5 py-2.5 hover:bg-[#7c4dff]/5 dark:hover:bg-[#7c4dff]/10 text-left transition-colors flex items-start gap-2.5 text-xs"
+                    >
+                      <span className="font-bold text-[#7c4dff] text-[10px] bg-[#7c4dff]/10 px-1.5 py-0.5 rounded leading-none shrink-0 mt-0.5">
+                        #{item.number}
+                      </span>
+                      <span className="font-medium text-zinc-755 dark:text-zinc-300 line-clamp-2 leading-snug">
+                        {item.title || 'Untitled Node'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </Panel>
  
         {/* React Flow Controls - placed bottom-left */}
