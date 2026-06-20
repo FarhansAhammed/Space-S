@@ -233,7 +233,7 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
               </button>
               
               {contextVisible && (
-                <div className="mt-1.5 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-xl p-2.5 text-[9px] text-zinc-550 dark:text-zinc-400 leading-relaxed max-h-24 overflow-y-auto no-canvas-wheel transition-colors duration-200">
+                <div className="mt-1.5 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-xl p-2.5 text-[9px] text-zinc-500 dark:text-zinc-400 leading-relaxed max-h-24 overflow-y-auto no-canvas-wheel transition-colors duration-200">
                   {contextChain.map((entry, i) => (
                     <div key={entry.nodeId} className="flex gap-1.5 mb-1 last:mb-0">
                       <span className="text-[#7c4dff] shrink-0 font-bold">{i === contextChain.length - 1 ? '↳' : '·'}</span>
@@ -268,14 +268,14 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
                 <circle cx="50" cy="50" r="1" fill="currentColor" />
               </svg>
               <div className="absolute bottom-2 left-2 right-2 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm px-2 py-1 rounded border border-black/5 dark:border-white/5 transition-colors duration-200">
-                <p className="text-[9px] text-zinc-650 dark:text-zinc-350 truncate">{data.imagePrompt || 'Bloch sphere visualization'}</p>
+                <p className="text-[9px] text-zinc-600 dark:text-zinc-300 truncate">{data.imagePrompt || 'Bloch sphere visualization'}</p>
               </div>
             </div>
           )}
  
           {/* Node content area */}
           <div
-            className={`nodrag no-canvas-wheel overflow-y-auto break-words whitespace-pre-wrap leading-relaxed text-zinc-655 dark:text-zinc-300 pr-1 select-text ${rfStyle?.height ? 'flex-1' : 'max-h-48'}`}
+            className={`nodrag no-canvas-wheel overflow-y-auto break-words whitespace-pre-wrap leading-relaxed text-zinc-600 dark:text-zinc-300 pr-1 select-text ${rfStyle?.height ? 'flex-1' : 'max-h-48'}`}
             style={{ fontSize: `${Math.round(11 * textScale)}px` }}
           >
             {data.isLoading ? (
@@ -492,7 +492,7 @@ const renderMarkdown = (text: string, textScale = 1): React.ReactNode => {
         if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
           return (
             <ul key={idx} className="list-disc pl-4 m-0">
-              <li style={{ fontSize: base(11) }} className="text-zinc-650 dark:text-zinc-300 break-words whitespace-pre-wrap">{parseInlineStyles(trimmed.slice(2))}</li>
+              <li style={{ fontSize: base(11) }} className="text-zinc-600 dark:text-zinc-300 break-words whitespace-pre-wrap">{parseInlineStyles(trimmed.slice(2))}</li>
             </ul>
           );
         }
@@ -502,14 +502,14 @@ const renderMarkdown = (text: string, textScale = 1): React.ReactNode => {
         if (numListMatch) {
           return (
             <ol key={idx} className="list-decimal pl-4 m-0" start={parseInt(numListMatch[1], 10)}>
-              <li style={{ fontSize: base(11) }} className="text-zinc-650 dark:text-zinc-300 break-words whitespace-pre-wrap">{parseInlineStyles(numListMatch[2])}</li>
+              <li style={{ fontSize: base(11) }} className="text-zinc-600 dark:text-zinc-300 break-words whitespace-pre-wrap">{parseInlineStyles(numListMatch[2])}</li>
             </ol>
           );
         }
 
         // Standard Paragraphs
         return (
-          <p key={idx} style={{ fontSize: base(11) }} className="text-zinc-650 dark:text-zinc-300 leading-relaxed min-h-[4px]">
+          <p key={idx} style={{ fontSize: base(11) }} className="text-zinc-600 dark:text-zinc-300 leading-relaxed min-h-[4px]">
             {parseInlineStyles(line)}
           </p>
         );

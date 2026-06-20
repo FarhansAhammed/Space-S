@@ -190,7 +190,7 @@ export const TopHeader = () => {
                   </div>
                 ))}
                 {presenceUsers.length > 4 && (
-                  <div className="w-8 h-8 rounded-full border-2 border-white dark:border-zinc-950 bg-zinc-200 dark:bg-zinc-850 text-zinc-655 dark:text-zinc-350 flex items-center justify-center text-[10px] font-bold select-none shadow-sm">
+                  <div className="w-8 h-8 rounded-full border-2 border-white dark:border-zinc-950 bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 flex items-center justify-center text-[10px] font-bold select-none shadow-sm">
                     +{presenceUsers.length - 4}
                   </div>
                 )}

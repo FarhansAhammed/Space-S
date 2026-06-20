@@ -74,7 +74,7 @@ export default function FAQSection() {
                     className="w-full flex items-center justify-between text-left py-3 font-space-grotesk font-bold text-[#0d1233] dark:text-zinc-50 hover:text-[#7c4dff] dark:hover:text-[#a080ff] transition-colors group"
                   >
                     <span className="text-sm sm:text-base leading-snug">{faq.q}</span>
-                    <span className="ml-4 flex-shrink-0 w-6 h-6 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-850 flex items-center justify-center text-zinc-500 group-hover:text-[#7c4dff] transition-all">
+                    <span className="ml-4 flex-shrink-0 w-6 h-6 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800 flex items-center justify-center text-zinc-500 group-hover:text-[#7c4dff] transition-all">
                       <Plus className={`w-4 h-4 transition-transform duration-300 ${isOpen ? 'rotate-[135deg] text-red-500' : ''}`} />
                     </span>
                   </button>

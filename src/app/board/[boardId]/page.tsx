@@ -64,7 +64,7 @@ export default function BoardPage() {
 
   return (
     <ReactFlowProvider>
-      <main className="w-screen h-screen relative bg-[#f8f5f0] overflow-hidden">
+      <main className="w-screen h-screen relative bg-[#f8f5f0] dark:bg-[#121110] overflow-hidden">
         {/* Top Header Panel (Fixed h-16) */}
         <TopHeader />
 

@@ -214,14 +214,14 @@ export const BoardCanvas = () => {
             <button 
               type="button"
               onClick={() => setShowNodeList(!showNodeList)}
-              className="bg-white/85 dark:bg-zinc-950/85 hover:bg-white dark:hover:bg-zinc-900 active:scale-95 transition-all backdrop-blur-md border border-white/20 dark:border-zinc-850/50 px-3 py-1.5 rounded-2xl shadow-[0_8px_32px_0_rgba(45,38,32,0.06)] text-[10px] font-semibold text-zinc-650 dark:text-zinc-350 flex items-center gap-1.5"
+              className="bg-white/85 dark:bg-zinc-950/85 hover:bg-white dark:hover:bg-zinc-900 active:scale-95 transition-all backdrop-blur-md border border-white/20 dark:border-zinc-800/50 px-3 py-1.5 rounded-2xl shadow-[0_8px_32px_0_rgba(45,38,32,0.06)] text-[10px] font-semibold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5"
             >
               <FileText className="w-3.5 h-3.5 text-[#7c4dff]" />
               <span>Nodes: {nodes.length}</span>
             </button>
 
             {showNodeList && nodes.length > 0 && (
-              <div className="mt-2 w-64 bg-white/90 dark:bg-zinc-950/90 border border-white/20 dark:border-zinc-850/50 rounded-[20px] shadow-[0_16px_36px_-6px_rgba(45,38,32,0.12),0_4px_16px_-4px_rgba(45,38,32,0.06)] backdrop-blur-md overflow-hidden flex flex-col z-50 text-left">
+              <div className="mt-2 w-64 bg-white/90 dark:bg-zinc-950/90 border border-white/20 dark:border-zinc-800/50 rounded-[20px] shadow-[0_16px_36px_-6px_rgba(45,38,32,0.12),0_4px_16px_-4px_rgba(45,38,32,0.06)] backdrop-blur-md overflow-hidden flex flex-col z-50 text-left">
                 <div className="px-3.5 py-2.5 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/5 dark:bg-white/5">
                   <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Node List</span>
                   <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500">Order of Creation</span>
@@ -244,7 +244,7 @@ export const BoardCanvas = () => {
                       <span className="font-bold text-[#7c4dff] text-[10px] bg-[#7c4dff]/10 px-1.5 py-0.5 rounded leading-none shrink-0 mt-0.5">
                         #{item.number}
                       </span>
-                      <span className="font-medium text-zinc-755 dark:text-zinc-300 line-clamp-2 leading-snug">
+                      <span className="font-medium text-zinc-700 dark:text-zinc-300 line-clamp-2 leading-snug">
                         {item.title || 'Untitled Node'}
                       </span>
                     </button>
@@ -417,7 +417,7 @@ export const BoardCanvas = () => {
                 key={idx}
                 type="button"
                 title={btn.label}
-                className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl text-zinc-500 dark:text-zinc-405 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-[10px] font-semibold"
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-[10px] font-semibold"
               >
                 {btn.icon}
                 <span className="hidden sm:inline">{btn.label}</span>

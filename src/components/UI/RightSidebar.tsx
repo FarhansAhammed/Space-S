@@ -55,7 +55,7 @@ export const RightSidebar = () => {
   };
  
   return (
-    <aside className="w-full md:w-[360px] bg-white/80 dark:bg-zinc-950/80 border-t md:border border-white/20 dark:border-zinc-850/50 shadow-[0_20px_40px_rgba(45,38,32,0.08)] rounded-t-[24px] md:rounded-[24px] flex flex-col fixed bottom-0 md:bottom-[24px] left-0 md:left-auto right-0 md:right-[24px] top-auto md:top-[84px] h-[60vh] md:h-auto z-40 overflow-hidden backdrop-blur-md transition-all duration-300 dark:text-zinc-200">
+    <aside className="w-full md:w-[360px] bg-white/80 dark:bg-zinc-950/80 border-t md:border border-white/20 dark:border-zinc-800/50 shadow-[0_20px_40px_rgba(45,38,32,0.08)] rounded-t-[24px] md:rounded-[24px] flex flex-col fixed bottom-0 md:bottom-[24px] left-0 md:left-auto right-0 md:right-[24px] top-auto md:top-[84px] h-[60vh] md:h-auto z-40 overflow-hidden backdrop-blur-md transition-all duration-300 dark:text-zinc-200">
       
       {/* Header Info */}
       <div className="p-5 border-b border-black/5 dark:border-white/5 flex flex-col gap-2">
@@ -82,7 +82,7 @@ export const RightSidebar = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-3 text-center border-b-2 capitalize transition-colors ${activeTab === tab ? 'border-[#7c4dff] text-zinc-850 dark:text-zinc-100 font-semibold' : 'border-transparent hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+            className={`flex-1 py-3 text-center border-b-2 capitalize transition-colors ${activeTab === tab ? 'border-[#7c4dff] text-zinc-900 dark:text-zinc-100 font-semibold' : 'border-transparent hover:text-zinc-700 dark:hover:text-zinc-300'}`}
           >
             {tab}
           </button>
@@ -97,7 +97,7 @@ export const RightSidebar = () => {
               <div className="flex flex-col items-center justify-center py-12 text-center text-zinc-400 dark:text-zinc-500">
                 <Sparkles className="w-8 h-8 text-[#7c4dff]/40 mb-2 animate-pulse" />
                 <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Ask this node anything!</p>
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-550 mt-1 max-w-[200px]">Any questions here remain isolated to this node context.</p>
+                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1 max-w-[200px]">Any questions here remain isolated to this node context.</p>
               </div>
             ) : (
               data.conversationHistory.map((msg, index) => {
@@ -130,7 +130,7 @@ export const RightSidebar = () => {
                         </div>
                         <div className="flex flex-col items-start">
                           <span className="text-[9px] font-semibold text-zinc-400 mb-1">@{msg.sender?.username || 'Collaborator'}</span>
-                          <div className="rounded-xl px-3 py-2 text-[11px] leading-relaxed shadow-sm border bg-zinc-50/70 dark:bg-zinc-900/60 border-zinc-100 dark:border-zinc-800/80 text-zinc-655 dark:text-zinc-300 rounded-tl-none select-text">
+                          <div className="rounded-xl px-3 py-2 text-[11px] leading-relaxed shadow-sm border bg-zinc-50/70 dark:bg-zinc-900/60 border-zinc-100 dark:border-zinc-800/80 text-zinc-600 dark:text-zinc-300 rounded-tl-none select-text">
                             {renderMarkdown(msg.content)}
                           </div>
                         </div>
@@ -145,7 +145,7 @@ export const RightSidebar = () => {
                       </div>
                       <div className="flex flex-col items-start">
                         <span className="text-[9px] font-semibold text-zinc-400 mb-1">Space S AI</span>
-                        <div className="rounded-xl px-3 py-2 text-[11px] leading-relaxed shadow-sm border bg-zinc-50/70 dark:bg-zinc-900/60 border-zinc-100 dark:border-zinc-800/80 text-zinc-655 dark:text-zinc-300 rounded-tl-none select-text">
+                        <div className="rounded-xl px-3 py-2 text-[11px] leading-relaxed shadow-sm border bg-zinc-50/70 dark:bg-zinc-900/60 border-zinc-100 dark:border-zinc-800/80 text-zinc-600 dark:text-zinc-300 rounded-tl-none select-text">
                           {renderMarkdown(msg.content)}
                         </div>
                       </div>
@@ -179,21 +179,21 @@ export const RightSidebar = () => {
           <div className="flex flex-col gap-4 text-xs text-zinc-600 dark:text-zinc-400 font-sans">
             <div>
               <p className="font-semibold text-zinc-800 dark:text-zinc-200 mb-1">Generational Index</p>
-              <p className="text-zinc-550 dark:text-zinc-450 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800/80 p-2.5 rounded-lg font-mono">
+              <p className="text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800/80 p-2.5 rounded-lg font-mono">
                 Generation {data.generation} {data.generation === 0 ? '(Root Board Parent)' : `(Derived Child level)`}
               </p>
             </div>
             {data.parentNodeId && (
               <div>
                 <p className="font-semibold text-zinc-800 dark:text-zinc-200 mb-1">Parent Node Ref</p>
-                <p className="text-zinc-550 dark:text-zinc-455 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800/80 p-2.5 rounded-lg font-mono truncate">
+                <p className="text-zinc-550 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800/80 p-2.5 rounded-lg font-mono truncate">
                   {data.parentNodeId}
                 </p>
               </div>
             )}
             <div>
               <p className="font-semibold text-zinc-800 dark:text-zinc-200 mb-1">Topic Summary</p>
-              <p className="text-zinc-550 dark:text-zinc-400 leading-relaxed bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800/80 p-2.5 rounded-lg">
+              <p className="text-zinc-500 dark:text-zinc-400 leading-relaxed bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-100 dark:border-zinc-800/80 p-2.5 rounded-lg">
                 This node contains contextual responses parsed from Poolside models. 
                 Any chat responses stream directly and update the node layout values.
               </p>
@@ -227,7 +227,7 @@ export const RightSidebar = () => {
             value={chatMessage}
             onChange={(e) => setChatMessage(e.target.value)}
             disabled={data.isLoading}
-            className="flex-1 h-9 px-3.5 border border-black/10 dark:border-white/10 rounded-xl outline-none focus:border-[#7c4dff] dark:focus:border-[#7c4dff] text-xs bg-black/5 dark:bg-white/5 focus:bg-white/70 dark:focus:bg-zinc-900/70 text-zinc-800 dark:text-zinc-200 transition-all placeholder-zinc-400 dark:placeholder-zinc-550"
+            className="flex-1 h-9 px-3.5 border border-black/10 dark:border-white/10 rounded-xl outline-none focus:border-[#7c4dff] dark:focus:border-[#7c4dff] text-xs bg-black/5 dark:bg-white/5 focus:bg-white/70 dark:focus:bg-zinc-900/70 text-zinc-800 dark:text-zinc-200 transition-all placeholder-zinc-400 dark:placeholder-zinc-500"
           />
           <button 
             type="submit"
@@ -278,7 +278,7 @@ const renderMarkdown = (text: string): React.ReactNode => {
         if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
           return (
             <ul key={idx} className="list-disc pl-3">
-              <li className="text-[11px] text-zinc-655 dark:text-zinc-300">{parseInlineStyles(trimmed.slice(2))}</li>
+              <li className="text-[11px] text-zinc-600 dark:text-zinc-300">{parseInlineStyles(trimmed.slice(2))}</li>
             </ul>
           );
         }
@@ -288,14 +288,14 @@ const renderMarkdown = (text: string): React.ReactNode => {
         if (numListMatch) {
           return (
             <ol key={idx} className="list-decimal pl-3" start={parseInt(numListMatch[1], 10)}>
-              <li className="text-[11px] text-zinc-655 dark:text-zinc-300">{parseInlineStyles(numListMatch[2])}</li>
+              <li className="text-[11px] text-zinc-600 dark:text-zinc-300">{parseInlineStyles(numListMatch[2])}</li>
             </ol>
           );
         }
  
         // Standard Paragraphs
         return (
-          <p key={idx} className="text-[11px] text-zinc-655 dark:text-zinc-300 leading-relaxed min-h-[4px]">
+          <p key={idx} className="text-[11px] text-zinc-600 dark:text-zinc-300 leading-relaxed min-h-[4px]">
             {parseInlineStyles(line)}
           </p>
         );

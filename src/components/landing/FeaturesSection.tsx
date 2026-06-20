@@ -38,7 +38,7 @@ export default function FeaturesSection() {
       body: "Select any part of an AI response. Hit Branch. Spaces splits that sub idea into its own connected node, drilling into one branch without losing the context of where it came from. True non linear AI conversation, not a chat restart.",
       mockup: (
         <div className="flex items-center gap-4 relative py-4 w-full max-w-sm justify-center">
-          <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/60 dark:border-zinc-850 shadow-sm text-center">
+          <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/60 dark:border-zinc-800 shadow-sm text-center">
             <span className="text-[9px] text-zinc-400 block mb-0.5">Parent Node</span>
             <span className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200">Quantum Computing</span>
           </div>

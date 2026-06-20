@@ -100,7 +100,7 @@ export default function CanvasListSection({
           loadingCanvases ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-36 rounded-2xl bg-zinc-200/40 dark:bg-zinc-850/40 animate-pulse border border-zinc-200/20" />
+                <div key={i} className="h-36 rounded-2xl bg-zinc-200/40 dark:bg-zinc-800/40 animate-pulse border border-zinc-200/20" />
               ))}
             </div>
           ) : canvases.length === 0 ? (
