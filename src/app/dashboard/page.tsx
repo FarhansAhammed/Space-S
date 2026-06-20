@@ -207,7 +207,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f5f0] dark:bg-[#121110] text-zinc-800 dark:text-zinc-200 transition-colors duration-200">
+    <div className="h-screen w-full overflow-y-auto no-canvas-wheel bg-[#f8f5f0] dark:bg-[#121110] text-zinc-800 dark:text-zinc-200 transition-colors duration-200">
       {/* Dashboard Top Header */}
       <header className="h-[64px] border-b border-zinc-200/60 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-md flex items-center justify-between px-4 sm:px-8 fixed top-0 left-0 right-0 z-40 transition-colors duration-200">
         <div className="flex items-center gap-2">
