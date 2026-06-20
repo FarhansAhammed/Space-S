@@ -63,10 +63,14 @@ export const SelectionMenu = () => {
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
         
-        // Place menu centered above the selection rect
+        const isMobile = window.innerWidth < 768;
+        
+        // Place menu centered below the selection rect for mobile, above for desktop
         setMenuPosition({
           x: rect.left + rect.width / 2 + window.scrollX,
-          y: rect.top - 40 + window.scrollY
+          y: isMobile 
+            ? rect.bottom + 8 + window.scrollY 
+            : rect.top - 40 + window.scrollY
         });
         setSelectedText(text);
         setParentNodeId(parentId);
