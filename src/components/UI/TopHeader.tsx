@@ -110,13 +110,13 @@ export const TopHeader = () => {
   };
 
   return (
-    <header className="h-[64px] border-b border-zinc-200/60 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-md flex items-center justify-between px-3 sm:px-6 z-40 fixed top-0 left-0 right-0 transition-colors duration-200">
+    <header className="h-[64px] border-b border-white/20 dark:border-zinc-900/50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-3 sm:px-6 z-40 fixed top-0 left-0 right-0 transition-colors duration-200">
       
       {/* Brand & Left Navigation */}
       <div className="flex items-center gap-3">
         <Link 
           href="/dashboard" 
-          className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 cursor-pointer border border-transparent hover:border-zinc-200/50 dark:hover:border-zinc-800/80 transition-all"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer border border-transparent hover:border-white/15 dark:hover:border-zinc-850/50 transition-all"
         >
           {/* Logo image */}
           <img src="/logo.png" alt="Space-S Logo" className="w-5 h-5 object-contain" />
@@ -128,7 +128,7 @@ export const TopHeader = () => {
         <Link 
           href="/dashboard"
           title="Back to Dashboard"
-          className="w-8 h-8 rounded-lg border border-zinc-200/60 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+          className="w-8 h-8 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-sm flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5 transition-all shadow-sm"
         >
           <ChevronLeft className="w-4 h-4" />
         </Link>
@@ -145,9 +145,9 @@ export const TopHeader = () => {
           placeholder="Type a topic or question and press Enter to create a node..." 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full h-9 pl-10 pr-14 border border-zinc-200 dark:border-zinc-800/80 rounded-lg outline-none focus:border-[#7c4dff] dark:focus:border-[#7c4dff] text-xs bg-zinc-50/50 dark:bg-zinc-900/50 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-zinc-200 font-sans transition-all placeholder-zinc-400 dark:placeholder-zinc-500"
+          className="w-full h-9 pl-10 pr-14 border border-black/10 dark:border-white/10 rounded-xl outline-none focus:border-[#7c4dff] dark:focus:border-[#7c4dff] text-xs bg-black/5 dark:bg-white/5 focus:bg-white/70 dark:focus:bg-zinc-900/70 text-zinc-800 dark:text-zinc-200 font-sans transition-all placeholder-zinc-400 dark:placeholder-zinc-500 shadow-inner"
         />
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-zinc-400 dark:text-zinc-500 font-mono border border-zinc-200 dark:border-zinc-800/80 px-1 py-0.5 rounded bg-white dark:bg-zinc-900 pointer-events-none">
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-zinc-400 dark:text-zinc-500 font-mono border border-black/5 dark:border-white/5 px-1.5 py-0.5 rounded-lg bg-white/80 dark:bg-zinc-900/80 pointer-events-none shadow-sm">
           <span>↵</span>
         </div>
       </form>
@@ -155,7 +155,7 @@ export const TopHeader = () => {
       {/* Right Controls / Profiles */}
       <div className="flex items-center gap-2 sm:gap-4">
         {/* View Grid Layout Icon */}
-        <button className="hidden sm:flex w-9 h-9 rounded-lg border border-zinc-200/50 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-850 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all flex items-center justify-center">
+        <button className="hidden sm:flex w-9 h-9 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-zinc-900/70 hover:bg-black/5 dark:hover:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all flex items-center justify-center shadow-sm">
           <LayoutGrid className="w-4 h-4" />
         </button>
 
@@ -164,7 +164,7 @@ export const TopHeader = () => {
           type="button"
           onClick={toggleTheme}
           title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-          className="w-9 h-9 rounded-lg border border-zinc-200/50 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-850 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all flex items-center justify-center"
+          className="w-9 h-9 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-zinc-900/70 hover:bg-black/5 dark:hover:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all flex items-center justify-center shadow-sm"
         >
           {theme === 'light' ? (
             <Sun className="w-4 h-4 text-amber-500" />
@@ -190,7 +190,7 @@ export const TopHeader = () => {
                   </div>
                 ))}
                 {presenceUsers.length > 4 && (
-                  <div className="w-8 h-8 rounded-full border-2 border-white dark:border-zinc-950 bg-zinc-200 dark:bg-zinc-850 text-zinc-650 dark:text-zinc-350 flex items-center justify-center text-[10px] font-bold select-none shadow-sm">
+                  <div className="w-8 h-8 rounded-full border-2 border-white dark:border-zinc-950 bg-zinc-200 dark:bg-zinc-850 text-zinc-655 dark:text-zinc-350 flex items-center justify-center text-[10px] font-bold select-none shadow-sm">
                     +{presenceUsers.length - 4}
                   </div>
                 )}
@@ -200,7 +200,7 @@ export const TopHeader = () => {
             {boardId && boardId !== 'sample-board' && (
               <button 
                 onClick={() => setShowInviteModal(true)}
-                className="h-9 px-2.5 sm:px-3.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 text-white font-medium text-xs hover:bg-zinc-800 dark:hover:bg-zinc-200 shadow-sm hover:shadow transition-all flex items-center gap-1.5"
+                className="h-9 px-3.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 text-white font-semibold text-xs hover:bg-zinc-850 dark:hover:bg-zinc-200 shadow hover:shadow-md transition-all flex items-center gap-1.5"
               >
                 <Users className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Invite</span>

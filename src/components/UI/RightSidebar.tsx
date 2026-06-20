@@ -55,10 +55,10 @@ export const RightSidebar = () => {
   };
  
   return (
-    <aside className="w-full md:w-[360px] bg-white/95 dark:bg-[#1a1917]/95 border-t md:border border-zinc-200/60 dark:border-zinc-800/80 shadow-glass rounded-t-2xl md:rounded-2xl flex flex-col fixed bottom-0 md:bottom-[24px] left-0 md:left-auto right-0 md:right-[24px] top-auto md:top-[84px] h-[60vh] md:h-auto z-40 overflow-hidden transition-all duration-300 dark:text-zinc-200">
+    <aside className="w-full md:w-[360px] bg-white/80 dark:bg-zinc-950/80 border-t md:border border-white/20 dark:border-zinc-850/50 shadow-[0_20px_40px_rgba(45,38,32,0.08)] rounded-t-[24px] md:rounded-[24px] flex flex-col fixed bottom-0 md:bottom-[24px] left-0 md:left-auto right-0 md:right-[24px] top-auto md:top-[84px] h-[60vh] md:h-auto z-40 overflow-hidden backdrop-blur-md transition-all duration-300 dark:text-zinc-200">
       
       {/* Header Info */}
-      <div className="p-5 border-b border-zinc-100/80 dark:border-zinc-800/80 flex flex-col gap-2">
+      <div className="p-5 border-b border-black/5 dark:border-white/5 flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase ${tagStyle.bg} ${tagStyle.text}`}>
             {tagStyle.icon}
@@ -66,7 +66,7 @@ export const RightSidebar = () => {
           </div>
           <button 
             onClick={() => selectNode(null)}
-            className="w-7 h-7 rounded-lg border border-zinc-100 dark:border-zinc-800/80 hover:bg-zinc-50 dark:hover:bg-zinc-900/60 flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-350 transition-all"
+            className="w-7 h-7 rounded-xl border border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-305 transition-all"
           >
             <X className="w-4 h-4" />
           </button>
@@ -77,12 +77,12 @@ export const RightSidebar = () => {
       </div>
  
       {/* Tabs */}
-      <div className="flex border-b border-zinc-100 dark:border-zinc-800/80 text-xs text-zinc-400 dark:text-zinc-500 font-medium">
+      <div className="flex border-b border-black/5 dark:border-white/5 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
         {(['chat', 'info', 'links', 'more'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-3 text-center border-b-2 capitalize transition-colors ${activeTab === tab ? 'border-[#7c4dff] text-zinc-800 dark:text-zinc-200 font-semibold' : 'border-transparent hover:text-zinc-600 dark:hover:text-zinc-400'}`}
+            className={`flex-1 py-3 text-center border-b-2 capitalize transition-colors ${activeTab === tab ? 'border-[#7c4dff] text-zinc-850 dark:text-zinc-100 font-semibold' : 'border-transparent hover:text-zinc-700 dark:hover:text-zinc-300'}`}
           >
             {tab}
           </button>
@@ -219,7 +219,7 @@ export const RightSidebar = () => {
       {activeTab === 'chat' && (
         <form 
           onSubmit={handleSendMessage}
-          className="p-4 border-t border-zinc-100/85 dark:border-zinc-800/80 bg-white dark:bg-[#1a1917] flex items-center gap-2 transition-colors duration-200"
+          className="p-4 border-t border-black/5 dark:border-white/5 bg-transparent flex items-center gap-2 transition-colors duration-200"
         >
           <input 
             type="text" 
@@ -227,12 +227,12 @@ export const RightSidebar = () => {
             value={chatMessage}
             onChange={(e) => setChatMessage(e.target.value)}
             disabled={data.isLoading}
-            className="flex-1 h-9 px-3.5 border border-zinc-200 dark:border-zinc-850 rounded-lg outline-none focus:border-[#7c4dff] dark:focus:border-[#7c4dff] text-xs bg-zinc-50/50 dark:bg-zinc-900/50 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-zinc-200 transition-all placeholder-zinc-400 dark:placeholder-zinc-500"
+            className="flex-1 h-9 px-3.5 border border-black/10 dark:border-white/10 rounded-xl outline-none focus:border-[#7c4dff] dark:focus:border-[#7c4dff] text-xs bg-black/5 dark:bg-white/5 focus:bg-white/70 dark:focus:bg-zinc-900/70 text-zinc-800 dark:text-zinc-200 transition-all placeholder-zinc-400 dark:placeholder-zinc-550"
           />
           <button 
             type="submit"
             disabled={!chatMessage.trim() || data.isLoading}
-            className="w-9 h-9 rounded-lg bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 text-white flex items-center justify-center hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow"
+            className="w-9 h-9 rounded-xl bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 text-white flex items-center justify-center hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow"
           >
             <Send className="w-3.5 h-3.5" />
           </button>

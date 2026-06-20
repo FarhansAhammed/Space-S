@@ -179,10 +179,10 @@ export const BoardCanvas = () => {
  
         {/* Custom Panel: Toolbar at top-left */}
         {nodes.length >= 1 && (
-          <Panel position="top-left" className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-zinc-200/50 dark:border-zinc-800/80 p-2.5 rounded-xl shadow-sm flex items-center gap-2 m-4 transition-colors">
+          <Panel position="top-left" className="bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border border-white/20 dark:border-zinc-850/50 p-2.5 rounded-2xl shadow-[0_8px_32px_0_rgba(45,38,32,0.06)] flex items-center gap-2 m-4 transition-colors">
             <button 
               onClick={handleOrganizeAction}
-              className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#ff5722] to-[#ff9100] text-white hover:from-[#f4511e] hover:to-[#ff8000] active:scale-95 text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#ff5722] to-[#ff9100] text-white hover:from-[#f4511e] hover:to-[#ff8000] active:scale-95 text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Organize Canvas</span>
@@ -191,10 +191,10 @@ export const BoardCanvas = () => {
 
             {nodes.length >= 2 && (
               <>
-                <div className="h-4 w-px bg-zinc-250 dark:bg-zinc-800" />
+                <div className="h-4 w-px bg-black/5 dark:bg-white/5" />
                 <button 
                   onClick={handleMergeAction}
-                  className="px-3 py-1.5 rounded-lg bg-[#7c4dff] text-white hover:bg-[#6200ea] active:scale-95 text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-xl bg-[#7c4dff] text-white hover:bg-[#6200ea] active:scale-95 text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
                 >
                   <Link2 className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Merge Nodes</span>
@@ -214,19 +214,19 @@ export const BoardCanvas = () => {
             <button 
               type="button"
               onClick={() => setShowNodeList(!showNodeList)}
-              className="bg-white/80 dark:bg-zinc-900/80 hover:bg-white dark:hover:bg-zinc-800 active:scale-95 transition-all backdrop-blur-sm border border-zinc-200/50 dark:border-zinc-800/80 px-3 py-1.5 rounded-lg shadow-sm text-[10px] font-semibold text-zinc-650 dark:text-zinc-350 flex items-center gap-1.5"
+              className="bg-white/85 dark:bg-zinc-950/85 hover:bg-white dark:hover:bg-zinc-900 active:scale-95 transition-all backdrop-blur-md border border-white/20 dark:border-zinc-850/50 px-3 py-1.5 rounded-2xl shadow-[0_8px_32px_0_rgba(45,38,32,0.06)] text-[10px] font-semibold text-zinc-650 dark:text-zinc-350 flex items-center gap-1.5"
             >
               <FileText className="w-3.5 h-3.5 text-[#7c4dff]" />
               <span>Nodes: {nodes.length}</span>
             </button>
 
             {showNodeList && nodes.length > 0 && (
-              <div className="mt-2 w-64 bg-white/95 dark:bg-zinc-900/95 border border-zinc-200/60 dark:border-zinc-800/80 rounded-xl shadow-glass backdrop-blur-md overflow-hidden flex flex-col z-50 text-left">
-                <div className="px-3.5 py-2.5 border-b border-zinc-100 dark:border-zinc-850 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-950/20">
+              <div className="mt-2 w-64 bg-white/90 dark:bg-zinc-950/90 border border-white/20 dark:border-zinc-850/50 rounded-[20px] shadow-[0_16px_36px_-6px_rgba(45,38,32,0.12),0_4px_16px_-4px_rgba(45,38,32,0.06)] backdrop-blur-md overflow-hidden flex flex-col z-50 text-left">
+                <div className="px-3.5 py-2.5 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-black/5 dark:bg-white/5">
                   <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Node List</span>
                   <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-500">Order of Creation</span>
                 </div>
-                <div className="max-h-60 overflow-y-auto divide-y divide-zinc-50 dark:divide-zinc-850 no-canvas-wheel nodrag">
+                <div className="max-h-60 overflow-y-auto divide-y divide-black/5 dark:divide-white/5 no-canvas-wheel nodrag">
                   {nodeItems.map((item) => (
                     <button
                       key={item.id}
@@ -400,13 +400,13 @@ export const BoardCanvas = () => {
             A free-form AI canvas for non linear thinking. Type your first topic or question below to visualize it.
           </p>
         </div>
- 
+
         {/* The Chat Form */}
         <form 
           onSubmit={handleBottomSubmit}
-          className="w-full bg-white/95 dark:bg-[#1e1d1a]/95 border border-zinc-200/60 dark:border-zinc-800/80 shadow-glass rounded-2xl p-2.5 flex items-center justify-between gap-3 backdrop-blur-md transition-all duration-305 hover:border-zinc-350 dark:hover:border-zinc-700/80"
+          className="w-full bg-white/85 dark:bg-[#1a1917]/85 border border-white/25 dark:border-zinc-850/50 shadow-[0_16px_36px_-6px_rgba(45,38,32,0.08),0_4px_16px_-4px_rgba(45,38,32,0.04)] rounded-[24px] p-2.5 flex items-center justify-between gap-3 backdrop-blur-md transition-all duration-300 hover:border-white/40 dark:hover:border-zinc-750/70"
         >
-          <div className="flex items-center gap-1 px-1.5">
+          <div className="flex items-center gap-1.5 px-1.5">
             {[
               { label: 'Attach', icon: <Plus className="w-3.5 h-3.5" /> },
               { label: 'Image', icon: <ImageIcon className="w-3.5 h-3.5" /> },
@@ -417,22 +417,22 @@ export const BoardCanvas = () => {
                 key={idx}
                 type="button"
                 title={btn.label}
-                className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-[10px] font-semibold"
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl text-zinc-500 dark:text-zinc-405 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-[10px] font-semibold"
               >
                 {btn.icon}
                 <span className="hidden sm:inline">{btn.label}</span>
               </button>
             ))}
           </div>
- 
-          <div className="flex-1 flex items-center gap-2 border-l border-zinc-100 dark:border-zinc-800/80 pl-3">
+  
+          <div className="flex-1 flex items-center gap-2 border-l border-black/5 dark:border-white/5 pl-3">
             <input 
               type="text" 
               placeholder={isLoadingCanvas ? 'Loading canvas...' : 'Ask anything or create a new node...'}
               value={bottomPrompt}
               onChange={(e) => setBottomPrompt(e.target.value)}
               disabled={isLoadingCanvas}
-              className="w-full border-none outline-none text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 bg-transparent py-1.5 disabled:cursor-wait"
+              className="w-full border-none outline-none text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-550 bg-transparent py-1.5 disabled:cursor-wait"
             />
             <button 
               type="submit"
