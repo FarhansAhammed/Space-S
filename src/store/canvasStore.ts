@@ -174,6 +174,7 @@ const mapDbNodeToReactFlow = (dbNode: DbNode, messages: DbMessage[] = []): Node<
       imageUrl: dbNode.image_url || undefined,
       sourceFile: dbNode.source_file || undefined,
       createdAt: dbNode.created_at,
+      isBranchSelection: nodeType === 'branch' && dbNode.title === dbNode.content && !messages.some(m => m.role === 'assistant'),
       conversationHistory: messages.map(m => ({
         role: m.role,
         content: m.content,
@@ -522,6 +523,9 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                 ...n,
                 data: {
                   ...n.data,
+                  isBranchSelection: n.data.type === 'branch'
+                    ? (n.data.title === n.data.content && !msgs.some(m => m.role === 'assistant'))
+                    : false,
                   conversationHistory: msgs.map(m => ({
                     role: m.role,
                     content: m.content,
@@ -2252,6 +2256,11 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                     }
                   }
 
+                  // Determine branch selection state
+                  const nextIsBranchSelection = nextType === 'branch'
+                    ? (dbNode.title === dbNode.content && !conversationHistory.some(m => m.role === 'assistant'))
+                    : false;
+
                   return {
                     ...n,
                     position: nextPosition,
@@ -2272,6 +2281,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                       imageUrl: dbNode.image_url || undefined,
                       sourceFile: dbNode.source_file || undefined,
                       isLoading,
+                      isBranchSelection: nextIsBranchSelection,
                       conversationHistory,
                       justUpdated: !wasSelfEcho && !n.dragging
                     }
