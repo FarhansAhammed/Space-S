@@ -1,7 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyToken } from '@clerk/nextjs/server';
+
+async function getUserId(req: NextRequest): Promise<string | null> {
+  const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return null;
+  try {
+    const payload = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY! });
+    return payload?.sub ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
+    const userId = await getUserId(req);
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { nodes, userPrompt } = await req.json();
 
     if (!nodes || !Array.isArray(nodes)) {
@@ -12,7 +30,11 @@ export async function POST(req: NextRequest) {
     const systemPrompt = "You are synthesizing multiple ideas from a canvas board. Find connections, tensions, and emergent insights between them. Respond clearly and directly, avoiding unnecessary preambles.";
     const promptText = `Here is the content of the selected nodes:\n\n${contextText}\n\nUser synthesis request: ${userPrompt || 'Synthesize the core connections and insights from these ideas.'}`;
 
-    const apiKey = process.env.POOLSIDE_API_KEY || 'sky_8SaWPSkB.ppgZwPNoQ4d7TvlzQwd21zpirNwsd3sf';
+    const apiKey = process.env.POOLSIDE_API_KEY;
+    if (!apiKey) {
+      console.error('Missing POOLSIDE_API_KEY environment variable');
+      return NextResponse.json({ error: 'AI service configuration error' }, { status: 500 });
+    }
 
     const response = await fetch('https://inference.poolside.ai/v1/chat/completions', {
       method: 'POST',

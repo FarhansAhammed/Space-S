@@ -103,7 +103,7 @@ export const BoardCanvas = () => {
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const now = Date.now();
-    if (now - lastBroadcast.current > 30) { // ~30fps throttle
+    if (now - lastBroadcast.current > 150) { // ~6fps throttle (optimized to save Realtime messages)
       const flowCoords = screenToFlowPosition({
         x: e.clientX,
         y: e.clientY

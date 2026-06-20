@@ -1,14 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyToken } from '@clerk/nextjs/server';
+
+async function getUserId(req: NextRequest): Promise<string | null> {
+  const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return null;
+  try {
+    const payload = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY! });
+    return payload?.sub ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
+    const userId = await getUserId(req);
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { messages } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Messages array is required' }, { status: 400 });
     }
 
-    const apiKey = process.env.POOLSIDE_API_KEY || 'sky_8SaWPSkB.ppgZwPNoQ4d7TvlzQwd21zpirNwsd3sf';
+    const apiKey = process.env.POOLSIDE_API_KEY;
+    if (!apiKey) {
+      console.error('Missing POOLSIDE_API_KEY environment variable');
+      return NextResponse.json({ error: 'AI service configuration error' }, { status: 500 });
+    }
     const systemPrompt = "You are a concise thinking partner. Respond clearly and directly. Do not use unnecessary preamble.";
 
     const formattedMessages = [

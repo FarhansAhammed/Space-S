@@ -136,6 +136,7 @@ interface CanvasStore {
   triggerNodeOperation: (nodeId: string, operation: 'explain' | 'expand' | 'shorten') => Promise<void>;
   broadcastCursor: (x: number, y: number) => void;
   organizeCanvas: () => Promise<void>;
+  clerkTokenFetcher: (() => Promise<string | null>) | null;
 }
 
 // Helpers
@@ -400,6 +401,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   currentUserInfo: null,
   newlyCreatedNodeId: null,
   maxZIndex: 10,
+  clerkTokenFetcher: null,
   setNewlyCreatedNodeId: (nodeId: string | null) => set({ newlyCreatedNodeId: nodeId }),
 
   toggleTheme: () => {
@@ -625,10 +627,17 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         maxZIndex: nextZIndex
       }));
 
+      const fetcher = get().clerkTokenFetcher;
+      const token = fetcher ? await fetcher() : null;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       try {
         const response = await fetch('/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             messages: [{ role: 'user', content: prompt }]
           })
@@ -734,10 +743,17 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         maxZIndex: nextZIndex
       }));
 
+      const fetcher = get().clerkTokenFetcher;
+      const token = fetcher ? await fetcher() : null;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       try {
         const response = await fetch('/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             messages: [{ role: 'user', content: prompt }]
           })
@@ -921,10 +937,17 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
       if (type === 'note') return;
 
+      const fetcher = get().clerkTokenFetcher;
+      const token = fetcher ? await fetcher() : null;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       try {
         const response = await fetch('/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             messages: [{ role: 'user', content: prompt }]
           })
@@ -1045,10 +1068,17 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
       if (type === 'note') return;
 
+      const fetcher = get().clerkTokenFetcher;
+      const token = fetcher ? await fetcher() : null;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       try {
         const response = await fetch('/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             messages: [{ role: 'user', content: prompt }]
           })
@@ -1166,10 +1196,17 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       });
     }
 
+    const fetcher = get().clerkTokenFetcher;
+    const token = fetcher ? await fetcher() : null;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           messages: updatedHistory
         })
@@ -1448,10 +1485,17 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }).eq('id', nodeId);
     }
 
+    const fetcher = get().clerkTokenFetcher;
+    const token = fetcher ? await fetcher() : null;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           messages: [{ role: 'user', content: prompt }]
         })
@@ -1707,10 +1751,17 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         };
       });
 
+      const fetcher = get().clerkTokenFetcher;
+      const token = fetcher ? await fetcher() : null;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       try {
         const response = await fetch('/api/merge', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             nodes: selectedNodes.map(n => ({ title: n.data.title, content: n.data.content })),
             userPrompt
@@ -1827,10 +1878,17 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         maxZIndex: nextZIndex
       }));
 
+      const fetcher = get().clerkTokenFetcher;
+      const token = fetcher ? await fetcher() : null;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       try {
         const response = await fetch('/api/merge', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             nodes: selectedNodes.map(n => ({ title: n.data.title, content: n.data.content })),
             userPrompt
@@ -2059,7 +2117,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       otherUsersCursors: {},
       userRole: null,
       currentUserInfo: userInfo || null,
-      isLoadingCanvas: true
+      isLoadingCanvas: true,
+      clerkTokenFetcher: getToken
     });
 
     if (canvasId === 'sample-board' || canvasId === 'default-board') {
