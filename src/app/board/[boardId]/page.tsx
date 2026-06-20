@@ -38,11 +38,16 @@ export default function BoardPage() {
       const username = user.username || user.firstName || 'User';
       const avatarColor = getAvatarColor(userId);
 
-      subscribeToCanvas(boardId, () => getTokenRef.current({ template: 'supabase' }), {
-        userId,
-        username,
-        avatarColor
-      });
+      subscribeToCanvas(
+        boardId, 
+        () => getTokenRef.current({ template: 'supabase' }), 
+        {
+          userId,
+          username,
+          avatarColor
+        },
+        () => getTokenRef.current()
+      );
     }
     return () => {
       unsubscribeFromCanvas();

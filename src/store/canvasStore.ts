@@ -125,7 +125,8 @@ interface CanvasStore {
   subscribeToCanvas: (
     canvasId: string, 
     getToken: () => Promise<string | null>,
-    userInfo?: { userId: string; username: string; avatarColor: string }
+    userInfo?: { userId: string; username: string; avatarColor: string },
+    getRawToken?: () => Promise<string | null>
   ) => Promise<void>;
   unsubscribeFromCanvas: () => void;
   queuePositionUpdate: (nodeId: string, x: number, y: number) => void;
@@ -2109,7 +2110,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   subscribeToCanvas: async (
     canvasId: string, 
     getToken: () => Promise<string | null>,
-    userInfo?: { userId: string; username: string; avatarColor: string }
+    userInfo?: { userId: string; username: string; avatarColor: string },
+    getRawToken?: () => Promise<string | null>
   ) => {
     const supabase = getSupabaseClient(getToken);
 
@@ -2136,7 +2138,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       userRole: null,
       currentUserInfo: userInfo || null,
       isLoadingCanvas: true,
-      clerkTokenFetcher: getToken
+      clerkTokenFetcher: getRawToken || getToken
     });
 
     if (canvasId === 'sample-board' || canvasId === 'default-board') {
