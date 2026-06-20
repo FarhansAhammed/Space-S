@@ -4,11 +4,15 @@ import { verifyToken } from '@clerk/nextjs/server';
 async function getUserId(req: NextRequest): Promise<string | null> {
   const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!token) return null;
+  if (!token) {
+    console.warn('getUserId: Authorization header token is missing');
+    return null;
+  }
   try {
     const payload = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY! });
     return payload?.sub ?? null;
-  } catch {
+  } catch (err) {
+    console.error('getUserId: Clerk token verification failed:', err);
     return null;
   }
 }
