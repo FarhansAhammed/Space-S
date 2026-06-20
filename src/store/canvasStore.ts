@@ -843,7 +843,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     let childId = `node_${Date.now()}`;
 
     if (boardId && boardId !== 'sample-board' && supabase) {
-      const dbType = ['llm', 'branch', 'merge', 'image', 'doc'].includes(type) ? type : 'llm';
+      const dbType = ['llm', 'branch', 'merge', 'image', 'doc', 'question', 'note'].includes(type) ? type : 'llm';
 
       const { data: dbNode, error: nodeError } = await supabase
         .from('nodes')
@@ -1353,7 +1353,25 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
               };
 
               set(state => {
-                const updatedNodes = computeGenerations([...state.nodes, childNode]);
+                const exists = state.nodes.some(n => n.id === childId);
+                let nextNodes;
+                if (exists) {
+                  nextNodes = state.nodes.map(n => {
+                    if (n.id === childId) {
+                      return {
+                        ...n,
+                        data: {
+                          ...n.data,
+                          isBranchSelection: true
+                        }
+                      };
+                    }
+                    return n;
+                  });
+                } else {
+                  nextNodes = [...state.nodes, childNode];
+                }
+                const updatedNodes = computeGenerations(nextNodes);
                 const edgeId = dbEdge ? dbEdge.id : `edge_${parentNodeId}_to_${childId}`;
                 const newLocalEdge = {
                   id: edgeId,
@@ -2215,6 +2233,23 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                   const nextHeight = n.dragging ? (n.height ?? undefined) : (dbNode.is_collapsed ? undefined : (dbNode.height ?? undefined));
                   const nextPosition = n.dragging ? n.position : { x: dbNode.position_x, y: dbNode.position_y };
 
+                  // Handle type mapping (keep local type if it was question/note and db returned llm)
+                  let nextType = dbNode.type as NodeType;
+                  if (nextType === 'llm' && (n.data.type === 'question' || n.data.type === 'note')) {
+                    nextType = n.data.type;
+                  }
+
+                  // Prevent overwriting local content with empty content if local content exists,
+                  // or if the node is currently loading/streaming.
+                  let nextContent = n.data.content;
+                  if (!isLoading) {
+                    if (dbNode.content !== undefined) {
+                      if (dbNode.content !== '' || n.data.content === '') {
+                        nextContent = dbNode.content;
+                      }
+                    }
+                  }
+
                   return {
                     ...n,
                     position: nextPosition,
@@ -2227,9 +2262,9 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                     },
                     data: {
                       ...n.data,
-                      type: dbNode.type as NodeType,
+                      type: nextType,
                       title: dbNode.title,
-                      content: dbNode.content,
+                      content: nextContent,
                       isCollapsed: dbNode.is_collapsed,
                       parentNodeId: dbNode.parent_node_id || undefined,
                       imageUrl: dbNode.image_url || undefined,
