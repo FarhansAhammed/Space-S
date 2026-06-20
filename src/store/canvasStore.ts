@@ -1160,6 +1160,9 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     const node = get().nodes.find(n => n.id === nodeId);
     if (!node || node.data.isLoading) return;
 
+    const previousContent = node.data.content || '';
+    const questionHeader = `\n\n---\n**Q:** ${prompt}\n\n**A:** `;
+
     const updatedHistory = [
       ...node.data.conversationHistory,
       {
@@ -1236,7 +1239,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                   ...n,
                   data: {
                     ...n.data,
-                    content: content
+                    content: previousContent + questionHeader + content
                   }
                 };
               }
@@ -1254,7 +1257,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         });
 
         await supabase.from('nodes').update({
-          content
+          content: previousContent + questionHeader + content
         }).eq('id', nodeId);
       }
 
@@ -1266,6 +1269,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
               data: {
                 ...n.data,
                 isLoading: false,
+                content: previousContent + questionHeader + content,
                 conversationHistory: [
                   ...updatedHistory,
                   { role: 'assistant', content }
