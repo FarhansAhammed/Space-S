@@ -44,10 +44,14 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
 
   const rfStyle = useCanvasStore(state => state.nodes.find(n => n.id === id)?.style);
   
+  // Local state for size during active resize dragging to ensure smooth performance without canvas re-renders
+  const [localSize, setLocalSize] = useState<{ width: number; height: number | undefined } | null>(null);
+
   // Compute a text scale factor proportional to the node's current width
   // Base width is 260px — scale grows up to 2× at ~520px+
   const DEFAULT_WIDTH = 260;
-  const nodeWidth = (rfStyle?.width as number | undefined) ?? DEFAULT_WIDTH;
+  const nodeWidth = localSize?.width ?? (rfStyle?.width as number | undefined) ?? DEFAULT_WIDTH;
+  const nodeHeight = data.isCollapsed ? undefined : (localSize?.height ?? (rfStyle?.height as number | undefined));
   const textScale = Math.min(2, Math.max(1, nodeWidth / DEFAULT_WIDTH));
   
   const [showPromptInput, setShowPromptInput] = useState(false);
@@ -142,8 +146,8 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
       onClick={() => selectNode(id)}
       className={`relative rounded-2xl border bg-white dark:bg-[#181716] shadow-node dark:shadow-none transition-all duration-200 cursor-pointer overflow-visible flex flex-col ${typeStyle.border} ${selected ? 'shadow-md scale-[1.01]' : 'hover:shadow-md'} ${data.justUpdated ? 'ring-2 ring-indigo-500 dark:ring-indigo-400 animate-pulse border-indigo-500 dark:border-indigo-400' : ''}`}
       style={{
-        width: rfStyle?.width ?? 260,
-        height: data.isCollapsed ? undefined : (rfStyle?.height ?? undefined),
+        width: nodeWidth,
+        height: nodeHeight ?? undefined,
       }}
     >
       {/* React Flow Handles - Styled as clean connect circles on borders */}
@@ -222,7 +226,7 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
  
           {/* Node content area */}
           <div
-            className={`nodrag no-canvas-wheel overflow-y-auto leading-relaxed text-zinc-600 dark:text-zinc-300 pr-1 select-text ${rfStyle?.height ? 'flex-1' : 'max-h-48'}`}
+            className={`nodrag no-canvas-wheel overflow-y-auto break-words whitespace-pre-wrap leading-relaxed text-zinc-600 dark:text-zinc-300 pr-1 select-text ${rfStyle?.height ? 'flex-1' : 'max-h-48'}`}
             style={{ fontSize: `${Math.round(11 * textScale)}px` }}
           >
             {data.isLoading ? (
@@ -360,9 +364,11 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
           minWidth={200}
           minHeight={120}
           onResize={(event, params) => {
-            updateNodeSizeLocally(id, params.width, params.height);
+            setLocalSize({ width: params.width, height: params.height });
           }}
           onResizeEnd={(event, params) => {
+            setLocalSize(null);
+            updateNodeSizeLocally(id, params.width, params.height);
             updateNodeSize(id, params.width, params.height);
           }}
           className="absolute bottom-[-6px] right-[-6px] cursor-se-resize select-none"
@@ -436,8 +442,8 @@ const renderMarkdown = (text: string, textScale = 1): React.ReactNode => {
         // Unordered lists
         if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
           return (
-            <ul key={idx} className="list-disc pl-3">
-              <li style={{ fontSize: base(11) }} className="text-zinc-600 dark:text-zinc-300">{parseInlineStyles(trimmed.slice(2))}</li>
+            <ul key={idx} className="list-disc pl-4 m-0">
+              <li style={{ fontSize: base(11) }} className="text-zinc-650 dark:text-zinc-300 break-words whitespace-pre-wrap">{parseInlineStyles(trimmed.slice(2))}</li>
             </ul>
           );
         }
@@ -446,8 +452,8 @@ const renderMarkdown = (text: string, textScale = 1): React.ReactNode => {
         const numListMatch = trimmed.match(/^(\d+)\.\s(.*)/);
         if (numListMatch) {
           return (
-            <ol key={idx} className="list-decimal pl-3" start={parseInt(numListMatch[1], 10)}>
-              <li style={{ fontSize: base(11) }} className="text-zinc-600 dark:text-zinc-300">{parseInlineStyles(numListMatch[2])}</li>
+            <ol key={idx} className="list-decimal pl-4 m-0" start={parseInt(numListMatch[1], 10)}>
+              <li style={{ fontSize: base(11) }} className="text-zinc-650 dark:text-zinc-300 break-words whitespace-pre-wrap">{parseInlineStyles(numListMatch[2])}</li>
             </ol>
           );
         }
