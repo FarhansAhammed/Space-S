@@ -1,14 +1,17 @@
 "use client";
 
 import React from 'react';
-import { Sparkles, GitBranch, Link2, Users, FileText } from 'lucide-react';
 
 interface Feature {
   title: string;
   body: string;
   badge?: string;
   badgeColor?: string;
-  mockup: React.ReactNode;
+  mediaType: 'image' | 'video';
+  mediaSrc: string;
+  mediaAlt: string;
+  objectFit: 'cover' | 'contain';
+  urlPath: string;
 }
 
 export default function FeaturesSection() {
@@ -18,82 +21,40 @@ export default function FeaturesSection() {
       body: "Type a prompt in the central chat box. Spaces creates a rich AI answer as a floating card right there. No more linear threads. Your ideas appear spatially, ready to be arranged and expanded on your AI thinking workspace.",
       badge: "AI POWERED",
       badgeColor: "bg-[#7c4dff]/10 text-[#7c4dff] dark:text-[#a080ff]",
-      mockup: (
-        <div className="flex flex-col gap-3 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/60 dark:border-zinc-800 shadow-sm w-full max-w-sm">
-          <div className="flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-850 pb-2">
-            <Sparkles className="w-4 h-4 text-[#7c4dff]" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Prompt Node</span>
-          </div>
-          <p className="text-[10px] font-semibold text-zinc-800 dark:text-zinc-200">"Explain the basics of photosynthesis..."</p>
-          <div className="bg-[#f8f5f0] dark:bg-zinc-950 p-2.5 rounded-lg border border-zinc-200/30">
-            <p className="text-[9px] text-[#1c1b18]/70 dark:text-[#f3f0ea]/75 leading-relaxed">
-              1. Absorption of light by chlorophyll.<br />2. Conversion of light energy into chemical energy...
-            </p>
-          </div>
-        </div>
-      )
+      mediaType: 'image',
+      mediaSrc: '/chatbox.png',
+      mediaAlt: 'Prompt to Node Canvas mockup',
+      objectFit: 'cover',
+      urlPath: 'spaces.ai/canvas'
     },
     {
       title: "Branch From Any Idea",
       body: "Select any part of an AI response. Hit Branch. Spaces splits that sub idea into its own connected node, drilling into one branch without losing the context of where it came from. True non linear AI conversation, not a chat restart.",
-      mockup: (
-        <div className="flex items-center gap-4 relative py-4 w-full max-w-sm justify-center">
-          <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/60 dark:border-zinc-800 shadow-sm text-center">
-            <span className="text-[9px] text-zinc-400 block mb-0.5">Parent Node</span>
-            <span className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200">Quantum Computing</span>
-          </div>
-          <div className="w-10 h-0.5 border-t-2 border-dashed border-[#7c4dff] relative">
-            <GitBranch className="w-3.5 h-3.5 text-[#7c4dff] absolute -top-2 left-3 bg-[#fdfcf9] dark:bg-[#0d0c0b] rounded-full p-0.5" />
-          </div>
-          <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-[#7c4dff]/40 dark:border-[#a080ff]/30 shadow-md text-center">
-            <span className="text-[8px] bg-[#7c4dff]/15 text-[#7c4dff] dark:text-[#a080ff] px-1.5 py-0.5 rounded font-bold block mb-1">BRANCH</span>
-            <span className="text-[10px] font-bold text-[#0d1233] dark:text-zinc-50">Qubits & Superposition</span>
-          </div>
-        </div>
-      )
+      mediaType: 'video',
+      mediaSrc: '/new_node.mp4',
+      mediaAlt: 'Branching node canvas demo',
+      objectFit: 'cover',
+      urlPath: 'spaces.ai/branch'
     },
     {
       title: "Synthesize Across Topics",
       body: "Draw a connection between two completely unrelated nodes and tap Synthesize. The AI reads both and generates a new node that finds real connections between them. This is AI knowledge visualization working in your favor, with unexpected insight automatically surfaced.",
       badge: "✦ MOST UNIQUE",
       badgeColor: "bg-red-500/10 text-red-500 dark:text-red-400",
-      mockup: (
-        <div className="relative w-full max-w-sm h-36 flex items-center justify-between px-4">
-          <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200/50 shadow-sm text-[9px] font-bold">Chaos Theory</div>
-          <div className="absolute left-[50%] -translate-x-[50%] top-1/2 -translate-y-1/2 p-3 bg-white dark:bg-zinc-900 rounded-xl border border-[#7c4dff] shadow-lg flex flex-col items-center max-w-[120px] text-center z-10">
-            <Link2 className="w-3.5 h-3.5 text-[#7c4dff] mb-1" />
-            <span className="text-[8px] font-bold text-[#7c4dff] uppercase tracking-wider block">Bridge</span>
-            <p className="text-[8px] text-zinc-500 leading-snug">Sensitive dependency in global markets</p>
-          </div>
-          <div className="p-2.5 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200/50 shadow-sm text-[9px] font-bold">Stock Markets</div>
-          <svg className="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 60 70 Q 150 40, 240 70" fill="none" stroke="#7c4dff" strokeWidth="1.5" strokeDasharray="4 3" />
-          </svg>
-        </div>
-      )
+      mediaType: 'image',
+      mediaSrc: '/merge.png',
+      mediaAlt: 'Synthesize across topics diagram',
+      objectFit: 'contain',
+      urlPath: 'spaces.ai/synthesize'
     },
     {
       title: "Real Time Collaborative Canvas",
       body: "Invite your team via a single link. Each person joins the collaborative AI brainstorming board with their own colored cursor and username. Add nodes, branch ideas, and synthesize together simultaneously. The canvas is the room.",
-      mockup: (
-        <div className="flex flex-col gap-2 p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/60 dark:border-zinc-800 shadow-sm w-full max-w-sm relative overflow-hidden h-28">
-          <div className="flex gap-1.5 items-center">
-            <Users className="w-3.5 h-3.5 text-zinc-400" />
-            <span className="text-[9px] text-zinc-400 font-bold uppercase">Multiplayer Canvas</span>
-          </div>
-          <div className="border border-dashed border-zinc-200 dark:border-zinc-800 p-2 rounded text-[9px] text-zinc-500">
-            Designing product roadmap...
-          </div>
-          <div className="absolute top-[35px] right-[40px] flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-[8px] bg-zinc-900 text-white px-1 py-0.5 rounded shadow">Sarah</span>
-          </div>
-          <div className="absolute bottom-[15px] left-[60px] flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-[#ff9100]" />
-            <span className="text-[8px] bg-zinc-900 text-white px-1 py-0.5 rounded shadow">Alex</span>
-          </div>
-        </div>
-      )
+      mediaType: 'video',
+      mediaSrc: '/colab.mp4',
+      mediaAlt: 'Real time collaborative canvas demo',
+      objectFit: 'contain',
+      urlPath: 'spaces.ai/collaborate'
     }
   ];
 
@@ -114,7 +75,7 @@ export default function FeaturesSection() {
           return (
             <div
               key={feature.title}
-              className={`flex flex-col lg:flex-row items-center gap-12 ${
+              className={`flex flex-col lg:flex-row items-center gap-12 group ${
                 isEven ? 'lg:flex-row' : 'lg:flex-row-reverse'
               }`}
             >
@@ -134,10 +95,56 @@ export default function FeaturesSection() {
               </div>
 
               {/* Mockup Visual */}
-              <div className="w-full lg:w-1/2 flex items-center justify-center bg-[#f8f5f0] dark:bg-[#121110] rounded-2xl border border-zinc-200/40 dark:border-zinc-800/60 p-8 min-h-[180px] shadow-sm relative overflow-hidden transition-colors duration-200">
-                <div className="absolute inset-0 bg-[radial-gradient(#e4dfd5_1px,transparent_1px)] dark:bg-[radial-gradient(#2d2c29_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none" />
-                <div className="relative z-10 w-full flex justify-center">
-                  {feature.mockup}
+              <div className="w-full lg:w-1/2 aspect-[16/10] bg-[#f8f5f0] dark:bg-[#121110] rounded-2xl border border-zinc-200/40 dark:border-zinc-800/60 shadow-sm relative overflow-hidden transition-all duration-500 flex items-center justify-center p-4 sm:p-6 group-hover:border-zinc-300 dark:group-hover:border-zinc-700">
+                {/* Dotted grid canvas background */}
+                <div className="absolute inset-0 bg-[radial-gradient(#e4dfd5_1px,transparent_1px)] dark:bg-[radial-gradient(#2d2c29_1px,transparent_1px)] [background-size:16px_16px] opacity-45 pointer-events-none" />
+                
+                {/* Mock Browser Window Container */}
+                <div className="relative z-10 w-full h-full transform transition-all duration-500 ease-out group-hover:-translate-y-1.5 group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)] dark:group-hover:shadow-[0_20px_40px_rgba(0,0,0,0.45)]">
+                  <div className="w-full h-full flex flex-col rounded-xl overflow-hidden border border-black/10 dark:border-white/10 bg-white dark:bg-zinc-900 shadow-md">
+                    {/* Browser Header */}
+                    <div className="h-7 min-h-[28px] flex items-center justify-between px-3 bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 select-none">
+                      {/* Window Controls */}
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f56]" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#27c93f]" />
+                      </div>
+                      {/* Address Bar */}
+                      <div className="flex-1 max-w-[200px] mx-auto">
+                        <div className="h-[18px] bg-white dark:bg-zinc-950 rounded border border-zinc-200/60 dark:border-zinc-800/80 flex items-center justify-center text-[9px] text-zinc-400 dark:text-zinc-500 font-mono tracking-tight px-3 py-0.5 truncate select-all">
+                          {feature.urlPath}
+                        </div>
+                      </div>
+                      {/* Space alignment helper */}
+                      <div className="w-[48px]" />
+                    </div>
+                    
+                    {/* Browser Content Area */}
+                    <div className="flex-1 w-full h-full relative overflow-hidden bg-[#f8f5f0]">
+                      {feature.mediaType === 'image' ? (
+                        <img
+                          src={feature.mediaSrc}
+                          alt={feature.mediaAlt}
+                          className={`w-full h-full rounded-b-xl shadow-inner ${
+                            feature.objectFit === 'cover' ? 'object-cover' : 'object-contain'
+                          }`}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <video
+                          src={feature.mediaSrc}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className={`w-full h-full rounded-b-xl shadow-inner ${
+                            feature.objectFit === 'cover' ? 'object-cover' : 'object-contain'
+                          }`}
+                        />
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
