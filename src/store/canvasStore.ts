@@ -1915,7 +1915,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           generation: childGen,
           isLoading: true,
           isCollapsed: false,
-          conversationHistory: []
+          conversationHistory: [],
+          createdAt: dbNode.created_at || new Date().toISOString()
         }
       };
 
@@ -2050,7 +2051,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           generation: childGen,
           isLoading: true,
           isCollapsed: false,
-          conversationHistory: []
+          conversationHistory: [],
+          createdAt: new Date().toISOString()
         }
       };
 
@@ -2807,7 +2809,8 @@ function getSampleBoardNodes(): Node<NodeData>[] {
         conversationHistory: [
           { role: 'user', content: 'What is quantum computing?' },
           { role: 'assistant', content: 'Quantum computing uses qubits that can exist in multiple states simultaneously (superposition)...' }
-        ]
+        ],
+        createdAt: '2026-06-20T10:00:00.000Z'
       }
     },
     {
@@ -2822,7 +2825,8 @@ function getSampleBoardNodes(): Node<NodeData>[] {
         generation: 0,
         isLoading: false,
         isCollapsed: false,
-        conversationHistory: []
+        conversationHistory: [],
+        createdAt: '2026-06-20T10:01:00.000Z'
       }
     },
     {
@@ -2836,7 +2840,8 @@ function getSampleBoardNodes(): Node<NodeData>[] {
         generation: 1, // Gen 1 (Child of n1)
         isLoading: false,
         isCollapsed: false,
-        conversationHistory: []
+        conversationHistory: [],
+        createdAt: '2026-06-20T10:02:00.000Z'
       }
     },
     {
@@ -2850,7 +2855,8 @@ function getSampleBoardNodes(): Node<NodeData>[] {
         generation: 1, // Gen 1 (Child of n1 & n2)
         isLoading: false,
         isCollapsed: false,
-        conversationHistory: []
+        conversationHistory: [],
+        createdAt: '2026-06-20T10:03:00.000Z'
       }
     },
     {
@@ -2866,7 +2872,8 @@ function getSampleBoardNodes(): Node<NodeData>[] {
         generation: 2, // Gen 2 (Child of n3)
         isLoading: false,
         isCollapsed: false,
-        conversationHistory: []
+        conversationHistory: [],
+        createdAt: '2026-06-20T10:04:00.000Z'
       }
     },
     {
@@ -2880,7 +2887,8 @@ function getSampleBoardNodes(): Node<NodeData>[] {
         generation: 2, // Gen 2 (Child of n4)
         isLoading: false,
         isCollapsed: false,
-        conversationHistory: []
+        conversationHistory: [],
+        createdAt: '2026-06-20T10:05:00.000Z'
       }
     }
   ];

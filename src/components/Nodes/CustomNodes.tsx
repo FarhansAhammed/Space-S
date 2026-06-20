@@ -1,7 +1,7 @@
 "use client";
  
 import React, { useState } from 'react';
-import { Handle, Position, NodeProps, NodeResizeControl } from 'reactflow';
+import { Handle, Position, Node, NodeProps, NodeResizeControl } from 'reactflow';
 import { 
   Bot, 
   FileText, 
@@ -34,14 +34,30 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
   const nodes = useCanvasStore(state => state.nodes);
 
   const nodeIndex = React.useMemo(() => {
+    const getCreationTime = (node: Node<NodeData>): number => {
+      const dateStr = node.data.createdAt;
+      if (dateStr) {
+        const parsed = new Date(dateStr).getTime();
+        if (!isNaN(parsed)) return parsed;
+      }
+      // Fallback: Try to parse timestamp from id if it starts with 'node_' followed by digits
+      if (node.id && node.id.startsWith('node_')) {
+        const parts = node.id.split('_');
+        const ts = parseInt(parts[1], 10);
+        if (!isNaN(ts)) return ts;
+      }
+      return 0;
+    };
+
     const sorted = [...nodes].sort((a, b) => {
-      const timeA = a.data.createdAt ? new Date(a.data.createdAt).getTime() : 0;
-      const timeB = b.data.createdAt ? new Date(b.data.createdAt).getTime() : 0;
+      const timeA = getCreationTime(a);
+      const timeB = getCreationTime(b);
       if (timeA !== timeB) return timeA - timeB;
-      return a.id.localeCompare(b.id);
+      return (a.id || '').localeCompare(b.id || '');
     });
     return sorted.findIndex(n => n.id === id) + 1;
   }, [nodes, id]);
+
 
   const rfStyle = useCanvasStore(state => state.nodes.find(n => n.id === id)?.style);
   
