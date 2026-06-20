@@ -40,6 +40,7 @@ export const BoardCanvas = () => {
     organizeCanvas
   } = useCanvasStore();
  
+  const inputRef = React.useRef<HTMLInputElement>(null);
   const [bottomPrompt, setBottomPrompt] = useState('');
   const [showNodeList, setShowNodeList] = useState(false);
   const hasNodes = nodes.length > 0;
@@ -113,6 +114,12 @@ export const BoardCanvas = () => {
     }
   };
 
+  const handlePaneClick = () => {
+    if (!hasNodes && inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+ 
   // Map custom node types
   const nodeTypes = useMemo(() => ({
     llmNode: CustomNode
@@ -162,6 +169,7 @@ export const BoardCanvas = () => {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         nodeTypes={nodeTypes}
+        onPaneClick={handlePaneClick}
         nodesDraggable={true}
         nodesConnectable={true}
         multiSelectionKeyCode="Control"
@@ -427,12 +435,13 @@ export const BoardCanvas = () => {
   
           <div className="flex-1 flex items-center gap-2 border-l border-black/5 dark:border-white/5 pl-3">
             <input 
+              ref={inputRef}
               type="text" 
               placeholder={isLoadingCanvas ? 'Loading canvas...' : 'Ask anything or create a new node...'}
               value={bottomPrompt}
               onChange={(e) => setBottomPrompt(e.target.value)}
               disabled={isLoadingCanvas}
-              className="w-full border-none outline-none text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-550 bg-transparent py-1.5 disabled:cursor-wait"
+              className="w-full border-none outline-none text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 bg-transparent py-1.5 disabled:cursor-wait"
             />
             <button 
               type="submit"

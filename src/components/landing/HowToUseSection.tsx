@@ -14,8 +14,8 @@ export default function HowToUseSection() {
     {
       num: "2",
       icon: <MessageSquare className="w-5 h-5 text-[#7c4dff]" />,
-      title: "Ask a question anywhere",
-      body: "Click anywhere on the canvas and type a question, just like texting. The AI answers you, and that answer appears as a card right where you clicked."
+      title: "Ask a question in the center",
+      body: "Type your first question in the central chat box, just like texting. The AI answers you, and that answer appears as a card in the middle of your board."
     },
     {
       num: "3",

@@ -15,7 +15,7 @@ export default function FeaturesSection() {
   const features: Feature[] = [
     {
       title: "Prompt to Node Canvas",
-      body: "Click anywhere on the blank canvas and type a prompt. Spaces creates a rich AI answer as a floating card right there. No more linear threads. Your ideas appear spatially, ready to be arranged and expanded on your AI thinking workspace.",
+      body: "Type a prompt in the central chat box. Spaces creates a rich AI answer as a floating card right there. No more linear threads. Your ideas appear spatially, ready to be arranged and expanded on your AI thinking workspace.",
       badge: "AI POWERED",
       badgeColor: "bg-[#7c4dff]/10 text-[#7c4dff] dark:text-[#a080ff]",
       mockup: (

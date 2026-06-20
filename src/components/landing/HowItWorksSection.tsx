@@ -24,10 +24,10 @@ export default function HowItWorksSection() {
           </span>
           <div className="relative z-10">
             <h3 className="font-space-grotesk font-bold text-lg text-[#0d1233] dark:text-zinc-50 mb-3">
-              Click anywhere. Ask anything.
+              Ask anything. Start your canvas.
             </h3>
             <p className="font-inter text-xs text-[#1c1b18]/65 dark:text-[#f3f0ea]/65 leading-relaxed">
-              The canvas is yours. Click an empty spot and type your question. Your AI response appears right there as a node, exactly where you placed it. Not in a thread. On a board. Spaces is the ultimate <strong className="font-medium text-[#7c4dff] dark:text-[#a080ff]">infinite canvas AI tool</strong>.
+              The canvas is yours. Type your question in the central chat box to create your first node. Your AI response appears right there on the board. Not in a thread. Spaces is the ultimate <strong className="font-medium text-[#7c4dff] dark:text-[#a080ff]">infinite canvas AI tool</strong>.
             </p>
           </div>
         </div>
