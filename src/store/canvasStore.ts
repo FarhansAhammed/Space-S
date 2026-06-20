@@ -15,8 +15,14 @@ import {
 } from 'reactflow';
 import { getSupabaseClient } from '@/lib/supabaseClient';
 import { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
+import { extractContextSummary } from '@/lib/extractContext';
 
 export type NodeType = 'llm' | 'branch' | 'merge' | 'image' | 'doc' | 'question' | 'note';
+
+export interface ContextEntry {
+  nodeId: string;
+  summary: string;
+}
 
 export interface NodeData {
   type: NodeType;
@@ -41,6 +47,8 @@ export interface NodeData {
   isBranchSelection?: boolean;
   justUpdated?: boolean;
   createdAt?: string;
+  contextSummary?: string | null;
+  contextChain?: ContextEntry[];
 }
 
 interface DbNode {
@@ -58,6 +66,8 @@ interface DbNode {
   image_url?: string | null;
   source_file?: string | null;
   created_at?: string;
+  context_summary?: string | null;
+  context_chain?: any;
 }
 
 interface DbEdge {
@@ -135,6 +145,7 @@ interface CanvasStore {
   setNewlyCreatedNodeId: (nodeId: string | null) => void;
   addSelectionBranchNode: (parentNodeId: string, selectedText: string) => void;
   triggerNodeOperation: (nodeId: string, operation: 'explain' | 'expand' | 'shorten') => Promise<void>;
+  updateNodeContextSummary: (nodeId: string, summary: string) => Promise<void>;
   broadcastCursor: (x: number, y: number) => void;
   organizeCanvas: () => Promise<void>;
   clerkTokenFetcher: (() => Promise<string | null>) | null;
@@ -149,6 +160,55 @@ const getEdgeColorForGen = (gen: number) => {
     case 4: return '#ff1744'; // Rose / Great-Grandchild -> GGreat-Grandchild
     default: return '#607d8b'; // Slate Gray / Deep gen
   }
+};
+
+const buildContextAwareSystemPrompt = (
+  contextChain: ContextEntry[],
+  selectedText: string
+): string => {
+  if (!contextChain || contextChain.length === 0) {
+    return "You are a concise thinking partner. Respond clearly and directly. Do not use unnecessary preamble.";
+  }
+
+  const contextDescription = contextChain
+    .map((entry, i) => {
+      if (i === contextChain.length - 1) {
+        return `Direct parent context: ${entry.summary}`;
+      }
+      return `Ancestor context (${contextChain.length - 1 - i} level up): ${entry.summary}`;
+    })
+    .join("\n");
+
+  const wordCount = selectedText.trim().split(/\s+/).length;
+
+  if (wordCount > 8) {
+    return `You are a concise thinking partner operating inside a specific knowledge context.
+
+CONTEXT INHERITED FROM PARENT NODES:
+${contextDescription}
+
+Note: this query was selected from content about the above topic. Answer the query as stated, using the context only if relevant. Respond clearly and directly. Do not use unnecessary preamble.`;
+  }
+
+  return `You are a concise thinking partner operating inside a specific knowledge context.
+
+CONTEXT INHERITED FROM PARENT NODES:
+${contextDescription}
+
+CRITICAL INSTRUCTION: The user has selected the term "${selectedText}" from content 
+about the above topic. Your response MUST interpret "${selectedText}" within this 
+specific context, NOT in its general everyday meaning.
+
+For example: if the context is about computer networking and the user selected 
+"physical", answer about the Physical Layer (Layer 1) of the OSI model — not about 
+physical matter, physical fitness, or any other meaning of the word.
+
+If the selected term has a specific technical meaning within the inherited context, 
+use that meaning exclusively. If the term appears in the context's key entities list, 
+anchor your answer to that exact usage.
+
+Respond clearly and directly. Start your answer with the term defined in context, 
+then expand. Do not use unnecessary preamble. Do not ask for clarification.`;
 };
 
 const mapDbNodeToReactFlow = (dbNode: DbNode, messages: DbMessage[] = []): Node<NodeData> => {
@@ -183,7 +243,9 @@ const mapDbNodeToReactFlow = (dbNode: DbNode, messages: DbMessage[] = []): Node<
           username: m.sender.username,
           avatarColor: m.sender.avatar_color
         } : null
-      }))
+      })),
+      contextSummary: dbNode.context_summary || null,
+      contextChain: dbNode.context_chain || []
     }
   };
 };
@@ -405,6 +467,25 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   maxZIndex: 10,
   clerkTokenFetcher: null,
   setNewlyCreatedNodeId: (nodeId: string | null) => set({ newlyCreatedNodeId: nodeId }),
+
+  updateNodeContextSummary: async (nodeId: string, summary: string) => {
+    set(state => ({
+      nodes: state.nodes.map(n =>
+        n.id === nodeId
+          ? { ...n, data: { ...n.data, contextSummary: summary } }
+          : n
+      )
+    }));
+
+    const boardId = get().boardId;
+    const supabase = get().supabaseClient;
+    if (boardId && boardId !== 'sample-board' && supabase) {
+      await supabase
+        .from('nodes')
+        .update({ context_summary: summary })
+        .eq('id', nodeId);
+    }
+  },
 
   toggleTheme: () => {
     set(state => ({
@@ -674,15 +755,28 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           }
         }
 
+        // Extract context summary for the root search node
+        let extractedSummary: string | null = null;
+        try {
+          if (content.trim().length >= 60) {
+            extractedSummary = await extractContextSummary(content, prompt, token);
+          }
+        } catch (e) {
+          console.error('Failed to extract context summary for search node:', e);
+        }
+
         await supabase.from('node_messages').insert({
           node_id: nodeId,
           role: 'assistant',
           content
         });
 
-        await supabase.from('nodes').update({
-          content
-        }).eq('id', nodeId);
+        const updateData: any = { content };
+        if (extractedSummary) {
+          updateData.context_summary = extractedSummary;
+        }
+
+        await supabase.from('nodes').update(updateData).eq('id', nodeId);
 
         set(state => ({
           nodes: state.nodes.map(n => {
@@ -692,6 +786,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                 data: {
                   ...n.data,
                   isLoading: false,
+                  contextSummary: extractedSummary || n.data.contextSummary,
                   conversationHistory: [
                     ...n.data.conversationHistory,
                     { role: 'assistant', content }
@@ -1211,12 +1306,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const systemPrompt = buildContextAwareSystemPrompt(node.data.contextChain || [], '');
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          messages: updatedHistory
+          messages: updatedHistory,
+          systemPrompt
         })
       });
 
@@ -1249,6 +1347,17 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         }
       }
 
+      // Extract updated context summary
+      let extractedSummary: string | null = null;
+      try {
+        const fullContent = previousContent + questionHeader + content;
+        if (fullContent.trim().length >= 60) {
+          extractedSummary = await extractContextSummary(fullContent, node.data.title, token);
+        }
+      } catch (e) {
+        console.error('Failed to extract context summary for continue conversation:', e);
+      }
+
       if (boardId && boardId !== 'sample-board' && supabase) {
         await supabase.from('node_messages').insert({
           node_id: nodeId,
@@ -1256,9 +1365,12 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           content
         });
 
-        await supabase.from('nodes').update({
-          content: previousContent + questionHeader + content
-        }).eq('id', nodeId);
+        const updateData: any = { content: previousContent + questionHeader + content };
+        if (extractedSummary) {
+          updateData.context_summary = extractedSummary;
+        }
+
+        await supabase.from('nodes').update(updateData).eq('id', nodeId);
       }
 
       set(state => ({
@@ -1270,6 +1382,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                 ...n.data,
                 isLoading: false,
                 content: previousContent + questionHeader + content,
+                contextSummary: extractedSummary || n.data.contextSummary,
                 conversationHistory: [
                   ...updatedHistory,
                   { role: 'assistant', content }
@@ -1312,6 +1425,35 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       y: parentNode.position.y + (Math.random() - 0.5) * 120
     };
 
+    // Build context chain
+    const parentContextChain = parentNode.data.contextChain ?? [];
+    const parentContextSummary = parentNode.data.contextSummary;
+
+    let childContextChain: ContextEntry[] = [];
+    if (parentContextSummary) {
+      const newEntry: ContextEntry = {
+        nodeId: parentNodeId,
+        summary: parentContextSummary
+      };
+      childContextChain = [...parentContextChain, newEntry].slice(-3);
+    } else {
+      // Fallback: parent context not extracted yet
+      const parentRawContent = parentNode.data.content || '';
+      if (parentRawContent.length > 0) {
+        const cleaned = parentRawContent
+          .slice(0, 300)
+          .replace(/[*#_`\[\]()]/g, '')
+          .trim();
+        const newEntry: ContextEntry = {
+          nodeId: parentNodeId,
+          summary: `Context from parent node: "${cleaned}"`
+        };
+        childContextChain = [...parentContextChain, newEntry].slice(-3);
+      } else {
+        childContextChain = parentContextChain;
+      }
+    }
+
     const boardId = get().boardId;
     const supabase = get().supabaseClient;
     let childId = `node_${Date.now()}`;
@@ -1326,7 +1468,9 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           position_y: position.y,
           title: selectedText,
           content: selectedText,
-          parent_node_id: parentNodeId
+          parent_node_id: parentNodeId,
+          context_chain: childContextChain,
+          context_summary: null
         })
         .select()
         .single()
@@ -1357,7 +1501,9 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                   parentNodeId,
                   createdAt: dbNode.created_at || new Date().toISOString(),
                   conversationHistory: [],
-                  isBranchSelection: true
+                  isBranchSelection: true,
+                  contextSummary: null,
+                  contextChain: childContextChain
                 }
               };
 
@@ -1371,7 +1517,9 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                         ...n,
                         data: {
                           ...n.data,
-                          isBranchSelection: true
+                          isBranchSelection: true,
+                          contextSummary: null,
+                          contextChain: childContextChain
                         }
                       };
                     }
@@ -1421,7 +1569,9 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           parentNodeId,
           createdAt: new Date().toISOString(),
           conversationHistory: [],
-          isBranchSelection: true
+          isBranchSelection: true,
+          contextSummary: null,
+          contextChain: childContextChain
         }
       };
 
@@ -1519,12 +1669,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const systemPrompt = buildContextAwareSystemPrompt(node.data.contextChain || [], selectedText);
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          messages: [{ role: 'user', content: prompt }]
+          messages: [{ role: 'user', content: prompt }],
+          systemPrompt
         })
       });
 
@@ -1557,15 +1710,29 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         }
       }
 
+      // Extract context summary for this node
+      let extractedSummary: string | null = null;
+      try {
+        if (content.trim().length >= 60) {
+          extractedSummary = await extractContextSummary(content, promptTitle, token);
+        }
+      } catch (e) {
+        console.error('Failed to extract context summary for branch node:', e);
+      }
+
       if (boardId && boardId !== 'sample-board' && supabase) {
         await supabase.from('node_messages').insert({
           node_id: nodeId,
           role: 'assistant',
           content
         });
-        await supabase.from('nodes').update({
-          content
-        }).eq('id', nodeId);
+
+        const updateData: any = { content };
+        if (extractedSummary) {
+          updateData.context_summary = extractedSummary;
+        }
+
+        await supabase.from('nodes').update(updateData).eq('id', nodeId);
       }
 
       set(state => ({
@@ -1577,6 +1744,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                 ...n.data,
                 isLoading: false,
                 isBranchSelection: false,
+                contextSummary: extractedSummary || n.data.contextSummary,
                 conversationHistory: [
                   ...n.data.conversationHistory,
                   { role: 'assistant', content }
@@ -2287,6 +2455,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                       isLoading,
                       isBranchSelection: nextIsBranchSelection,
                       conversationHistory,
+                      contextSummary: dbNode.context_summary !== undefined ? dbNode.context_summary : n.data.contextSummary,
+                      contextChain: dbNode.context_chain !== undefined ? dbNode.context_chain : n.data.contextChain,
                       justUpdated: !wasSelfEcho && !n.dragging
                     }
                   };

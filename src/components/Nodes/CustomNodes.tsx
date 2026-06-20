@@ -58,6 +58,8 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
   const [showPromptInput, setShowPromptInput] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [isHoveringResize, setIsHoveringResize] = useState(false);
+  const [contextVisible, setContextVisible] = useState(false);
+  const contextChain = data.contextChain;
  
   // Semantic styles mapping based on node type
   const getTypeStyles = (type: NodeType) => {
@@ -147,8 +149,8 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
       onClick={() => selectNode(id)}
       className={`relative rounded-[20px] border shadow-[0_12px_32px_rgba(45,38,32,0.07),0_2px_8px_rgba(45,38,32,0.04)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.35),0_2px_8px_rgba(0,0,0,0.2)] hover:shadow-[0_16px_36px_-6px_rgba(45,38,32,0.12),0_4px_16px_-4px_rgba(45,38,32,0.06)] dark:hover:shadow-[0_16px_36px_-6px_rgba(0,0,0,0.45),0_4px_16px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 cursor-pointer overflow-visible flex flex-col ${typeStyle.bg} ${typeStyle.border} ${selected ? 'scale-[1.01]' : ''} ${data.justUpdated ? 'ring-2 ring-indigo-500 dark:ring-indigo-400 animate-pulse border-indigo-500 dark:border-indigo-400' : ''}`}
       style={{
-        width: nodeWidth,
-        height: nodeHeight ?? undefined,
+         width: nodeWidth,
+         height: nodeHeight ?? undefined,
       }}
     >
       {/* React Flow Handles - Styled as clean connect circles on borders */}
@@ -196,6 +198,36 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
           >
             {data.title}
           </h3>
+
+          {/* Context Inheritance indicator */}
+          {contextChain && contextChain.length > 0 && (
+            <div className="mb-2.5">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setContextVisible(!contextVisible);
+                }}
+                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-50/50 dark:bg-[#7c4dff]/5 hover:bg-purple-100 dark:hover:bg-[#7c4dff]/10 text-[#7c4dff] dark:text-[#be9eff] transition-colors duration-200 text-[9px] font-semibold border border-[#7c4dff]/10"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-[#7c4dff] animate-pulse" />
+                <span>Context Inherited</span>
+                <span className="text-[8px] opacity-70">
+                  {contextVisible ? '▲' : '▼'}
+                </span>
+              </button>
+              
+              {contextVisible && (
+                <div className="mt-1.5 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-xl p-2.5 text-[9px] text-zinc-550 dark:text-zinc-400 leading-relaxed max-h-24 overflow-y-auto no-canvas-wheel transition-colors duration-200">
+                  {contextChain.map((entry, i) => (
+                    <div key={entry.nodeId} className="flex gap-1.5 mb-1 last:mb-0">
+                      <span className="text-[#7c4dff] shrink-0 font-bold">{i === contextChain.length - 1 ? '↳' : '·'}</span>
+                      <span className="break-words">{entry.summary}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           
           {/* Document File details if Doc node */}
           {data.type === 'doc' && data.sourceFile && (

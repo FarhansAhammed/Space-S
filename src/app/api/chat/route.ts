@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { messages } = await req.json();
+    const { messages, systemPrompt } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Messages array is required' }, { status: 400 });
@@ -35,10 +35,11 @@ export async function POST(req: NextRequest) {
       console.error('Missing POOLSIDE_API_KEY environment variable');
       return NextResponse.json({ error: 'AI service configuration error' }, { status: 500 });
     }
-    const systemPrompt = "You are a concise thinking partner. Respond clearly and directly. Do not use unnecessary preamble.";
+    const fallbackSystemPrompt = "You are a concise thinking partner. Respond clearly and directly. Do not use unnecessary preamble.";
+    const activeSystemPrompt = systemPrompt ?? fallbackSystemPrompt;
 
     const formattedMessages = [
-      { role: 'system', content: systemPrompt },
+      { role: 'system', content: activeSystemPrompt },
       ...messages
     ];
 
