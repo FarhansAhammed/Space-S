@@ -9,7 +9,6 @@ import { useCanvasStore } from '@/store/canvasStore';
 import Navbar from '@/components/landing/Navbar';
 import HeroSection from '@/components/landing/HeroSection';
 import CanvasListSection from '@/components/landing/CanvasListSection';
-import ProblemSection from '@/components/landing/ProblemSection';
 import HowItWorksSection from '@/components/landing/HowItWorksSection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
 import WhoUsesSection from '@/components/landing/WhoUsesSection';
@@ -148,9 +147,6 @@ export default function LandingPage() {
           handleSignIn={handleSignIn}
           handleGoDashboard={handleGoDashboard}
         />
-
-        {/* 4. The Problem Pull-Quote Section */}
-        <ProblemSection />
 
         {/* 5. How It Works Timeline Section */}
         <HowItWorksSection />
