@@ -1,14 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronDown, ChevronLeft, LayoutGrid, Sun, Moon, Users, X, Loader2, Bot, Check, Sparkles } from 'lucide-react';
-import { useCanvasStore } from '@/store/canvasStore';
+import { Search, ChevronDown, ChevronLeft, LayoutGrid, Sun, Moon, Users, X, Loader2, Bot, Check, Sparkles, StickyNote, FileText, HelpCircle, Image as ImageIcon } from 'lucide-react';
+import { useCanvasStore, NodeType } from '@/store/canvasStore';
 import { UserButton, Show, useAuth } from '@clerk/nextjs';
 import Link from 'next/link';
+import { useReactFlow } from 'reactflow';
+
+const getSearchTagStyles = (type: NodeType) => {
+  switch (type) {
+    case 'llm':
+      return { text: 'text-indigo-500', bg: 'bg-indigo-500/10', label: 'AI Response', icon: <Sparkles className="w-3.5 h-3.5" /> };
+    case 'note':
+      return { text: 'text-amber-600', bg: 'bg-amber-600/10', label: 'Note', icon: <StickyNote className="w-3.5 h-3.5" /> };
+    case 'image':
+      return { text: 'text-emerald-600', bg: 'bg-emerald-600/10', label: 'Image', icon: <ImageIcon className="w-3.5 h-3.5" /> };
+    case 'doc':
+      return { text: 'text-orange-600', bg: 'bg-orange-600/10', label: 'Document', icon: <FileText className="w-3.5 h-3.5" /> };
+    case 'question':
+      return { text: 'text-rose-600', bg: 'bg-rose-600/10', label: 'Question', icon: <HelpCircle className="w-3.5 h-3.5" /> };
+    case 'merge':
+      return { text: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-600/10', label: 'Synthesis', icon: <Sparkles className="w-3.5 h-3.5" /> };
+    default:
+      return { text: 'text-zinc-500', bg: 'bg-zinc-100 dark:bg-zinc-800', label: 'Node', icon: <Sparkles className="w-3.5 h-3.5" /> };
+  }
+};
 
 export const TopHeader = () => {
-  const { addLLMNodeFromSearch, theme, toggleTheme, boardId, presenceUsers, userRole, selectedModel, setSelectedModel } = useCanvasStore();
+  const { nodes, selectNode, addLLMNodeFromSearch, theme, toggleTheme, boardId, presenceUsers, userRole, selectedModel, setSelectedModel } = useCanvasStore();
+  const { setCenter } = useReactFlow();
   const { getToken } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
@@ -18,13 +40,47 @@ export const TopHeader = () => {
 
   const isOwner = userRole === 'owner';
 
+  const matchingNodes = React.useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    return nodes.filter(n => 
+      n.data.title.toLowerCase().includes(query) || 
+      (n.data.content && n.data.content.toLowerCase().includes(query))
+    );
+  }, [nodes, searchQuery]);
+
+  useEffect(() => {
+    if (searchQuery.trim().length > 0) {
+      setShowDropdown(true);
+    } else {
+      setShowDropdown(false);
+    }
+  }, [searchQuery]);
+
+  const handleNodeClick = (nodeId: string) => {
+    const targetNode = nodes.find(n => n.id === nodeId);
+    if (targetNode) {
+      selectNode(nodeId);
+      setCenter(targetNode.position.x + 130, targetNode.position.y + 100, {
+        zoom: 1.05,
+        duration: 800
+      });
+      setSearchQuery('');
+      setShowDropdown(false);
+    }
+  };
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
-    // Call store action to generate a parent node from this search query
-    addLLMNodeFromSearch(searchQuery.trim());
-    setSearchQuery('');
+    if (matchingNodes.length > 0) {
+      handleNodeClick(matchingNodes[0].id);
+    } else {
+      addLLMNodeFromSearch(searchQuery.trim());
+      setSearchQuery('');
+    }
+    setShowDropdown(false);
   };
 
   const fetchInviteStatus = async () => {
@@ -144,7 +200,7 @@ export const TopHeader = () => {
         </Link>
       </div>
 
-      {/* Main Search Bar (Creating Parent Nodes) */}
+      {/* Main Search Bar (Search Existing or Create Parent Nodes) */}
       <form 
         onSubmit={handleSearchSubmit} 
         className="hidden md:block flex-1 max-w-[480px] mx-4 lg:mx-8 relative"
@@ -152,7 +208,7 @@ export const TopHeader = () => {
         <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
         <input 
           type="text" 
-          placeholder="Type a topic or question and press Enter to create a node..." 
+          placeholder="Search nodes or type a topic and press Enter..." 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full h-9 pl-10 pr-14 border border-black/10 dark:border-white/10 rounded-xl outline-none focus:border-[#7c4dff] dark:focus:border-[#7c4dff] text-xs bg-black/5 dark:bg-white/5 focus:bg-white/70 dark:focus:bg-zinc-900/70 text-zinc-800 dark:text-zinc-200 font-sans transition-all placeholder-zinc-400 dark:placeholder-zinc-500 shadow-inner"
@@ -160,6 +216,65 @@ export const TopHeader = () => {
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-zinc-400 dark:text-zinc-500 font-mono border border-black/5 dark:border-white/5 px-1.5 py-0.5 rounded-lg bg-white/80 dark:bg-zinc-900/80 pointer-events-none shadow-sm">
           <span>↵</span>
         </div>
+
+        {showDropdown && (
+          <>
+            <div 
+              className="fixed inset-0 z-40 cursor-default" 
+              onClick={() => setShowDropdown(false)} 
+            />
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl py-2 z-50 max-h-[320px] overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-100 flex flex-col gap-0.5">
+              {matchingNodes.length > 0 ? (
+                <>
+                  <div className="px-3.5 py-1.5 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider select-none">
+                    Existing Nodes
+                  </div>
+                  {matchingNodes.map(node => {
+                    const typeStyle = getSearchTagStyles(node.data.type);
+                    return (
+                      <button
+                        key={node.id}
+                        type="button"
+                        onClick={() => handleNodeClick(node.id)}
+                        className="w-full px-3.5 py-2.5 text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-start gap-3 border-b border-black/5 dark:border-white/5 last:border-0"
+                      >
+                        <div className={`p-1.5 rounded-lg shrink-0 ${typeStyle.bg} ${typeStyle.text}`}>
+                          {typeStyle.icon}
+                        </div>
+                        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 truncate font-sans">
+                              {node.data.title}
+                            </span>
+                            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md uppercase tracking-wide shrink-0 ${typeStyle.bg} ${typeStyle.text}`}>
+                              {typeStyle.label}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate font-sans">
+                            {node.data.content || 'No content'}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                  <div className="border-t border-black/5 dark:border-white/5 my-1" />
+                </>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => {
+                  addLLMNodeFromSearch(searchQuery.trim());
+                  setSearchQuery('');
+                  setShowDropdown(false);
+                }}
+                className="w-full px-3.5 py-2 text-left hover:bg-indigo-50 dark:hover:bg-indigo-950/20 text-[#7c4dff] dark:text-[#a080ff] transition-colors flex items-center gap-2.5 font-semibold text-xs"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#7c4dff] animate-pulse" />
+                <span className="font-sans">Create root AI node: "{searchQuery}"</span>
+              </button>
+            </div>
+          </>
+        )}
       </form>
 
       {/* Right Controls / Profiles */}
