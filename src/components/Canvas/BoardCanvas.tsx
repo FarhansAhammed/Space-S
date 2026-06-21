@@ -437,9 +437,9 @@ export const BoardCanvas = () => {
 
       {/* Floating Main Chat Box Container */}
       <div 
-        className="absolute left-1/2 w-[90%] max-w-[640px] z-30 transition-all duration-700 ease-in-out flex flex-col items-center"
+        className="fixed left-1/2 w-[90%] max-w-[640px] z-30 transition-all duration-700 ease-in-out flex flex-col items-center"
         style={{
-          top: (hasNodes || isLoadingCanvas) ? 'calc(100% - 24px)' : '50%',
+          top: (hasNodes || isLoadingCanvas) ? 'calc(100% - 32px)' : '50%',
           transform: (hasNodes || isLoadingCanvas) ? 'translate(-50%, -100%)' : 'translate(-50%, -50%)',
         }}
       >
