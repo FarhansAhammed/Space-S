@@ -17,7 +17,12 @@ import CustomNode from '../Nodes/CustomNodes';
 import { useRouter } from 'next/navigation';
  
 // Floating canvas bottom bar
-import { Plus, Image as ImageIcon, FileText, Globe, ArrowUp, Link2, Sparkles } from 'lucide-react';
+import { Plus, Image as ImageIcon, FileText, Globe, ArrowUp, Link2, Sparkles, X } from 'lucide-react';
+
+// Map custom node types outside the component to avoid React Flow performance warning
+const nodeTypes = {
+  llmNode: CustomNode
+};
  
 export const BoardCanvas = () => {
   const router = useRouter();
@@ -37,12 +42,16 @@ export const BoardCanvas = () => {
     setNewlyCreatedNodeId,
     isLoadingCanvas,
     selectNode,
-    organizeCanvas
+    organizeCanvas,
+    selectedModel,
+    addDocNode
   } = useCanvasStore();
  
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [bottomPrompt, setBottomPrompt] = useState('');
   const [showNodeList, setShowNodeList] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const hasNodes = nodes.length > 0;
 
   const sortedNodes = useMemo(() => {
@@ -120,11 +129,54 @@ export const BoardCanvas = () => {
     }
   };
  
-  // Map custom node types
-  const nodeTypes = useMemo(() => ({
-    llmNode: CustomNode
-  }), []);
  
+  const triggerError = (msg: string) => {
+    setUploadError(msg);
+    setTimeout(() => setUploadError(null), 4000);
+  };
+
+  const handleUploadClick = (label: string) => {
+    if (label === 'Web') {
+      alert("Web search is not implemented yet!");
+      return;
+    }
+    if (selectedModel === 'poolside') {
+      triggerError("Uploading not supported in this model.");
+      return;
+    }
+    if (fileInputRef.current) {
+      if (label === 'Image') {
+        fileInputRef.current.accept = 'image/*';
+      } else if (label === 'Document') {
+        fileInputRef.current.accept = 'application/pdf';
+      } else {
+        fileInputRef.current.accept = 'application/pdf,image/*';
+      }
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+
+    const isImage = file.type.startsWith('image/');
+    const isPdf = file.type === 'application/pdf';
+    if (!isImage && !isPdf) {
+      triggerError("Unsupported file type. Please upload an image or PDF.");
+      return;
+    }
+
+    try {
+      await addDocNode(file);
+    } catch (err) {
+      console.error("Upload error:", err);
+      triggerError("Failed to upload and transcribe file.");
+    }
+    e.target.value = '';
+  };
+
   const handleBottomSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!bottomPrompt.trim()) return;
@@ -409,6 +461,31 @@ export const BoardCanvas = () => {
           </p>
         </div>
 
+        {/* Upload Warning Banner */}
+        {uploadError && (
+          <div className="w-full mb-3 px-4 py-2.5 bg-rose-50/95 dark:bg-rose-950/90 border border-rose-200 dark:border-rose-900/50 rounded-2xl text-xs text-rose-600 dark:text-rose-300 font-semibold flex items-center justify-between shadow-md backdrop-blur-sm animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <span className="flex items-center gap-1.5">
+              <span className="text-sm">⚠️</span>
+              {uploadError}
+            </span>
+            <button 
+              type="button" 
+              onClick={() => setUploadError(null)} 
+              className="text-rose-400 hover:text-rose-600 dark:hover:text-rose-200 transition-colors p-0.5 rounded"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Hidden File Input */}
+        <input 
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
         {/* The Chat Form */}
         <form 
           onSubmit={handleBottomSubmit}
@@ -425,6 +502,7 @@ export const BoardCanvas = () => {
                 key={idx}
                 type="button"
                 title={btn.label}
+                onClick={() => handleUploadClick(btn.label)}
                 className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5 transition-all text-[10px] font-semibold"
               >
                 {btn.icon}
@@ -437,7 +515,13 @@ export const BoardCanvas = () => {
             <input 
               ref={inputRef}
               type="text" 
-              placeholder={isLoadingCanvas ? 'Loading canvas...' : 'Ask anything or create a new node...'}
+              placeholder={
+                isLoadingCanvas 
+                  ? 'Loading canvas...' 
+                  : selectedModel === 'gemini'
+                    ? 'Ask anything or upload a file... (Gemini 2.5 Flash)'
+                    : 'Ask anything or create a new node... (Poolside)'
+              }
               value={bottomPrompt}
               onChange={(e) => setBottomPrompt(e.target.value)}
               disabled={isLoadingCanvas}

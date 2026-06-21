@@ -44,6 +44,7 @@ export interface NodeData {
   imageUrl?: string;
   imagePrompt?: string;
   sourceFile?: string;
+  fileSize?: string;
   isBranchSelection?: boolean;
   justUpdated?: boolean;
   createdAt?: string;
@@ -146,6 +147,9 @@ interface CanvasStore {
   addSelectionBranchNode: (parentNodeId: string, selectedText: string) => void;
   triggerNodeOperation: (nodeId: string, operation: 'explain' | 'expand' | 'shorten') => Promise<void>;
   updateNodeContextSummary: (nodeId: string, summary: string) => Promise<void>;
+  selectedModel: 'poolside' | 'gemini';
+  setSelectedModel: (model: 'poolside' | 'gemini') => void;
+  addDocNode: (file: File) => Promise<void>;
   broadcastCursor: (x: number, y: number) => void;
   organizeCanvas: () => Promise<void>;
   clerkTokenFetcher: (() => Promise<string | null>) | null;
@@ -213,6 +217,15 @@ then expand. Do not use unnecessary preamble. Do not ask for clarification.`;
 
 const mapDbNodeToReactFlow = (dbNode: DbNode, messages: DbMessage[] = []): Node<NodeData> => {
   const nodeType = dbNode.type as NodeType;
+  const sourceFileRaw = dbNode.source_file || undefined;
+  let sourceFile = sourceFileRaw;
+  let fileSize = undefined;
+  if (sourceFileRaw && sourceFileRaw.includes('|')) {
+    const parts = sourceFileRaw.split('|');
+    sourceFile = parts[0];
+    fileSize = parts[1];
+  }
+
   return {
     id: dbNode.id,
     type: 'llmNode',
@@ -232,7 +245,8 @@ const mapDbNodeToReactFlow = (dbNode: DbNode, messages: DbMessage[] = []): Node<
       isCollapsed: dbNode.is_collapsed,
       parentNodeId: dbNode.parent_node_id || undefined,
       imageUrl: dbNode.image_url || undefined,
-      sourceFile: dbNode.source_file || undefined,
+      sourceFile,
+      fileSize,
       createdAt: dbNode.created_at,
       isBranchSelection: nodeType === 'branch' && dbNode.title === dbNode.content && !messages.some(m => m.role === 'assistant'),
       conversationHistory: messages.map(m => ({
@@ -466,6 +480,13 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   newlyCreatedNodeId: null,
   maxZIndex: 10,
   clerkTokenFetcher: null,
+  selectedModel: 'poolside',
+  setSelectedModel: (model: 'poolside' | 'gemini') => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('spaceS_selectedModel', model);
+    }
+    set({ selectedModel: model });
+  },
   setNewlyCreatedNodeId: (nodeId: string | null) => set({ newlyCreatedNodeId: nodeId }),
 
   updateNodeContextSummary: async (nodeId: string, summary: string) => {
@@ -568,9 +589,17 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         }));
       } else if (dbEdge) {
         // Swap the temporary ID with the database UUID
-        set(state => ({
-          edges: state.edges.map(e => e.id === tempEdgeId ? { ...e, id: dbEdge.id } : e)
-        }));
+        set(state => {
+          const exists = state.edges.some(e => e.id === dbEdge.id);
+          if (exists) {
+            return {
+              edges: state.edges.filter(e => e.id !== tempEdgeId)
+            };
+          }
+          return {
+            edges: state.edges.map(e => e.id === tempEdgeId ? { ...e, id: dbEdge.id } : e)
+          };
+        });
       }
     }
   },
@@ -706,12 +735,22 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         }
       };
 
-      set(state => ({
-        nodes: computeGenerations([...state.nodes, parentNode]),
-        activeNodeId: nodeId,
-        newlyCreatedNodeId: nodeId,
-        maxZIndex: nextZIndex
-      }));
+      set(state => {
+        const exists = state.nodes.some(n => n.id === nodeId);
+        if (exists) {
+          return {
+            nodes: state.nodes.map(n => n.id === nodeId ? { ...n, data: { ...n.data, isLoading: true, conversationHistory: parentNode.data.conversationHistory } } : n),
+            activeNodeId: nodeId,
+            newlyCreatedNodeId: nodeId,
+          };
+        }
+        return {
+          nodes: computeGenerations([...state.nodes, parentNode]),
+          activeNodeId: nodeId,
+          newlyCreatedNodeId: nodeId,
+          maxZIndex: nextZIndex
+        };
+      });
 
       const fetcher = get().clerkTokenFetcher;
       const token = fetcher ? await fetcher() : null;
@@ -725,7 +764,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           method: 'POST',
           headers,
           body: JSON.stringify({
-            messages: [{ role: 'user', content: prompt }]
+            messages: [{ role: 'user', content: prompt }],
+            model: get().selectedModel
           })
         });
 
@@ -759,7 +799,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         let extractedSummary: string | null = null;
         try {
           if (content.trim().length >= 60) {
-            extractedSummary = await extractContextSummary(content, prompt, token);
+            extractedSummary = await extractContextSummary(content, prompt, token, get().selectedModel);
           }
         } catch (e) {
           console.error('Failed to extract context summary for search node:', e);
@@ -855,7 +895,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           method: 'POST',
           headers,
           body: JSON.stringify({
-            messages: [{ role: 'user', content: prompt }]
+            messages: [{ role: 'user', content: prompt }],
+            model: get().selectedModel
           })
         });
 
@@ -938,6 +979,35 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       y: parentNode.position.y + (Math.random() - 0.5) * 160
     };
 
+    // Build context chain
+    const parentContextChain = parentNode.data.contextChain ?? [];
+    const parentContextSummary = parentNode.data.contextSummary;
+
+    let childContextChain: ContextEntry[] = [];
+    if (parentContextSummary) {
+      const newEntry: ContextEntry = {
+        nodeId: parentNodeId,
+        summary: parentContextSummary
+      };
+      childContextChain = [...parentContextChain, newEntry].slice(-3);
+    } else {
+      // Fallback: parent context not extracted yet
+      const parentRawContent = parentNode.data.content || '';
+      if (parentRawContent.length > 0) {
+        const cleaned = parentRawContent
+          .slice(0, 300)
+          .replace(/[*#_`\[\]()]/g, '')
+          .trim();
+        const newEntry: ContextEntry = {
+          nodeId: parentNodeId,
+          summary: `Context from parent node: "${cleaned}"`
+        };
+        childContextChain = [...parentContextChain, newEntry].slice(-3);
+      } else {
+        childContextChain = parentContextChain;
+      }
+    }
+
     const boardId = get().boardId;
     const supabase = get().supabaseClient;
     let childId = `node_${Date.now()}`;
@@ -954,7 +1024,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           position_y: position.y,
           title: title || prompt,
           content: type === 'note' ? prompt : '',
-          parent_node_id: parentNodeId
+          parent_node_id: parentNodeId,
+          context_chain: childContextChain
         })
         .select()
         .single();
@@ -1000,6 +1071,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           isCollapsed: false,
           parentNodeId,
           createdAt: dbNode.created_at || new Date().toISOString(),
+          contextChain: childContextChain,
+          contextSummary: null,
           conversationHistory: type === 'note' ? [] : [{
             role: 'user',
             content: prompt,
@@ -1013,19 +1086,31 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       };
 
       set(state => {
-        const updatedNodes = computeGenerations([...state.nodes, childNode]);
+        const existsNode = state.nodes.some(n => n.id === childId);
+        const updatedNodes = existsNode 
+          ? state.nodes.map(n => n.id === childId ? { ...n, data: { ...n.data, isLoading: type !== 'note', conversationHistory: childNode.data.conversationHistory, contextChain: childContextChain, contextSummary: null } } : n)
+          : computeGenerations([...state.nodes, childNode]);
+
         const edgeId = dbEdge ? dbEdge.id : `edge_${parentNodeId}_to_${childId}`;
-        const newLocalEdge = {
-          id: edgeId,
-          source: parentNodeId,
-          target: childId,
-          animated: true,
-          style: {
-            stroke: getEdgeColorForGen(childGen),
-            strokeWidth: 2.5
-          }
-        };
-        const updatedEdges = updateEdgesColor([...state.edges, newLocalEdge], updatedNodes);
+        const existsEdge = state.edges.some(e => e.id === edgeId);
+        
+        let updatedEdges = state.edges;
+        if (!existsEdge) {
+          const newLocalEdge = {
+            id: edgeId,
+            source: parentNodeId,
+            target: childId,
+            animated: true,
+            style: {
+              stroke: getEdgeColorForGen(childGen),
+              strokeWidth: 2.5
+            }
+          };
+          updatedEdges = updateEdgesColor([...state.edges, newLocalEdge], updatedNodes);
+        } else {
+          updatedEdges = updateEdgesColor(state.edges, updatedNodes);
+        }
+
         return {
           nodes: updatedNodes,
           edges: updatedEdges,
@@ -1045,11 +1130,14 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }
 
       try {
+        const systemPrompt = buildContextAwareSystemPrompt(childContextChain, '');
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers,
           body: JSON.stringify({
-            messages: [{ role: 'user', content: prompt }]
+            messages: [{ role: 'user', content: prompt }],
+            systemPrompt,
+            model: get().selectedModel
           })
         });
 
@@ -1085,9 +1173,22 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           content
         });
 
-        await supabase.from('nodes').update({
-          content
-        }).eq('id', childId);
+        // Extract context summary for the newly generated derived node
+        let extractedSummary: string | null = null;
+        try {
+          if (content.trim().length >= 60) {
+            extractedSummary = await extractContextSummary(content, prompt, token, get().selectedModel);
+          }
+        } catch (e) {
+          console.error('Failed to extract context summary for derived node:', e);
+        }
+
+        const nodeUpdateData: any = { content };
+        if (extractedSummary) {
+          nodeUpdateData.context_summary = extractedSummary;
+        }
+
+        await supabase.from('nodes').update(nodeUpdateData).eq('id', childId);
 
         set(state => ({
           nodes: state.nodes.map(n => {
@@ -1097,6 +1198,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                 data: {
                   ...n.data,
                   isLoading: false,
+                  contextSummary: extractedSummary || n.data.contextSummary,
                   conversationHistory: [
                     ...n.data.conversationHistory,
                     { role: 'assistant', content }
@@ -1143,6 +1245,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           isCollapsed: false,
           parentNodeId,
           createdAt: new Date().toISOString(),
+          contextChain: childContextChain,
+          contextSummary: null,
           conversationHistory: type === 'note' ? [] : [{ role: 'user', content: prompt }]
         }
       };
@@ -1176,11 +1280,14 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }
 
       try {
+        const systemPrompt = buildContextAwareSystemPrompt(childContextChain, '');
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers,
           body: JSON.stringify({
-            messages: [{ role: 'user', content: prompt }]
+            messages: [{ role: 'user', content: prompt }],
+            systemPrompt,
+            model: get().selectedModel
           })
         });
 
@@ -1210,6 +1317,16 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           }
         }
 
+        // Extract context summary for the newly generated local derived node
+        let extractedSummary: string | null = null;
+        try {
+          if (content.trim().length >= 60) {
+            extractedSummary = await extractContextSummary(content, prompt, token, get().selectedModel);
+          }
+        } catch (e) {
+          console.error('Failed to extract context summary for local derived node:', e);
+        }
+
         set(state => ({
           nodes: state.nodes.map(n => {
             if (n.id === childId) {
@@ -1218,6 +1335,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                 data: {
                   ...n.data,
                   isLoading: false,
+                  contextSummary: extractedSummary || n.data.contextSummary,
                   conversationHistory: [
                     ...n.data.conversationHistory,
                     { role: 'assistant', content }
@@ -1314,7 +1432,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         headers,
         body: JSON.stringify({
           messages: updatedHistory,
-          systemPrompt
+          systemPrompt,
+          model: get().selectedModel
         })
       });
 
@@ -1352,7 +1471,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       try {
         const fullContent = previousContent + questionHeader + content;
         if (fullContent.trim().length >= 60) {
-          extractedSummary = await extractContextSummary(fullContent, node.data.title, token);
+          extractedSummary = await extractContextSummary(fullContent, node.data.title, token, get().selectedModel);
         }
       } catch (e) {
         console.error('Failed to extract context summary for continue conversation:', e);
@@ -1410,6 +1529,170 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           return n;
         })
       }));
+    }
+  },
+
+  addDocNode: async (file: File) => {
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1000;
+    const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+
+    const position: XYPosition = {
+      x: viewportWidth / 2 - 150,
+      y: viewportHeight / 2 - 100,
+    };
+
+    const boardId = get().boardId;
+    const supabase = get().supabaseClient;
+    let nodeId = `node_${Date.now()}`;
+
+    const formatBytes = (bytes: number, decimals = 1) => {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const dm = decimals < 0 ? 0 : decimals;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    };
+
+    const fileSizeStr = formatBytes(file.size);
+
+    if (boardId && boardId !== 'sample-board' && supabase) {
+      const { data: dbNode, error: nodeError } = await supabase
+        .from('nodes')
+        .insert({
+          canvas_id: boardId,
+          type: 'doc',
+          position_x: position.x,
+          position_y: position.y,
+          title: file.name,
+          content: 'Transcribing...',
+          source_file: `${file.name}|${fileSizeStr}`
+        })
+        .select()
+        .single();
+
+      if (nodeError || !dbNode) {
+        console.error('Failed to insert doc node in DB:', nodeError);
+        return;
+      }
+
+      nodeId = dbNode.id;
+
+      // Auto-name the canvas if it's the first node on this canvas
+      const isFirstNode = get().nodes.length === 0;
+      if (isFirstNode) {
+        await supabase
+          .from('canvases')
+          .update({ name: file.name, updated_at: new Date().toISOString() })
+          .eq('id', boardId);
+        set({ boardName: file.name });
+      }
+    }
+
+    const nextZIndex = get().maxZIndex + 1;
+    const docNode: Node<NodeData> = {
+      id: nodeId,
+      type: 'llmNode',
+      position,
+      zIndex: nextZIndex,
+      data: {
+        type: 'doc',
+        title: file.name,
+        content: 'Transcribing...',
+        generation: 0,
+        isLoading: true,
+        isCollapsed: false,
+        sourceFile: file.name,
+        fileSize: fileSizeStr,
+        createdAt: new Date().toISOString(),
+        conversationHistory: []
+      }
+    };
+
+    set(state => {
+      const exists = state.nodes.some(n => n.id === nodeId);
+      if (exists) {
+        return {
+          nodes: state.nodes.map(n => n.id === nodeId ? { ...n, data: { ...n.data, isLoading: true, sourceFile: docNode.data.sourceFile, fileSize: docNode.data.fileSize } } : n),
+          activeNodeId: nodeId,
+          newlyCreatedNodeId: nodeId,
+        };
+      }
+      return {
+        nodes: computeGenerations([...state.nodes, docNode]),
+        activeNodeId: nodeId,
+        newlyCreatedNodeId: nodeId,
+        maxZIndex: nextZIndex
+      };
+    });
+
+    const fetcher = get().clerkTokenFetcher;
+    const token = fetcher ? await fetcher() : null;
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/transcribe', {
+        method: 'POST',
+        headers,
+        body: formData
+      });
+
+      if (!response.ok) throw new Error('Transcription API failed');
+
+      const data = await response.json();
+      const transcribedText = data.text || 'No text transcribed.';
+
+      set(state => ({
+        nodes: state.nodes.map(n => {
+          if (n.id === nodeId) {
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                content: transcribedText,
+                isLoading: false
+              }
+            };
+          }
+          return n;
+        })
+      }));
+
+      if (boardId && boardId !== 'sample-board' && supabase) {
+        await supabase.from('nodes').update({
+          content: transcribedText
+        }).eq('id', nodeId);
+      }
+
+    } catch (err) {
+      console.error('Error transcribing file:', err);
+      set(state => ({
+        nodes: state.nodes.map(n => {
+          if (n.id === nodeId) {
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                content: 'Failed to transcribe file. Check API logs.',
+                isLoading: false
+              }
+            };
+          }
+          return n;
+        })
+      }));
+
+      if (boardId && boardId !== 'sample-board' && supabase) {
+        await supabase.from('nodes').update({
+          content: 'Failed to transcribe file.'
+        }).eq('id', nodeId);
+      }
     }
   },
 
@@ -1677,7 +1960,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         headers,
         body: JSON.stringify({
           messages: [{ role: 'user', content: prompt }],
-          systemPrompt
+          systemPrompt,
+          model: get().selectedModel
         })
       });
 
@@ -1714,7 +1998,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       let extractedSummary: string | null = null;
       try {
         if (content.trim().length >= 60) {
-          extractedSummary = await extractContextSummary(content, promptTitle, token);
+          extractedSummary = await extractContextSummary(content, promptTitle, token, get().selectedModel);
         }
       } catch (e) {
         console.error('Failed to extract context summary for branch node:', e);
@@ -1936,8 +2220,20 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       });
 
       set(state => {
-        const updatedNodes = computeGenerations([...state.nodes, mergeNode]);
-        const updatedEdges = updateEdgesColor([...state.edges, ...newEdges], updatedNodes);
+        const existsNode = state.nodes.some(n => n.id === mergeId);
+        const updatedNodes = existsNode 
+          ? state.nodes.map(n => n.id === mergeId ? { ...n, data: { ...n.data, isLoading: true } } : n)
+          : computeGenerations([...state.nodes, mergeNode]);
+
+        let nextEdges = state.edges;
+        newEdges.forEach(newEdge => {
+          const existsEdge = nextEdges.some(e => e.id === newEdge.id);
+          if (!existsEdge) {
+            nextEdges = [...nextEdges, newEdge];
+          }
+        });
+        const updatedEdges = updateEdgesColor(nextEdges, updatedNodes);
+
         return {
           nodes: updatedNodes,
           edges: updatedEdges,
@@ -1960,7 +2256,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           headers,
           body: JSON.stringify({
             nodes: selectedNodes.map(n => ({ title: n.data.title, content: n.data.content })),
-            userPrompt
+            userPrompt,
+            model: get().selectedModel
           })
         });
 
@@ -2088,7 +2385,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           headers,
           body: JSON.stringify({
             nodes: selectedNodes.map(n => ({ title: n.data.title, content: n.data.content })),
-            userPrompt
+            userPrompt,
+            model: get().selectedModel
           })
         });
 
@@ -2617,7 +2915,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   broadcastCursor: (x: number, y: number) => {
     const channel = get().realtimeChannel;
     const user = get().currentUserInfo;
-    if (!channel || !user) return;
+    if (!channel || !user || channel.state !== 'joined') return;
 
     channel.send({
       type: 'broadcast',

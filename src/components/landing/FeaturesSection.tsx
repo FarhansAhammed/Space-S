@@ -138,6 +138,7 @@ export default function FeaturesSection() {
                           loop
                           muted
                           playsInline
+                          suppressHydrationWarning
                           className={`w-full h-full rounded-b-xl shadow-inner ${
                             feature.objectFit === 'cover' ? 'object-cover' : 'object-contain'
                           }`}

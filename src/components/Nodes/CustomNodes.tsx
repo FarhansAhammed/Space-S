@@ -249,11 +249,18 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
           {data.type === 'doc' && data.sourceFile && (
             <div className="flex items-center gap-3 p-2.5 mb-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 transition-colors duration-200">
               <div className="p-2 rounded bg-amber-50 dark:bg-[#6d4c41]/20 text-[#8d6e63] dark:text-[#a1887f]">
-                <FileText className="w-5 h-5" />
+                {data.sourceFile.toLowerCase().match(/\.(jpg|jpeg|png|webp|gif|svg)$/) ? (
+                  <ImageIcon className="w-5 h-5" />
+                ) : (
+                  <FileText className="w-5 h-5" />
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300 truncate">{data.sourceFile}</p>
-                <p className="text-[9px] text-zinc-400 dark:text-zinc-500">PDF • 14.8 MB</p>
+                <p className="text-[9px] text-zinc-400 dark:text-zinc-500">
+                  {data.sourceFile.toLowerCase().match(/\.(jpg|jpeg|png|webp|gif|svg)$/) ? 'Image' : 'PDF'} 
+                  {data.fileSize ? ` • ${data.fileSize}` : ''}
+                </p>
               </div>
             </div>
           )}

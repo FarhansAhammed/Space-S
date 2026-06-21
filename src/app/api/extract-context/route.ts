@@ -26,21 +26,17 @@ export async function POST(req: NextRequest) {
     }
 
     let content = '';
+    let model = '';
     try {
       const body = await req.json();
       content = body.content || '';
       title = body.title || 'Untitled';
+      model = body.model || '';
     } catch {
       return NextResponse.json({ error: 'Invalid JSON request body' }, { status: 400 });
     }
     if (!content) {
       return NextResponse.json({ error: 'Content is required' }, { status: 400 });
-    }
-
-    const apiKey = process.env.POOLSIDE_API_KEY;
-    if (!apiKey) {
-      console.error('Missing POOLSIDE_API_KEY environment variable');
-      return NextResponse.json({ error: 'AI service configuration error' }, { status: 500 });
     }
 
     const systemPrompt = `You are a context classifier. Given a piece of text, extract:
@@ -55,31 +51,75 @@ ENTITIES: [entity1, entity2, entity3]`;
 
     const userMessageContent = `Title: ${title || 'Untitled'}\nContent excerpt: ${content.slice(0, 600)}`;
 
-    const response = await fetch('https://inference.poolside.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'poolside/laguna-xs.2',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessageContent }
-        ],
-        stream: false,
-        max_tokens: 150
-      })
-    });
+    let rawText = '';
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Poolside context extraction failed:', errorText);
-      return NextResponse.json({ contextSummary: `General context: ${title || 'Untitled'}` });
+    if (model === 'gemini') {
+      const geminiApiKey = process.env.GEMINI_API_KEY;
+      if (!geminiApiKey) {
+        console.error('Missing GEMINI_API_KEY environment variable');
+        return NextResponse.json({ contextSummary: `General context: ${title || 'Untitled'}` });
+      }
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [
+            { role: 'user', parts: [{ text: userMessageContent }] }
+          ],
+          systemInstruction: {
+            parts: [{ text: systemPrompt }]
+          },
+          generationConfig: {
+            maxOutputTokens: 150
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Gemini context extraction failed:', errorText);
+        return NextResponse.json({ contextSummary: `General context: ${title || 'Untitled'}` });
+      }
+
+      const data = await response.json();
+      rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } else {
+      const apiKey = process.env.POOLSIDE_API_KEY;
+      if (!apiKey) {
+        console.error('Missing POOLSIDE_API_KEY environment variable');
+        return NextResponse.json({ contextSummary: `General context: ${title || 'Untitled'}` });
+      }
+
+      const response = await fetch('https://inference.poolside.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'poolside/laguna-xs.2',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMessageContent }
+          ],
+          stream: false,
+          max_tokens: 150
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Poolside context extraction failed:', errorText);
+        return NextResponse.json({ contextSummary: `General context: ${title || 'Untitled'}` });
+      }
+
+      const data = await response.json();
+      rawText = data.choices?.[0]?.message?.content || '';
     }
 
-    const data = await response.json();
-    const rawText = data.choices?.[0]?.message?.content || '';
 
     let domain = '';
     let topic = '';

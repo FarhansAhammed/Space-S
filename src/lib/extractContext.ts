@@ -30,11 +30,12 @@ const DOMAIN_SIGNALS: Record<string, string[]> = {
 export async function extractContextSummary(
   nodeContent: string,
   nodeTitle: string,
-  token?: string | null
+  token?: string | null,
+  model?: string
 ): Promise<string> {
   const content = nodeContent || '';
   const title = nodeTitle || '';
-
+  
   // Heuristic approach (no API call, instant):
   if (content.length >= 80) {
     // 1. Take the first 400 characters of nodeContent.
@@ -43,7 +44,7 @@ export async function extractContextSummary(
     // 2. Strip markdown, bullet points, and formatting.
     snippet = snippet
       .replace(/[*#_`\[\]()]/g, '') // strip md formatting chars
-      .replace(/^[\s-*+>]*\d*\.?\s*/gm, '') // strip list prefixes, blockquotes
+      .replace(/^[ \t-*+>]*\d*\.?\s*/gm, '') // strip list prefixes, blockquotes
       .replace(/\s+/g, ' ') // normalize spaces
       .trim();
 
@@ -96,8 +97,9 @@ export async function extractContextSummary(
     const response = await fetch('/api/extract-context', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ content: content.slice(0, 600), title }),
+      body: JSON.stringify({ content: content.slice(0, 600), title, model }),
     });
+
 
     if (!response.ok) {
       throw new Error(`Context extraction API status ${response.status}`);

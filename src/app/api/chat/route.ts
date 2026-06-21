@@ -24,19 +24,113 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { messages, systemPrompt } = await req.json();
+    const { messages, systemPrompt, model } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Messages array is required' }, { status: 400 });
     }
 
+    const fallbackSystemPrompt = "You are a concise thinking partner. Respond clearly and directly. Do not use unnecessary preamble.";
+    const activeSystemPrompt = systemPrompt ?? fallbackSystemPrompt;
+
+    if (model === 'gemini') {
+      const geminiApiKey = process.env.GEMINI_API_KEY;
+      if (!geminiApiKey) {
+        console.error('Missing GEMINI_API_KEY environment variable');
+        return NextResponse.json({ error: 'Gemini API key is not configured' }, { status: 500 });
+      }
+
+      // Map roles: 'assistant' -> 'model', 'user' -> 'user'
+      // Gemini expects role/parts array
+      const geminiMessages = messages.map((msg: any) => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }]
+      }));
+
+      const payload: any = {
+        contents: geminiMessages
+      };
+
+      if (activeSystemPrompt) {
+        payload.systemInstruction = {
+          parts: [{ text: activeSystemPrompt }]
+        };
+      }
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?key=${geminiApiKey}&alt=sse`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return NextResponse.json({ error: `Gemini API error: ${errorText}` }, { status: response.status });
+      }
+
+      const reader = response.body?.getReader();
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          let buffer = '';
+          if (!reader) {
+            controller.close();
+            return;
+          }
+
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+                if (trimmed.startsWith('data: ')) {
+                  const dataStr = trimmed.slice(6);
+                  try {
+                    const parsed = JSON.parse(dataStr);
+                    const content = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (content) {
+                      controller.enqueue(encoder.encode(content));
+                    }
+                  } catch {
+                    // Ignore JSON parse errors on stream metadata
+                  }
+                }
+              }
+            }
+          } catch (err) {
+            controller.error(err);
+          } finally {
+            controller.close();
+          }
+        }
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive'
+        }
+      });
+    }
+
+    // Poolside implementation
     const apiKey = process.env.POOLSIDE_API_KEY;
     if (!apiKey) {
       console.error('Missing POOLSIDE_API_KEY environment variable');
       return NextResponse.json({ error: 'AI service configuration error' }, { status: 500 });
     }
-    const fallbackSystemPrompt = "You are a concise thinking partner. Respond clearly and directly. Do not use unnecessary preamble.";
-    const activeSystemPrompt = systemPrompt ?? fallbackSystemPrompt;
 
     const formattedMessages = [
       { role: 'system', content: activeSystemPrompt },
@@ -62,6 +156,7 @@ export async function POST(req: NextRequest) {
     }
 
     const reader = response.body?.getReader();
+
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
 
