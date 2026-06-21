@@ -4,7 +4,6 @@ import React, { useMemo, useState, useEffect } from 'react';
 import ReactFlow, { 
   Background, 
   BackgroundVariant,
-  Controls,
   MiniMap,
   Panel,
   useReactFlow,
@@ -15,16 +14,16 @@ import 'reactflow/dist/style.css';
 import { useCanvasStore } from '@/store/canvasStore';
 import CustomNode from '../Nodes/CustomNodes';
 import { useRouter } from 'next/navigation';
+import ContextMenu from '../UI/ContextMenu';
  
 // Floating canvas bottom bar
-import { Plus, Image as ImageIcon, FileText, Globe, ArrowUp, Link2, Sparkles, X } from 'lucide-react';
+import { Plus, Image as ImageIcon, FileText, ArrowUp, Link2, Sparkles, X } from 'lucide-react';
 
 // Map custom node types outside the component to avoid React Flow performance warning
-const nodeTypes = {
-  llmNode: CustomNode
-};
- 
 export const BoardCanvas = () => {
+  const nodeTypes = useMemo(() => ({
+    llmNode: CustomNode
+  }), []);
   const router = useRouter();
   const { 
     nodes, 
@@ -35,6 +34,7 @@ export const BoardCanvas = () => {
     addLLMNodeFromSearch,
     addMergeNode,
     deleteNode,
+    undoDeleteNode,
     theme,
     broadcastCursor,
     otherUsersCursors,
@@ -47,6 +47,15 @@ export const BoardCanvas = () => {
     addDocNode
   } = useCanvasStore();
  
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    flowX: number;
+    flowY: number;
+    targetType: 'canvas' | 'node';
+    targetNodeId?: string;
+  } | null>(null);
+
   const inputRef = React.useRef<HTMLInputElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [bottomPrompt, setBottomPrompt] = useState('');
@@ -88,10 +97,9 @@ export const BoardCanvas = () => {
     }
   }, [newlyCreatedNodeId, nodes, setCenter, setNewlyCreatedNodeId]);
 
-  // Keyboard Delete key: delete all currently selected nodes
+  // Keyboard handlers: Delete/Backspace keys to delete nodes, Ctrl+Z to undo deletion
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'Delete') return;
       // Don't fire when user is typing in an input, textarea, or contenteditable
       const target = e.target as HTMLElement;
       if (
@@ -100,13 +108,26 @@ export const BoardCanvas = () => {
         target.isContentEditable
       ) return;
 
-      const selectedNodes = nodes.filter(n => n.selected);
-      selectedNodes.forEach(n => deleteNode(n.id));
+      // Handle Delete/Backspace keys
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        const selectedNodes = nodes.filter(n => n.selected);
+        if (selectedNodes.length > 0) {
+          e.preventDefault();
+          selectedNodes.forEach(n => deleteNode(n.id));
+        }
+      }
+
+      // Handle Ctrl+Z / Cmd+Z to undo
+      const isUndo = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z';
+      if (isUndo) {
+        e.preventDefault();
+        undoDeleteNode();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [nodes, deleteNode]);
+  }, [nodes, deleteNode, undoDeleteNode]);
   const { x: vpX, y: vpY, zoom: vpZoom } = useViewport();
 
   const lastBroadcast = React.useRef(0);
@@ -124,9 +145,41 @@ export const BoardCanvas = () => {
   };
 
   const handlePaneClick = () => {
+    if (contextMenu) setContextMenu(null);
     if (!hasNodes && inputRef.current) {
       inputRef.current.focus();
     }
+  };
+
+  const handlePaneContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const flowCoords = screenToFlowPosition({
+      x: e.clientX,
+      y: e.clientY
+    });
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      flowX: flowCoords.x,
+      flowY: flowCoords.y,
+      targetType: 'canvas'
+    });
+  };
+
+  const handleNodeContextMenu = (e: React.MouseEvent, node: any) => {
+    e.preventDefault();
+    const flowCoords = screenToFlowPosition({
+      x: e.clientX,
+      y: e.clientY
+    });
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      flowX: flowCoords.x,
+      flowY: flowCoords.y,
+      targetType: 'node',
+      targetNodeId: node.id
+    });
   };
  
  
@@ -136,10 +189,6 @@ export const BoardCanvas = () => {
   };
 
   const handleUploadClick = (label: string) => {
-    if (label === 'Web') {
-      alert("Web search is not implemented yet!");
-      return;
-    }
     if (selectedModel === 'poolside') {
       triggerError("Uploading not supported in this model.");
       return;
@@ -222,10 +271,13 @@ export const BoardCanvas = () => {
         onConnect={onConnect}
         nodeTypes={nodeTypes}
         onPaneClick={handlePaneClick}
+        onPaneContextMenu={handlePaneContextMenu}
+        onNodeContextMenu={handleNodeContextMenu}
         nodesDraggable={true}
         nodesConnectable={true}
         multiSelectionKeyCode="Control"
         fitView
+        minZoom={0.05}
         noWheelClassName="no-canvas-wheel"
         className={theme === 'dark' ? "bg-[#121110] transition-colors duration-200" : "bg-[#f8f5f0] transition-colors duration-200"} // Match exact light/dark warm background
       >
@@ -237,36 +289,7 @@ export const BoardCanvas = () => {
           variant={BackgroundVariant.Dots} 
         />
  
-        {/* Custom Panel: Toolbar at top-left */}
-        {nodes.length >= 1 && (
-          <Panel position="top-left" className="bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md border border-white/20 dark:border-zinc-850/50 p-2.5 rounded-2xl shadow-[0_8px_32px_0_rgba(45,38,32,0.06)] flex items-center gap-2 m-4 transition-colors">
-            <button 
-              onClick={handleOrganizeAction}
-              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#ff5722] to-[#ff9100] text-white hover:from-[#f4511e] hover:to-[#ff8000] active:scale-95 text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Organize Canvas</span>
-              <span className="inline sm:hidden">Organize</span>
-            </button>
 
-            {nodes.length >= 2 && (
-              <>
-                <div className="h-4 w-px bg-black/5 dark:bg-white/5" />
-                <button 
-                  onClick={handleMergeAction}
-                  className="px-3 py-1.5 rounded-xl bg-[#7c4dff] text-white hover:bg-[#6200ea] active:scale-95 text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
-                >
-                  <Link2 className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Merge Nodes</span>
-                  <span className="inline sm:hidden">Merge</span>
-                </button>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 max-w-[150px] leading-tight hidden sm:inline">
-                  Hold Ctrl & click to select multiple, then merge
-                </span>
-              </>
-            )}
-          </Panel>
-        )}
 
         {/* Node count box which opens a sorted node list popover on click */}
         <Panel position="top-right" className="z-50 m-4 relative select-none">
@@ -314,14 +337,7 @@ export const BoardCanvas = () => {
             )}
           </div>
         </Panel>
- 
-        {/* React Flow Controls - placed bottom-left */}
-        {hasNodes && (
-          <Controls 
-            className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/80 shadow-sm rounded-lg p-1 transition-colors"
-            showInteractive={false}
-          />
-        )}
+
  
         {/* React Flow MiniMap - styled transparently matching beige theme */}
         {hasNodes && (
@@ -495,8 +511,7 @@ export const BoardCanvas = () => {
             {[
               { label: 'Attach', icon: <Plus className="w-3.5 h-3.5" /> },
               { label: 'Image', icon: <ImageIcon className="w-3.5 h-3.5" /> },
-              { label: 'Document', icon: <FileText className="w-3.5 h-3.5" /> },
-              { label: 'Web', icon: <Globe className="w-3.5 h-3.5" /> }
+              { label: 'Document', icon: <FileText className="w-3.5 h-3.5" /> }
             ].map((btn, idx) => (
               <button
                 key={idx}
@@ -586,6 +601,18 @@ export const BoardCanvas = () => {
           </div>
         );
       })}
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          flowX={contextMenu.flowX}
+          flowY={contextMenu.flowY}
+          targetType={contextMenu.targetType}
+          targetNodeId={contextMenu.targetNodeId}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
 
     </div>
   );

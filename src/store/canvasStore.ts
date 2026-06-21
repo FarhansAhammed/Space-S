@@ -118,14 +118,17 @@ interface CanvasStore {
   userRole: 'owner' | 'editor' | null;
   currentUserInfo: { userId: string; username: string; avatarColor: string } | null;
   maxZIndex: number;
+  deletedNodesHistory: Array<{ node: Node<NodeData>; edges: Edge[] }>;
 
   // Actions
   toggleTheme: () => void;
   selectNode: (nodeId: string | null) => Promise<void>;
   addLLMNodeFromSearch: (prompt: string) => Promise<void>;
+  addNodeAtPosition: (type: NodeType, x: number, y: number, prompt: string) => Promise<void>;
   deriveNode: (parentNodeId: string, type: NodeType, prompt: string, title?: string) => Promise<void>;
   continueNodeConversation: (nodeId: string, prompt: string) => Promise<void>;
   deleteNode: (nodeId: string) => Promise<void>;
+  undoDeleteNode: () => Promise<void>;
   updateNodeData: (nodeId: string, updates: Partial<NodeData>) => Promise<void>;
   collapseNode: (nodeId: string) => void;
   expandNode: (nodeId: string) => void;
@@ -479,6 +482,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   currentUserInfo: null,
   newlyCreatedNodeId: null,
   maxZIndex: 10,
+  deletedNodesHistory: [],
   clerkTokenFetcher: null,
   selectedModel: 'poolside',
   setSelectedModel: (model: 'poolside' | 'gemini') => {
@@ -962,6 +966,276 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
             return n;
           })
         }));
+      }
+    }
+  },
+
+  addNodeAtPosition: async (type: NodeType, x: number, y: number, prompt: string) => {
+    const boardId = get().boardId;
+    const supabase = get().supabaseClient;
+    let nodeId = `node_${Date.now()}`;
+    const nextZIndex = get().maxZIndex + 1;
+
+    const position = { x, y };
+    const isAI = type !== 'note' && prompt.trim().length > 0;
+
+    if (boardId && boardId !== 'sample-board' && supabase) {
+      const dbType = ['llm', 'branch', 'merge', 'image', 'doc', 'question', 'note'].includes(type) ? type : 'llm';
+      const { data: dbNode, error: nodeError } = await supabase
+        .from('nodes')
+        .insert({
+          canvas_id: boardId,
+          type: dbType,
+          position_x: position.x,
+          position_y: position.y,
+          title: prompt || (type === 'note' ? 'New Note' : 'New Node'),
+          content: type === 'note' ? prompt : ''
+        })
+        .select()
+        .single();
+
+      if (nodeError || !dbNode) {
+        console.error('Failed to insert node in DB:', nodeError);
+        return;
+      }
+      nodeId = dbNode.id;
+
+      if (isAI) {
+        await supabase.from('node_messages').insert({
+          node_id: nodeId,
+          role: 'user',
+          content: prompt,
+          sender_id: get().currentUserInfo?.userId
+        });
+      }
+
+      const newNode: Node<NodeData> = {
+        id: nodeId,
+        type: 'llmNode',
+        position,
+        zIndex: nextZIndex,
+        data: {
+          type: dbType,
+          title: prompt || (type === 'note' ? 'New Note' : 'New Node'),
+          content: type === 'note' ? prompt : '',
+          generation: 0,
+          isLoading: isAI,
+          isCollapsed: false,
+          conversationHistory: isAI ? [{
+            role: 'user',
+            content: prompt,
+            senderId: get().currentUserInfo?.userId,
+            sender: get().currentUserInfo ? {
+              username: get().currentUserInfo!.username,
+              avatarColor: get().currentUserInfo!.avatarColor
+            } : null
+          }] : [],
+          createdAt: dbNode.created_at || new Date().toISOString()
+        }
+      };
+
+      set(state => ({
+        nodes: [...state.nodes, newNode],
+        activeNodeId: nodeId,
+        newlyCreatedNodeId: nodeId,
+        maxZIndex: nextZIndex
+      }));
+
+      if (isAI) {
+        const fetcher = get().clerkTokenFetcher;
+        const token = fetcher ? await fetcher() : null;
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        try {
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              messages: [{ role: 'user', content: prompt }],
+              model: get().selectedModel
+            })
+          });
+
+          if (!response.ok) throw new Error('API failed');
+
+          const reader = response.body?.getReader();
+          const decoder = new TextDecoder();
+          let content = '';
+
+          if (reader) {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              content += decoder.decode(value, { stream: true });
+
+              set(state => ({
+                nodes: state.nodes.map(n => {
+                  if (n.id === nodeId) {
+                    return {
+                      ...n,
+                      data: { ...n.data, content }
+                    };
+                  }
+                  return n;
+                })
+              }));
+            }
+          }
+
+          await supabase.from('node_messages').insert({
+            node_id: nodeId,
+            role: 'assistant',
+            content
+          });
+
+          await supabase.from('nodes').update({ content }).eq('id', nodeId);
+
+          set(state => ({
+            nodes: state.nodes.map(n => {
+              if (n.id === nodeId) {
+                return {
+                  ...n,
+                  data: {
+                    ...n.data,
+                    isLoading: false,
+                    conversationHistory: [
+                      ...n.data.conversationHistory,
+                      { role: 'assistant', content }
+                    ]
+                  }
+                };
+              }
+              return n;
+            })
+          }));
+        } catch (err) {
+          console.error('Error fetching AI stream for new node:', err);
+          set(state => ({
+            nodes: state.nodes.map(n => {
+              if (n.id === nodeId) {
+                return {
+                  ...n,
+                  data: {
+                    ...n.data,
+                    isLoading: false,
+                    content: 'Failed to generate AI response.'
+                  }
+                };
+              }
+              return n;
+            })
+          }));
+        }
+      }
+    } else {
+      const newNode: Node<NodeData> = {
+        id: nodeId,
+        type: 'llmNode',
+        position,
+        zIndex: nextZIndex,
+        data: {
+          type,
+          title: prompt || (type === 'note' ? 'New Note' : 'New Node'),
+          content: type === 'note' ? prompt : '',
+          generation: 0,
+          isLoading: isAI,
+          isCollapsed: false,
+          conversationHistory: isAI ? [{
+            role: 'user',
+            content: prompt,
+            senderId: get().currentUserInfo?.userId,
+            sender: get().currentUserInfo ? {
+              username: get().currentUserInfo!.username,
+              avatarColor: get().currentUserInfo!.avatarColor
+            } : null
+          }] : [],
+          createdAt: new Date().toISOString()
+        }
+      };
+
+      set(state => ({
+        nodes: [...state.nodes, newNode],
+        activeNodeId: nodeId,
+        newlyCreatedNodeId: nodeId,
+        maxZIndex: nextZIndex
+      }));
+
+      if (isAI) {
+        try {
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages: [{ role: 'user', content: prompt }],
+              model: get().selectedModel
+            })
+          });
+
+          if (!response.ok) throw new Error('API failed');
+
+          const reader = response.body?.getReader();
+          const decoder = new TextDecoder();
+          let content = '';
+
+          if (reader) {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              content += decoder.decode(value, { stream: true });
+
+              set(state => ({
+                nodes: state.nodes.map(n => {
+                  if (n.id === nodeId) {
+                    return {
+                      ...n,
+                      data: { ...n.data, content }
+                    };
+                  }
+                  return n;
+                })
+              }));
+            }
+          }
+
+          set(state => ({
+            nodes: state.nodes.map(n => {
+              if (n.id === nodeId) {
+                return {
+                  ...n,
+                  data: {
+                    ...n.data,
+                    isLoading: false,
+                    conversationHistory: [
+                      ...n.data.conversationHistory,
+                      { role: 'assistant', content }
+                    ]
+                  }
+                };
+              }
+              return n;
+            })
+          }));
+        } catch (err) {
+          console.error('Error fetching local AI stream:', err);
+          set(state => ({
+            nodes: state.nodes.map(n => {
+              if (n.id === nodeId) {
+                return {
+                  ...n,
+                  data: {
+                    ...n.data,
+                    isLoading: false,
+                    content: 'Failed to generate AI response.'
+                  }
+                };
+              }
+              return n;
+            })
+          }));
+        }
       }
     }
   },
@@ -2064,6 +2338,18 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   deleteNode: async (nodeId: string) => {
     const boardId = get().boardId;
     const supabase = get().supabaseClient;
+    const nodeToDelete = get().nodes.find(n => n.id === nodeId);
+    if (!nodeToDelete) return;
+
+    const edgesToDelete = get().edges.filter(e => e.source === nodeId || e.target === nodeId);
+
+    // Save to local history before deleting
+    set(state => ({
+      deletedNodesHistory: [
+        ...state.deletedNodesHistory,
+        { node: nodeToDelete, edges: edgesToDelete }
+      ]
+    }));
 
     // Optimistically update local state immediately to ensure snappy UI response
     set(state => {
@@ -2080,6 +2366,102 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       const { error } = await supabase.from('nodes').delete().eq('id', nodeId);
       if (error) {
         console.error('Failed to delete node from DB:', error);
+      }
+    }
+  },
+
+  undoDeleteNode: async () => {
+    const boardId = get().boardId;
+    const supabase = get().supabaseClient;
+    const history = get().deletedNodesHistory;
+
+    if (history.length === 0) return;
+
+    // Pop the last deleted node/edges record
+    const lastItem = history[history.length - 1];
+    const { node, edges } = lastItem;
+
+    // Update history state
+    set(state => ({
+      deletedNodesHistory: state.deletedNodesHistory.slice(0, -1)
+    }));
+
+    // Add back to local state optimistically
+    set(state => {
+      const nextNodes = [...state.nodes, node];
+      const nextEdges = [...state.edges, ...edges];
+      return {
+        nodes: computeGenerations(nextNodes),
+        edges: nextEdges,
+        activeNodeId: node.id
+      };
+    });
+
+    // If online canvas, re-persist back to Supabase DB
+    if (boardId && boardId !== 'sample-board' && supabase) {
+      try {
+        // 1. Re-insert node
+        const { error: nodeError } = await supabase
+          .from('nodes')
+          .insert({
+            id: node.id,
+            canvas_id: boardId,
+            type: node.data.type,
+            position_x: node.position.x,
+            position_y: node.position.y,
+            title: node.data.title,
+            content: node.data.content,
+            is_collapsed: node.data.isCollapsed,
+            parent_node_id: node.data.parentNodeId || null,
+            image_url: node.data.imageUrl || null,
+            source_file: node.data.sourceFile || null,
+            context_summary: node.data.contextSummary || null,
+            context_chain: node.data.contextChain || null,
+            created_at: node.data.createdAt || new Date().toISOString()
+          });
+
+        if (nodeError) {
+          console.error('Failed to restore node in DB:', nodeError);
+          return;
+        }
+
+        // 2. Re-insert edges
+        if (edges.length > 0) {
+          const edgeInserts = edges.map(e => ({
+            id: e.id,
+            canvas_id: boardId,
+            source_node_id: e.source,
+            target_node_id: e.target
+          }));
+
+          const { error: edgeError } = await supabase
+            .from('edges')
+            .insert(edgeInserts);
+
+          if (edgeError) {
+            console.error('Failed to restore edges in DB:', edgeError);
+          }
+        }
+
+        // 3. Re-insert node messages
+        if (node.data.conversationHistory && node.data.conversationHistory.length > 0) {
+          const messageInserts = node.data.conversationHistory.map(m => ({
+            node_id: node.id,
+            role: m.role,
+            content: m.content,
+            sender_id: m.senderId || null
+          }));
+
+          const { error: messageError } = await supabase
+            .from('node_messages')
+            .insert(messageInserts);
+
+          if (messageError) {
+            console.error('Failed to restore node messages in DB:', messageError);
+          }
+        }
+      } catch (err) {
+        console.error('Exception restoring node/edges in DB:', err);
       }
     }
   },

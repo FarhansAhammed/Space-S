@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronDown, ChevronLeft, LayoutGrid, Sun, Moon, Users, X, Loader2, Bot, Check, Sparkles, StickyNote, FileText, HelpCircle, Image as ImageIcon } from 'lucide-react';
+import { Search, ChevronDown, LayoutGrid, Sun, Moon, Users, X, Loader2, Bot, Check, Sparkles, StickyNote, FileText, HelpCircle, Image as ImageIcon } from 'lucide-react';
 import { useCanvasStore, NodeType } from '@/store/canvasStore';
 import { UserButton, Show, useAuth } from '@clerk/nextjs';
 import Link from 'next/link';
@@ -176,27 +176,18 @@ export const TopHeader = () => {
   };
 
   return (
-    <header className="h-[64px] border-b border-white/20 dark:border-zinc-900/50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-3 sm:px-6 z-40 fixed top-0 left-0 right-0 transition-colors duration-200">
+    <>
+      <header className="h-[64px] border-b border-white/20 dark:border-zinc-900/50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-3 sm:px-6 z-40 fixed top-0 left-0 right-0 transition-colors duration-200">
       
       {/* Brand & Left Navigation */}
       <div className="flex items-center gap-3">
         <Link 
-          href="/dashboard" 
+          href="/" 
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer border border-transparent hover:border-white/15 dark:hover:border-zinc-850/50 transition-all"
         >
           {/* Logo image */}
           <img src="/logo.png" alt="Space-S Logo" className="w-5 h-5 object-contain" />
           <span className="font-semibold text-sm font-display text-zinc-800 dark:text-zinc-200 hidden sm:inline">Space<span className="text-[#7c4dff] dark:text-[#a080ff] font-bold">-S</span></span>
-          <ChevronDown className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 hidden sm:inline" />
-        </Link>
-
-        {/* Back navigation */}
-        <Link 
-          href="/dashboard"
-          title="Back to Dashboard"
-          className="w-8 h-8 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-sm flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5 transition-all shadow-sm"
-        >
-          <ChevronLeft className="w-4 h-4" />
         </Link>
       </div>
 
@@ -279,10 +270,14 @@ export const TopHeader = () => {
 
       {/* Right Controls / Profiles */}
       <div className="flex items-center gap-2 sm:gap-4">
-        {/* View Grid Layout Icon */}
-        <button className="hidden sm:flex w-9 h-9 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-zinc-900/70 hover:bg-black/5 dark:hover:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all flex items-center justify-center shadow-sm">
+        {/* Go to Dashboard Link */}
+        <Link 
+          href="/dashboard"
+          title="Go to Dashboard"
+          className="hidden sm:flex w-9 h-9 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-zinc-900/70 hover:bg-black/5 dark:hover:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-all flex items-center justify-center shadow-sm animate-in fade-in duration-200"
+        >
           <LayoutGrid className="w-4 h-4" />
-        </button>
+        </Link>
 
         {/* Model Selector Dropdown */}
         <div className="relative">
@@ -419,61 +414,72 @@ export const TopHeader = () => {
           </div>
         </Show>
       </div>
+    </header>
 
-      {/* Invite Modal Overlay */}
-      {showInviteModal && (
+    {/* Invite Modal Overlay - Rendered outside header to avoid backdrop-blur filter clipping */}
+    {showInviteModal && (
+      <div 
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center" 
+        onClick={() => setShowInviteModal(false)}
+      >
         <div 
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center" 
-          onClick={() => setShowInviteModal(false)}
+          className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 p-6 rounded-2xl w-full max-w-sm shadow-xl relative transition-all animate-in fade-in zoom-in-95 duration-150" 
+          onClick={e => e.stopPropagation()}
         >
-          <div 
-            className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 p-6 rounded-2xl w-full max-w-sm shadow-xl relative transition-all" 
-            onClick={e => e.stopPropagation()}
-          >
-            <h3 className="text-sm font-bold text-zinc-950 dark:text-zinc-50 mb-1">Invite Collaborators</h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">Share this link to invite others to edit this canvas.</p>
-            
-            {loadingInvite ? (
-              <div className="flex justify-center py-4">
-                <Loader2 className="w-6 h-6 text-[#7c4dff] animate-spin" />
+          <h3 className="text-sm font-bold text-zinc-950 dark:text-zinc-50 mb-1">Invite Collaborators</h3>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4">Share this link to invite others to edit this canvas.</p>
+          
+          {loadingInvite ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="w-6 h-6 text-[#7c4dff] animate-spin" />
+            </div>
+          ) : inviteToken ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 bg-zinc-50/50 dark:bg-zinc-950/30">
+                <span className="text-[10px] font-mono select-all truncate w-4/5 text-zinc-600 dark:text-zinc-400 pr-2">
+                  {window.location.origin}/join/{inviteToken}
+                </span>
+                <button
+                  onClick={copyInviteLink}
+                  className="px-2.5 py-1 bg-[#7c4dff] text-white rounded text-[10px] font-semibold hover:bg-[#6200ea] transition-all whitespace-nowrap"
+                >
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
               </div>
-            ) : inviteToken ? (
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between border border-zinc-200 dark:border-zinc-800 rounded-lg p-2 bg-zinc-50/50 dark:bg-zinc-950/30">
-                  <span className="text-[10px] font-mono select-all truncate w-4/5 text-zinc-600 dark:text-zinc-400 pr-2">
-                    {window.location.origin}/join/{inviteToken}
-                  </span>
+
+              {isOwner ? (
+                <div className="flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800/80 pt-3 text-xs">
+                  <div className="flex flex-col text-left">
+                    <span className="text-zinc-700 dark:text-zinc-300 font-semibold text-xs">Invite Link Status</span>
+                    <span className={`text-[10px] ${inviteEnabled ? 'text-green-600 dark:text-green-400 font-medium' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                      {inviteEnabled ? 'Active — Anyone with link can join' : 'Disabled — Access is revoked'}
+                    </span>
+                  </div>
                   <button
-                    onClick={copyInviteLink}
-                    className="px-2.5 py-1 bg-[#7c4dff] text-white rounded text-[10px] font-semibold hover:bg-[#6200ea] transition-all whitespace-nowrap"
+                    type="button"
+                    onClick={toggleInviteLink}
+                    className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-200 focus:outline-none focus:ring-1 focus:ring-[#7c4dff]/50 ${inviteEnabled ? 'bg-green-500 flex justify-end' : 'bg-zinc-300 dark:bg-zinc-700 flex justify-start'}`}
                   >
-                    {copied ? 'Copied!' : 'Copy'}
+                    <div className="w-4 h-4 rounded-full bg-white shadow-sm transition-all"></div>
                   </button>
                 </div>
+              ) : (
+                <div className="text-[10px] text-zinc-400 dark:text-zinc-500 text-center mt-2">
+                  Only the canvas owner can toggle the link status.
+                </div>
+              )}
 
-                {isOwner ? (
-                  <div className="flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800/80 pt-3 text-xs">
-                    <div className="flex flex-col text-left">
-                      <span className="text-zinc-700 dark:text-zinc-300 font-semibold text-xs">Invite Link Status</span>
-                      <span className={`text-[10px] ${inviteEnabled ? 'text-green-600 dark:text-green-400 font-medium' : 'text-zinc-400 dark:text-zinc-500'}`}>
-                        {inviteEnabled ? 'Active — Anyone with link can join' : 'Disabled — Access is revoked'}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={toggleInviteLink}
-                      className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-200 focus:outline-none focus:ring-1 focus:ring-[#7c4dff]/50 ${inviteEnabled ? 'bg-green-500 flex justify-end' : 'bg-zinc-300 dark:bg-zinc-700 flex justify-start'}`}
-                    >
-                      <div className="w-4 h-4 rounded-full bg-white shadow-sm transition-all"></div>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="text-[10px] text-zinc-400 dark:text-zinc-500 text-center mt-2">
-                    Only the canvas owner can toggle the link status.
-                  </div>
-                )}
-              </div>
-            ) : (
+              {/* Bottom Close Button */}
+              <button
+                type="button"
+                onClick={() => setShowInviteModal(false)}
+                className="w-full mt-2 h-9 border border-zinc-200 dark:border-zinc-800 text-zinc-705 dark:text-zinc-300 text-xs font-semibold rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-all active:scale-95"
+              >
+                Close Menu
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
               <button
                 onClick={generateInviteLink}
                 disabled={!isOwner}
@@ -481,19 +487,28 @@ export const TopHeader = () => {
               >
                 {isOwner ? 'Generate Invite Link' : 'No invite link generated yet'}
               </button>
-            )}
+              {/* Bottom Close Button */}
+              <button
+                type="button"
+                onClick={() => setShowInviteModal(false)}
+                className="w-full h-9 border border-zinc-200 dark:border-zinc-800 text-zinc-705 dark:text-zinc-300 text-xs font-semibold rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-all active:scale-95"
+              >
+                Close Menu
+              </button>
+            </div>
+          )}
 
-            <button
-              onClick={() => setShowInviteModal(false)}
-              className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-all"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            onClick={() => setShowInviteModal(false)}
+            className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-200 p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-all"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
-      )}
-
-    </header>
+      </div>
+    )}
+  </>
   );
 };
 export default TopHeader;
