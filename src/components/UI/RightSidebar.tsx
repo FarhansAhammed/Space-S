@@ -6,8 +6,8 @@ import { useCanvasStore, NodeType } from '@/store/canvasStore';
 import { useUser } from '@clerk/nextjs';
  
 export const RightSidebar = () => {
-  const { user } = useUser();
-  const { activeNodeId, nodes, selectNode, continueNodeConversation } = useCanvasStore();
+  const user = useUser().user;
+  const { activeNodeId, nodes, selectNode, continueNodeConversation, showMobileSidebar } = useCanvasStore();
   const [chatMessage, setChatMessage] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
  
@@ -54,7 +54,7 @@ export const RightSidebar = () => {
   };
  
   return (
-    <aside className="w-full md:w-[360px] bg-white/80 dark:bg-zinc-950/80 border-t md:border border-white/20 dark:border-zinc-800/50 shadow-[0_20px_40px_rgba(45,38,32,0.08)] rounded-t-[24px] md:rounded-[24px] flex flex-col fixed bottom-0 md:bottom-[24px] left-0 md:left-auto right-0 md:right-[24px] top-auto md:top-[84px] h-[60vh] md:h-auto z-40 overflow-hidden backdrop-blur-md transition-all duration-300 dark:text-zinc-200">
+    <aside className={`w-full md:w-[360px] bg-white/80 dark:bg-zinc-950/80 border-t md:border border-white/20 dark:border-zinc-800/50 shadow-[0_20px_40px_rgba(45,38,32,0.08)] rounded-t-[24px] md:rounded-[24px] ${showMobileSidebar ? 'flex' : 'hidden md:flex'} flex-col fixed bottom-0 md:bottom-[24px] left-0 md:left-auto right-0 md:right-[24px] top-auto md:top-[84px] h-[60vh] md:h-auto z-40 overflow-hidden backdrop-blur-md transition-all duration-300 dark:text-zinc-200`}>
       
       {/* Header Info */}
       <div className="p-5 border-b border-black/5 dark:border-white/5 flex flex-col gap-2">

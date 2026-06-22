@@ -107,6 +107,7 @@ interface CanvasStore {
   activeNodeId: string | null; // For right sidebar Chat box
   theme: 'light' | 'dark';
   newlyCreatedNodeId: string | null;
+  showMobileSidebar: boolean;
 
   // Supabase Integration State
   supabaseClient: SupabaseClient | null;
@@ -159,6 +160,60 @@ interface CanvasStore {
 }
 
 // Helpers
+const getNonOverlappingPosition = (
+  preferred: XYPosition,
+  existingNodes: Node[],
+  width: number = 300,
+  height: number = 220
+): XYPosition => {
+  let candidate = { ...preferred };
+  const maxAttempts = 100;
+  let attempt = 0;
+  
+  const bufferX = 40;
+  const bufferY = 40;
+
+  const getNum = (val: any): number | undefined => {
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') {
+      const parsed = parseFloat(val);
+      if (!isNaN(parsed)) return parsed;
+    }
+    return undefined;
+  };
+
+  const isOverlapping = (pos: XYPosition) => {
+    for (const node of existingNodes) {
+      const w = node.width ?? getNum(node.style?.width) ?? 300;
+      const h = node.height ?? getNum(node.style?.height) ?? 220;
+      
+      const xOverlap = pos.x < node.position.x + w + bufferX && pos.x + width + bufferX > node.position.x;
+      const yOverlap = pos.y < node.position.y + h + bufferY && pos.y + height + bufferY > node.position.y;
+      
+      if (xOverlap && yOverlap) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  let gridX = 0;
+  let gridY = 0;
+  
+  while (isOverlapping(candidate) && attempt < maxAttempts) {
+    attempt++;
+    gridY++;
+    if (gridY > 4) {
+      gridY = 0;
+      gridX++;
+    }
+    candidate.x = preferred.x + gridX * (width + bufferX);
+    candidate.y = preferred.y + gridY * (height + bufferY);
+  }
+  
+  return candidate;
+};
+
 const getEdgeColorForGen = (gen: number) => {
   switch (gen) {
     case 1: return '#7c4dff'; // Purple / Parent -> Child
@@ -473,6 +528,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   isSaving: false,
   isLoadingCanvas: false,
   activeNodeId: null,
+  showMobileSidebar: false,
   theme: 'light',
   supabaseClient: null,
   realtimeChannel: null,
@@ -609,7 +665,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   selectNode: async (nodeId: string | null) => {
-    set({ activeNodeId: nodeId });
+    set({ activeNodeId: nodeId, showMobileSidebar: !!nodeId });
 
     if (nodeId) {
       const nextZIndex = get().maxZIndex + 1;
@@ -664,10 +720,11 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1000;
     const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
 
-    const position: XYPosition = {
+    const preferredPosition: XYPosition = {
       x: viewportWidth / 2 - 150,
       y: viewportHeight / 2 - 100,
     };
+    const position = getNonOverlappingPosition(preferredPosition, get().nodes);
 
     const boardId = get().boardId;
     const supabase = get().supabaseClient;
@@ -746,12 +803,14 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
             nodes: state.nodes.map(n => n.id === nodeId ? { ...n, data: { ...n.data, isLoading: true, conversationHistory: parentNode.data.conversationHistory } } : n),
             activeNodeId: nodeId,
             newlyCreatedNodeId: nodeId,
+            showMobileSidebar: false,
           };
         }
         return {
           nodes: computeGenerations([...state.nodes, parentNode]),
           activeNodeId: nodeId,
           newlyCreatedNodeId: nodeId,
+          showMobileSidebar: false,
           maxZIndex: nextZIndex
         };
       });
@@ -884,6 +943,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         nodes: [...state.nodes, parentNode],
         activeNodeId: nodeId,
         newlyCreatedNodeId: nodeId,
+        showMobileSidebar: false,
         maxZIndex: nextZIndex
       }));
 
@@ -1038,6 +1098,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         nodes: [...state.nodes, newNode],
         activeNodeId: nodeId,
         newlyCreatedNodeId: nodeId,
+        showMobileSidebar: false,
         maxZIndex: nextZIndex
       }));
 
@@ -1160,6 +1221,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         nodes: [...state.nodes, newNode],
         activeNodeId: nodeId,
         newlyCreatedNodeId: nodeId,
+        showMobileSidebar: false,
         maxZIndex: nextZIndex
       }));
 
@@ -1248,10 +1310,11 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     const parentGen = parentNode.data.generation ?? 0;
     const childGen = parentGen + 1;
 
-    const position: XYPosition = {
+    const preferredPosition: XYPosition = {
       x: parentNode.position.x + 360,
       y: parentNode.position.y + (Math.random() - 0.5) * 160
     };
+    const position = getNonOverlappingPosition(preferredPosition, get().nodes);
 
     // Build context chain
     const parentContextChain = parentNode.data.contextChain ?? [];
@@ -1390,6 +1453,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           edges: updatedEdges,
           activeNodeId: childId,
           newlyCreatedNodeId: childId,
+          showMobileSidebar: false,
           maxZIndex: nextZIndex
         };
       });
@@ -1541,6 +1605,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         edges: [...state.edges, newEdge],
         activeNodeId: childId,
         newlyCreatedNodeId: childId,
+        showMobileSidebar: false,
         maxZIndex: nextZIndex
       }));
 
@@ -1810,10 +1875,11 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1000;
     const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
 
-    const position: XYPosition = {
+    const preferredPosition: XYPosition = {
       x: viewportWidth / 2 - 150,
       y: viewportHeight / 2 - 100,
     };
+    const position = getNonOverlappingPosition(preferredPosition, get().nodes);
 
     const boardId = get().boardId;
     const supabase = get().supabaseClient;
@@ -1890,12 +1956,14 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           nodes: state.nodes.map(n => n.id === nodeId ? { ...n, data: { ...n.data, isLoading: true, sourceFile: docNode.data.sourceFile, fileSize: docNode.data.fileSize } } : n),
           activeNodeId: nodeId,
           newlyCreatedNodeId: nodeId,
+          showMobileSidebar: false,
         };
       }
       return {
         nodes: computeGenerations([...state.nodes, docNode]),
         activeNodeId: nodeId,
         newlyCreatedNodeId: nodeId,
+        showMobileSidebar: false,
         maxZIndex: nextZIndex
       };
     });
@@ -1977,10 +2045,11 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     const parentGen = parentNode.data.generation ?? 0;
     const childGen = parentGen + 1;
 
-    const position: XYPosition = {
+    const preferredPosition: XYPosition = {
       x: parentNode.position.x + 360,
       y: parentNode.position.y + (Math.random() - 0.5) * 120
     };
+    const position = getNonOverlappingPosition(preferredPosition, get().nodes);
 
     // Build context chain
     const parentContextChain = parentNode.data.contextChain ?? [];
@@ -2103,6 +2172,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
                   edges: updatedEdges,
                   activeNodeId: childId,
                   newlyCreatedNodeId: childId,
+                  showMobileSidebar: false,
                   maxZIndex: nextZIndex
                 };
               });
@@ -2148,6 +2218,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         edges: [...state.edges, newEdge],
         activeNodeId: childId,
         newlyCreatedNodeId: childId,
+        showMobileSidebar: false,
         maxZIndex: nextZIndex
       }));
     }
@@ -2524,10 +2595,11 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       sumY += n.position.y;
     });
 
-    const position = {
+    const preferredPosition = {
       x: sumX / selectedNodes.length,
       y: sumY / selectedNodes.length + 200
     };
+    const position = getNonOverlappingPosition(preferredPosition, get().nodes);
 
     const maxGen = Math.max(...selectedNodes.map(n => n.data.generation ?? 0));
     const childGen = maxGen + 1;
@@ -2621,6 +2693,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           edges: updatedEdges,
           activeNodeId: mergeId,
           newlyCreatedNodeId: mergeId,
+          showMobileSidebar: false,
           maxZIndex: nextZIndex
         };
       });
@@ -2751,6 +2824,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         edges: [...state.edges, ...newEdges],
         activeNodeId: mergeId,
         newlyCreatedNodeId: mergeId,
+        showMobileSidebar: false,
         maxZIndex: nextZIndex
       }));
 
@@ -2844,7 +2918,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       edges: [],
       boardId: `board_${Date.now()}`,
       boardName: boardTitle,
-      activeNodeId: null
+      activeNodeId: null,
+      showMobileSidebar: false
     });
   },
 
@@ -2855,7 +2930,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       nodes: isSample ? getSampleBoardNodes() : [],
       edges: isSample ? getSampleBoardEdges() : [],
       boardName: isSample ? 'Quantum Computing Ideas' : 'New Board',
-      activeNodeId: null
+      activeNodeId: null,
+      showMobileSidebar: false
     });
   },
 
@@ -2991,6 +3067,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       nodes: [],
       edges: [],
       activeNodeId: null,
+      showMobileSidebar: false,
       presenceUsers: [],
       otherUsersCursors: {},
       userRole: null,
