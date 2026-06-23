@@ -20,10 +20,11 @@ import ContextMenu from '../UI/ContextMenu';
 import { Plus, Image as ImageIcon, FileText, ArrowUp, Link2, Sparkles, X } from 'lucide-react';
 
 // Map custom node types outside the component to avoid React Flow performance warning
+const nodeTypes = {
+  llmNode: CustomNode
+};
+
 export const BoardCanvas = () => {
-  const nodeTypes = useMemo(() => ({
-    llmNode: CustomNode
-  }), []);
   const router = useRouter();
   const { 
     nodes, 
