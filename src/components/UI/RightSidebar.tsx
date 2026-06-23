@@ -1,14 +1,16 @@
 "use client";
  
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Sparkles, Send, FileText, HelpCircle, StickyNote } from 'lucide-react';
+import { X, Sparkles, Send, FileText, HelpCircle, StickyNote, Maximize2, Minimize2 } from 'lucide-react';
 import { useCanvasStore, NodeType } from '@/store/canvasStore';
 import { useUser } from '@clerk/nextjs';
+import { MarkdownRenderer } from './MarkdownRenderer';
  
 export const RightSidebar = () => {
   const user = useUser().user;
   const { activeNodeId, nodes, selectNode, continueNodeConversation, showMobileSidebar } = useCanvasStore();
   const [chatMessage, setChatMessage] = useState('');
+  const [isExpanded, setIsExpanded] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
  
   // Retrieve current active node
@@ -18,6 +20,27 @@ export const RightSidebar = () => {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeNode?.data.conversationHistory, activeNode?.data.isLoading]);
+
+  // Synchronize sidebar states to document.body classes for layout reaction
+  useEffect(() => {
+    if (activeNode) {
+      if (isExpanded) {
+        document.body.classList.add('sidebar-expanded');
+        document.body.classList.remove('sidebar-open');
+      } else {
+        document.body.classList.add('sidebar-open');
+        document.body.classList.remove('sidebar-expanded');
+      }
+    } else {
+      document.body.classList.remove('sidebar-open');
+      document.body.classList.remove('sidebar-expanded');
+    }
+
+    return () => {
+      document.body.classList.remove('sidebar-open');
+      document.body.classList.remove('sidebar-expanded');
+    };
+  }, [activeNode, isExpanded]);
  
   if (!activeNodeId || !activeNode) return null;
  
@@ -54,7 +77,7 @@ export const RightSidebar = () => {
   };
  
   return (
-    <aside className={`w-full md:w-[360px] bg-white/80 dark:bg-zinc-950/80 border-t md:border border-white/20 dark:border-zinc-800/50 shadow-[0_20px_40px_rgba(45,38,32,0.08)] rounded-t-[24px] md:rounded-[24px] ${showMobileSidebar ? 'flex' : 'hidden md:flex'} flex-col fixed bottom-0 md:bottom-[24px] left-0 md:left-auto right-0 md:right-[24px] top-auto md:top-[84px] h-[60vh] md:h-auto z-40 overflow-hidden backdrop-blur-md transition-all duration-300 dark:text-zinc-200`}>
+    <aside className={`w-full ${isExpanded ? 'md:w-[800px]' : 'md:w-[450px]'} bg-white/80 dark:bg-zinc-950/80 border-t md:border border-white/20 dark:border-zinc-800/50 shadow-[0_20px_40px_rgba(45,38,32,0.08)] rounded-t-[24px] md:rounded-[24px] ${showMobileSidebar ? 'flex' : 'hidden md:flex'} flex-col fixed bottom-0 md:bottom-[24px] left-0 md:left-auto right-0 md:right-[24px] top-auto md:top-[84px] h-[60vh] md:h-auto z-40 overflow-hidden backdrop-blur-md transition-all duration-300 dark:text-zinc-200`}>
       
       {/* Header Info */}
       <div className="p-5 border-b border-black/5 dark:border-white/5 flex flex-col gap-2">
@@ -63,12 +86,23 @@ export const RightSidebar = () => {
             {tagStyle.icon}
             <span>{tagStyle.label}</span>
           </div>
-          <button 
-            onClick={() => selectNode(null)}
-            className="w-7 h-7 rounded-xl border border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-305 transition-all"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button 
+              type="button"
+              onClick={() => setIsExpanded(!isExpanded)}
+              title={isExpanded ? "Collapse panel" : "Expand panel"}
+              className="w-7 h-7 rounded-xl border border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-all"
+            >
+              {isExpanded ? <Minimize2 className="w-4.5 h-4.5" /> : <Maximize2 className="w-4.5 h-4.5" />}
+            </button>
+            <button 
+              type="button"
+              onClick={() => selectNode(null)}
+              className="w-7 h-7 rounded-xl border border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-all"
+            >
+              <X className="w-4.5 h-4.5" />
+            </button>
+          </div>
         </div>
         <h2 className="text-sm font-semibold font-display text-zinc-800 dark:text-zinc-100 line-clamp-2 mt-1">
           {data.title}
@@ -97,7 +131,7 @@ export const RightSidebar = () => {
                       <div className="flex flex-col items-end">
                         <span className="text-[9px] font-semibold text-zinc-400 mb-1">You</span>
                         <div className="rounded-xl px-3 py-2 text-[11px] leading-relaxed shadow-sm border bg-[#7c4dff]/5 dark:bg-[#7c4dff]/10 border-[#7c4dff]/15 dark:border-[#7c4dff]/30 text-zinc-800 dark:text-zinc-200 rounded-tr-none select-text">
-                          {renderMarkdown(msg.content)}
+                          <MarkdownRenderer content={msg.content} />
                         </div>
                       </div>
                     </div>
@@ -116,7 +150,7 @@ export const RightSidebar = () => {
                       <div className="flex flex-col items-start">
                         <span className="text-[9px] font-semibold text-zinc-400 mb-1">@{msg.sender?.username || 'Collaborator'}</span>
                         <div className="rounded-xl px-3 py-2 text-[11px] leading-relaxed shadow-sm border bg-zinc-50/70 dark:bg-zinc-900/60 border-zinc-100 dark:border-zinc-800/80 text-zinc-600 dark:text-zinc-300 rounded-tl-none select-text">
-                          {renderMarkdown(msg.content)}
+                          <MarkdownRenderer content={msg.content} />
                         </div>
                       </div>
                     </div>
@@ -131,7 +165,7 @@ export const RightSidebar = () => {
                     <div className="flex flex-col items-start">
                       <span className="text-[9px] font-semibold text-zinc-400 mb-1">Space S AI</span>
                       <div className="rounded-xl px-3 py-2 text-[11px] leading-relaxed shadow-sm border bg-zinc-50/70 dark:bg-zinc-900/60 border-zinc-100 dark:border-zinc-800/80 text-zinc-600 dark:text-zinc-300 rounded-tl-none select-text">
-                        {renderMarkdown(msg.content)}
+                        <MarkdownRenderer content={msg.content} isLoading={data.isLoading && index === data.conversationHistory.length - 1} />
                       </div>
                     </div>
                   </div>
@@ -183,67 +217,6 @@ export const RightSidebar = () => {
       </form>
  
     </aside>
-  );
-};
- 
-// Simple Markdown-to-React elements parser (no dangerouslySetInnerHTML)
-const parseInlineStyles = (text: string): React.ReactNode[] => {
-  const parts = text.split('**');
-  return parts.map((part, index) => {
-    if (index % 2 === 1) {
-      return <strong key={index} className="font-bold text-zinc-900 dark:text-zinc-100">{part}</strong>;
-    }
-    return part;
-  });
-};
- 
-const renderMarkdown = (text: string): React.ReactNode => {
-  if (!text) return null;
- 
-  const lines = text.split('\n');
-  return (
-    <div className="flex flex-col gap-1">
-      {lines.map((line, idx) => {
-        const trimmed = line.trim();
-        
-        // Headers
-        if (trimmed.startsWith('### ')) {
-          return <h4 key={idx} className="font-semibold text-[11px] text-zinc-950 dark:text-white mt-1 mb-0.5">{parseInlineStyles(trimmed.slice(4))}</h4>;
-        }
-        if (trimmed.startsWith('## ')) {
-          return <h3 key={idx} className="font-bold text-xs text-zinc-950 dark:text-white mt-1.5 mb-1">{parseInlineStyles(trimmed.slice(3))}</h3>;
-        }
-        if (trimmed.startsWith('# ')) {
-          return <h2 key={idx} className="font-extrabold text-sm text-zinc-950 dark:text-white mt-2 mb-1">{parseInlineStyles(trimmed.slice(2))}</h2>;
-        }
- 
-        // Unordered lists
-        if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-          return (
-            <ul key={idx} className="list-disc pl-3">
-              <li className="text-[11px] text-zinc-600 dark:text-zinc-300">{parseInlineStyles(trimmed.slice(2))}</li>
-            </ul>
-          );
-        }
- 
-        // Ordered lists
-        const numListMatch = trimmed.match(/^(\d+)\.\s(.*)/);
-        if (numListMatch) {
-          return (
-            <ol key={idx} className="list-decimal pl-3" start={parseInt(numListMatch[1], 10)}>
-              <li className="text-[11px] text-zinc-600 dark:text-zinc-300">{parseInlineStyles(numListMatch[2])}</li>
-            </ol>
-          );
-        }
- 
-        // Standard Paragraphs
-        return (
-          <p key={idx} className="text-[11px] text-zinc-600 dark:text-zinc-300 leading-relaxed min-h-[4px]">
-            {parseInlineStyles(line)}
-          </p>
-        );
-      })}
-    </div>
   );
 };
  

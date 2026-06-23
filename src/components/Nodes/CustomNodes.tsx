@@ -2,6 +2,7 @@
  
 import React, { useState } from 'react';
 import { Handle, Position, Node, NodeProps, NodeResizeControl } from 'reactflow';
+import { MarkdownRenderer } from '../UI/MarkdownRenderer';
 import { 
   Bot, 
   FileText, 
@@ -282,7 +283,7 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
  
           {/* Node content area */}
           <div
-            className={`nodrag no-canvas-wheel overflow-y-auto break-words whitespace-pre-wrap leading-relaxed text-zinc-600 dark:text-zinc-300 pr-1 select-text ${rfStyle?.height ? 'flex-1' : 'max-h-48'}`}
+            className={`nodrag no-canvas-wheel overflow-y-auto break-words whitespace-normal leading-relaxed text-zinc-600 dark:text-zinc-300 pr-1 select-text ${rfStyle?.height ? 'flex-1' : 'max-h-48'}`}
             style={{ fontSize: `${Math.round(11 * textScale)}px` }}
           >
             {data.isLoading ? (
@@ -328,7 +329,7 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
                 </div>
               </div>
             ) : (
-              renderMarkdown(data.content, textScale)
+              <MarkdownRenderer content={data.content} textScale={textScale} isLoading={data.isLoading} />
             )}
           </div>
         </div>
@@ -458,69 +459,6 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
           </div>
         </NodeResizeControl>
       )}
-    </div>
-  );
-};
- 
-// Simple Markdown-to-React elements parser (no dangerouslySetInnerHTML)
-const parseInlineStyles = (text: string): React.ReactNode[] => {
-  const parts = text.split('**');
-  return parts.map((part, index) => {
-    if (index % 2 === 1) {
-      return <strong key={index} className="font-bold text-zinc-900 dark:text-zinc-100">{part}</strong>;
-    }
-    return part;
-  });
-};
- 
-const renderMarkdown = (text: string, textScale = 1): React.ReactNode => {
-  if (!text) return null;
-
-  const base = (px: number) => `${Math.round(px * textScale)}px`;
-
-  const lines = text.split('\n');
-  return (
-    <div className="flex flex-col gap-1">
-      {lines.map((line, idx) => {
-        const trimmed = line.trim();
-        
-        // Headers
-        if (trimmed.startsWith('### ')) {
-          return <h4 key={idx} style={{ fontSize: base(11) }} className="font-semibold text-zinc-950 dark:text-white mt-1 mb-0.5">{parseInlineStyles(trimmed.slice(4))}</h4>;
-        }
-        if (trimmed.startsWith('## ')) {
-          return <h3 key={idx} style={{ fontSize: base(12) }} className="font-bold text-zinc-950 dark:text-white mt-1.5 mb-1">{parseInlineStyles(trimmed.slice(3))}</h3>;
-        }
-        if (trimmed.startsWith('# ')) {
-          return <h2 key={idx} style={{ fontSize: base(14) }} className="font-extrabold text-zinc-950 dark:text-white mt-2 mb-1">{parseInlineStyles(trimmed.slice(2))}</h2>;
-        }
-
-        // Unordered lists
-        if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-          return (
-            <ul key={idx} className="list-disc pl-4 m-0">
-              <li style={{ fontSize: base(11) }} className="text-zinc-600 dark:text-zinc-300 break-words whitespace-pre-wrap">{parseInlineStyles(trimmed.slice(2))}</li>
-            </ul>
-          );
-        }
-
-        // Ordered lists
-        const numListMatch = trimmed.match(/^(\d+)\.\s(.*)/);
-        if (numListMatch) {
-          return (
-            <ol key={idx} className="list-decimal pl-4 m-0" start={parseInt(numListMatch[1], 10)}>
-              <li style={{ fontSize: base(11) }} className="text-zinc-600 dark:text-zinc-300 break-words whitespace-pre-wrap">{parseInlineStyles(numListMatch[2])}</li>
-            </ol>
-          );
-        }
-
-        // Standard Paragraphs
-        return (
-          <p key={idx} style={{ fontSize: base(11) }} className="text-zinc-600 dark:text-zinc-300 leading-relaxed min-h-[4px]">
-            {parseInlineStyles(line)}
-          </p>
-        );
-      })}
     </div>
   );
 };

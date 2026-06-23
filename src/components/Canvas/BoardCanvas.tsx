@@ -454,10 +454,9 @@ export const BoardCanvas = () => {
 
       {/* Floating Main Chat Box Container */}
       <div 
-        className="fixed left-1/2 w-[90%] max-w-[640px] z-30 transition-all duration-700 ease-in-out flex flex-col items-center"
+        className={`fixed z-30 transition-all duration-700 ease-in-out flex flex-col items-center w-[90%] max-w-[640px] bottom-prompt-container ${!(hasNodes || isLoadingCanvas) ? 'onboarding-center' : ''}`}
         style={{
           top: (hasNodes || isLoadingCanvas) ? 'calc(100% - 32px)' : '50%',
-          transform: (hasNodes || isLoadingCanvas) ? 'translate(-50%, -100%)' : 'translate(-50%, -50%)',
         }}
       >
         {/* Onboarding Header */}

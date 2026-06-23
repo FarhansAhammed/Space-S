@@ -19,6 +19,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://spacesapp.io"),
   title: "Infinite Canvas AI Brainstorming for Space S Visual Workspace",
   description: "Space S is an AI infinite canvas for brainstorming and research. Place AI responses as visual nodes, branch ideas, synthesize across topics, and collaborate live. Start free.",
   alternates: {

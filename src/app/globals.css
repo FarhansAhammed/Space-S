@@ -1,3 +1,5 @@
+@import "katex/dist/katex.min.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -77,4 +79,64 @@ body {
 [data-localization-key="footer"] {
   display: none !important;
 }
+
+/* Custom styling overrides for Markdown lists & spacing inside nodes */
+.markdown-content li > p {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  display: inline;
+}
+
+.markdown-content li > ul,
+.markdown-content li > ol {
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
+}
+
+/* Prompt container default centered positioning (mobile) */
+.bottom-prompt-container {
+  left: 50%;
+  transform: translate(-50%, -100%);
+  width: 90%;
+  max-width: 640px;
+}
+
+.bottom-prompt-container.onboarding-center {
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Desktop styling (md screen and up) */
+@media (min-width: 768px) {
+  .bottom-prompt-container {
+    left: 50% !important;
+    width: 90% !important;
+    max-width: 640px !important;
+    transform: translate(-50%, -100%) !important;
+    transition: all 0.5s ease-in-out !important;
+  }
+
+  .bottom-prompt-container:not(.onboarding-center) {
+    top: calc(100% - 32px) !important;
+  }
+
+  .bottom-prompt-container.onboarding-center {
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+
+  /* When right sidebar is open (default width 450px) - shift left a bit and shrink max-width slightly to fit safely */
+  body.sidebar-open .bottom-prompt-container:not(.onboarding-center) {
+    left: calc(50% - 180px) !important;
+    max-width: 550px !important;
+  }
+
+  /* When right sidebar is expanded (width 800px) - shift more and shrink max-width further */
+  body.sidebar-expanded .bottom-prompt-container:not(.onboarding-center) {
+    left: calc(50% - 350px) !important;
+    max-width: 280px !important;
+  }
+}
+
+
 
