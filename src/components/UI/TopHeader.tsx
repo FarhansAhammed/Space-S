@@ -5,6 +5,45 @@ import { UserButton, Show, useAuth } from '@clerk/nextjs';
 import Link from 'next/link';
 import { useReactFlow } from 'reactflow';
 
+const MODEL_CONFIGS = {
+  'poolside': {
+    label: 'Poolside',
+    shortLabel: 'Poolside',
+    icon: <Bot className="w-3.5 h-3.5 text-[#7c4dff]" />,
+    colorClass: 'text-[#7c4dff]',
+  },
+  'gemini': {
+    label: 'Gemini 2.5 Flash',
+    shortLabel: 'Gemini 2.5',
+    icon: <Sparkles className="w-3.5 h-3.5 text-indigo-500" />,
+    colorClass: 'text-indigo-500',
+  },
+  'gemini-3.1-flash-lite': {
+    label: 'Gemini 3.1 Flash Lite',
+    shortLabel: 'Gemini 3.1 Lite',
+    icon: <Sparkles className="w-3.5 h-3.5 text-sky-500" />,
+    colorClass: 'text-sky-500',
+  },
+  'gemma-4-31b': {
+    label: 'Gemma 4 31B',
+    shortLabel: 'Gemma 4',
+    icon: <Bot className="w-3.5 h-3.5 text-emerald-500" />,
+    colorClass: 'text-emerald-500',
+  },
+  'gemini-3-flash': {
+    label: 'Gemini 3 Flash',
+    shortLabel: 'Gemini 3',
+    icon: <Sparkles className="w-3.5 h-3.5 text-violet-500" />,
+    colorClass: 'text-violet-500',
+  },
+  'gemini-2.5-flash-lite': {
+    label: 'Gemini 2.5 Flash Lite',
+    shortLabel: 'Gemini 2.5 Lite',
+    icon: <Sparkles className="w-3.5 h-3.5 text-teal-500" />,
+    colorClass: 'text-teal-500',
+  },
+};
+
 const getSearchTagStyles = (type: NodeType) => {
   switch (type) {
     case 'llm':
@@ -109,8 +148,9 @@ export const TopHeader = () => {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedModel = localStorage.getItem('spaceS_selectedModel');
-      if (savedModel === 'poolside' || savedModel === 'gemini') {
-        setSelectedModel(savedModel);
+      const validModels = Object.keys(MODEL_CONFIGS);
+      if (savedModel && validModels.includes(savedModel)) {
+        setSelectedModel(savedModel as any);
       }
     }
   }, [setSelectedModel]);
@@ -286,18 +326,16 @@ export const TopHeader = () => {
             onClick={() => setShowModelDropdown(!showModelDropdown)}
             className="h-9 px-3 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-zinc-900/70 hover:bg-black/5 dark:hover:bg-white/5 text-zinc-700 dark:text-zinc-300 font-semibold text-xs transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
           >
-            {selectedModel === 'gemini' ? (
-              <>
-                <Sparkles className="w-3.5 h-3.5 text-indigo-500 animate-pulse" />
-                <span className="hidden sm:inline">Gemini 2.5 Flash</span>
-                <span className="inline sm:hidden">Gemini</span>
-              </>
-            ) : (
-              <>
-                <Bot className="w-3.5 h-3.5 text-[#7c4dff]" />
-                <span>Poolside</span>
-              </>
-            )}
+            {(() => {
+              const cfg = (MODEL_CONFIGS as any)[selectedModel] || MODEL_CONFIGS['poolside'];
+              return (
+                <>
+                  <span className={selectedModel !== 'poolside' ? 'animate-pulse' : ''}>{cfg.icon}</span>
+                  <span className="hidden sm:inline">{cfg.label}</span>
+                  <span className="inline sm:hidden">{cfg.shortLabel}</span>
+                </>
+              );
+            })()}
             <ChevronDown className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
           </button>
 
@@ -309,36 +347,24 @@ export const TopHeader = () => {
                 onClick={() => setShowModelDropdown(false)} 
               />
               
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-50 flex flex-col animate-in fade-in slide-in-from-top-1 duration-100">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedModel('poolside');
-                    setShowModelDropdown(false);
-                  }}
-                  className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${selectedModel === 'poolside' ? 'text-[#7c4dff]' : 'text-zinc-650 dark:text-zinc-300'}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Bot className="w-3.5 h-3.5 text-[#7c4dff]" />
-                    <span>Poolside</span>
-                  </div>
-                  {selectedModel === 'poolside' && <Check className="w-3.5 h-3.5 text-[#7c4dff]" />}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedModel('gemini');
-                    setShowModelDropdown(false);
-                  }}
-                  className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${selectedModel === 'gemini' ? 'text-indigo-500' : 'text-zinc-650 dark:text-zinc-300'}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-                    <span>Gemini 2.5 Flash</span>
-                  </div>
-                  {selectedModel === 'gemini' && <Check className="w-3.5 h-3.5 text-indigo-500" />}
-                </button>
+              <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-50 flex flex-col animate-in fade-in slide-in-from-top-1 duration-100">
+                {Object.entries(MODEL_CONFIGS).map(([key, cfg]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => {
+                      setSelectedModel(key as any);
+                      setShowModelDropdown(false);
+                    }}
+                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${selectedModel === key ? cfg.colorClass : 'text-zinc-650 dark:text-zinc-300'}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {cfg.icon}
+                      <span>{cfg.label}</span>
+                    </div>
+                    {selectedModel === key && <Check className={`w-3.5 h-3.5 ${cfg.colorClass}`} />}
+                  </button>
+                ))}
               </div>
             </>
           )}

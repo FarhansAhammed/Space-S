@@ -533,9 +533,15 @@ export const BoardCanvas = () => {
               placeholder={
                 isLoadingCanvas 
                   ? 'Loading canvas...' 
-                  : selectedModel === 'gemini'
-                    ? 'Ask anything or upload a file... (Gemini 2.5 Flash)'
-                    : 'Ask anything or create a new node... (Poolside)'
+                  : selectedModel === 'poolside'
+                    ? 'Ask anything or create a new node... (Poolside)'
+                    : `Ask anything or upload a file... (${
+                        selectedModel === 'gemini' ? 'Gemini 2.5 Flash' :
+                        selectedModel === 'gemini-3.1-flash-lite' ? 'Gemini 3.1 Flash Lite' :
+                        selectedModel === 'gemma-4-31b' ? 'Gemma 4 31B' :
+                        selectedModel === 'gemini-3-flash' ? 'Gemini 3 Flash' :
+                        selectedModel === 'gemini-2.5-flash-lite' ? 'Gemini 2.5 Flash Lite' : 'Gemini'
+                      })`
               }
               value={bottomPrompt}
               onChange={(e) => setBottomPrompt(e.target.value)}

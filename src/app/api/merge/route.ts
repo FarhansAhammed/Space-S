@@ -34,14 +34,23 @@ export async function POST(req: NextRequest) {
     const systemPrompt = "You are synthesizing multiple ideas from a canvas board. Find connections, tensions, and emergent insights between them. Respond clearly and directly, avoiding unnecessary preambles.";
     const promptText = `Here is the content of the selected nodes:\n\n${contextText}\n\nUser synthesis request: ${userPrompt || 'Synthesize the core connections and insights from these ideas.'}`;
 
-    if (model === 'gemini') {
+    const GEMINI_MODELS: Record<string, string> = {
+      'gemini': 'gemini-2.5-flash',
+      'gemini-2.5-flash-lite': 'gemini-2.5-flash-lite',
+      'gemini-3-flash': 'gemini-3-flash-preview',
+      'gemini-3.1-flash-lite': 'gemini-3.1-flash-lite',
+      'gemma-4-31b': 'gemma-4-31b-it',
+    };
+
+    if (model && model in GEMINI_MODELS) {
+      const geminiModelId = GEMINI_MODELS[model];
       const geminiApiKey = process.env.GEMINI_API_KEY;
       if (!geminiApiKey) {
         console.error('Missing GEMINI_API_KEY environment variable');
         return NextResponse.json({ error: 'Gemini API key is not configured' }, { status: 500 });
       }
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?key=${geminiApiKey}&alt=sse`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModelId}:streamGenerateContent?key=${geminiApiKey}&alt=sse`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

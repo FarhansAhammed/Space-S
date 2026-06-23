@@ -53,14 +53,23 @@ ENTITIES: [entity1, entity2, entity3]`;
 
     let rawText = '';
 
-    if (model === 'gemini') {
+    const GEMINI_MODELS: Record<string, string> = {
+      'gemini': 'gemini-2.5-flash',
+      'gemini-2.5-flash-lite': 'gemini-2.5-flash-lite',
+      'gemini-3-flash': 'gemini-3-flash-preview',
+      'gemini-3.1-flash-lite': 'gemini-3.1-flash-lite',
+      'gemma-4-31b': 'gemma-4-31b-it',
+    };
+
+    if (model && model in GEMINI_MODELS) {
+      const geminiModelId = GEMINI_MODELS[model];
       const geminiApiKey = process.env.GEMINI_API_KEY;
       if (!geminiApiKey) {
         console.error('Missing GEMINI_API_KEY environment variable');
         return NextResponse.json({ contextSummary: `General context: ${title || 'Untitled'}` });
       }
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModelId}:generateContent?key=${geminiApiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

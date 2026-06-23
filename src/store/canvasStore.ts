@@ -151,8 +151,8 @@ interface CanvasStore {
   addSelectionBranchNode: (parentNodeId: string, selectedText: string) => void;
   triggerNodeOperation: (nodeId: string, operation: 'explain' | 'expand' | 'shorten') => Promise<void>;
   updateNodeContextSummary: (nodeId: string, summary: string) => Promise<void>;
-  selectedModel: 'poolside' | 'gemini';
-  setSelectedModel: (model: 'poolside' | 'gemini') => void;
+  selectedModel: 'poolside' | 'gemini' | 'gemini-3.1-flash-lite' | 'gemma-4-31b' | 'gemini-3-flash' | 'gemini-2.5-flash-lite';
+  setSelectedModel: (model: 'poolside' | 'gemini' | 'gemini-3.1-flash-lite' | 'gemma-4-31b' | 'gemini-3-flash' | 'gemini-2.5-flash-lite') => void;
   addDocNode: (file: File) => Promise<void>;
   broadcastCursor: (x: number, y: number) => void;
   organizeCanvas: () => Promise<void>;
@@ -541,7 +541,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   deletedNodesHistory: [],
   clerkTokenFetcher: null,
   selectedModel: 'poolside',
-  setSelectedModel: (model: 'poolside' | 'gemini') => {
+  setSelectedModel: (model: 'poolside' | 'gemini' | 'gemini-3.1-flash-lite' | 'gemma-4-31b' | 'gemini-3-flash' | 'gemini-2.5-flash-lite') => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('spaceS_selectedModel', model);
     }
