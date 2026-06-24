@@ -125,16 +125,22 @@ body {
     transform: translate(-50%, -50%) !important;
   }
 
-  /* When right sidebar is open (default width 450px) - shift left a bit and shrink max-width slightly to fit safely */
+  /* When right sidebar is open (default width 450px) */
   body.sidebar-open .bottom-prompt-container:not(.onboarding-center) {
-    left: calc(50% - 180px) !important;
-    max-width: 550px !important;
+    left: calc(50vw - 190px) !important;
+    max-width: min(640px, 100vw - 450px - 120px) !important;
   }
 
-  /* When right sidebar is expanded (width 800px) - shift more and shrink max-width further */
+  /* When right sidebar is expanded (width 800px) */
   body.sidebar-expanded .bottom-prompt-container:not(.onboarding-center) {
-    left: calc(50% - 350px) !important;
-    max-width: 280px !important;
+    left: calc(50vw - 364px) !important;
+    max-width: min(640px, 100vw - 800px - 120px) !important;
+  }
+
+  /* Hide button labels when sidebar is active to prevent squishing */
+  body.sidebar-open .bottom-prompt-container button span,
+  body.sidebar-expanded .bottom-prompt-container button span {
+    display: none !important;
   }
 }
 

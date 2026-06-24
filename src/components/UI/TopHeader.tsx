@@ -64,7 +64,7 @@ const getSearchTagStyles = (type: NodeType) => {
 };
 
 export const TopHeader = () => {
-  const { nodes, selectNode, addLLMNodeFromSearch, theme, toggleTheme, boardId, presenceUsers, userRole, selectedModel, setSelectedModel } = useCanvasStore();
+  const { nodes, selectNode, addLLMNodeFromSearch, theme, toggleTheme, boardId, presenceUsers, userRole, selectedModel, setSelectedModel, currentMode, setMode } = useCanvasStore();
   const { setCenter } = useReactFlow();
   const { getToken } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
@@ -220,7 +220,7 @@ export const TopHeader = () => {
       <header className="h-[64px] border-b border-white/20 dark:border-zinc-900/50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-3 sm:px-6 z-50 fixed top-0 left-0 right-0 transition-colors duration-200">
       
       {/* Brand & Left Navigation */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <Link 
           href="/" 
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer border border-transparent hover:border-white/15 dark:hover:border-zinc-850/50 transition-all"
@@ -229,6 +229,24 @@ export const TopHeader = () => {
           <img src="/logo.png" alt="Space-S Logo" className="w-5 h-5 object-contain" />
           <span className="font-semibold text-sm font-display text-zinc-800 dark:text-zinc-200 hidden sm:inline">Space<span className="text-[#7c4dff] dark:text-[#a080ff] font-bold">-S</span></span>
         </Link>
+
+        {/* Mode Toggle Segment Control */}
+        <div className="flex items-center bg-zinc-100 dark:bg-zinc-900/80 p-0.5 rounded-xl border border-black/5 dark:border-white/5 shadow-inner">
+          <button
+            type="button"
+            onClick={() => setMode('canvas')}
+            className={`px-3 py-1 rounded-lg text-[11px] font-bold font-sans transition-all duration-200 ${currentMode === 'canvas' ? 'bg-[#7c4dff] text-white shadow-sm' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-350'}`}
+          >
+            Canvas
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('chat')}
+            className={`px-3 py-1 rounded-lg text-[11px] font-bold font-sans transition-all duration-200 ${currentMode === 'chat' ? 'bg-[#7c4dff] text-white shadow-sm' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-355'}`}
+          >
+            Chat
+          </button>
+        </div>
       </div>
 
       {/* Main Search Bar (Search Existing or Create Parent Nodes) */}

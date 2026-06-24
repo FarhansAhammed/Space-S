@@ -314,14 +314,65 @@ interface MarkdownRendererProps {
   content: string;
   textScale?: number;
   isLoading?: boolean;
+  highlightSnippet?: string;
 }
 
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ 
   content, 
   textScale = 1, 
-  isLoading = false 
+  isLoading = false,
+  highlightSnippet
 }) => {
   const baseFontSize = (px: number) => `${Math.round(px * textScale)}px`;
+
+  const highlightText = (text: string, snippet: string) => {
+    if (!snippet || !text || typeof text !== 'string') return text;
+    const index = text.toLowerCase().indexOf(snippet.toLowerCase());
+    if (index === -1) return text;
+
+    const parts: React.ReactNode[] = [];
+    let currentText = text;
+    while (currentText) {
+      const idx = currentText.toLowerCase().indexOf(snippet.toLowerCase());
+      if (idx === -1) {
+        parts.push(currentText);
+        break;
+      }
+      if (idx > 0) {
+        parts.push(currentText.substring(0, idx));
+      }
+      const match = currentText.substring(idx, idx + snippet.length);
+      parts.push(
+        <span 
+          key={parts.length} 
+          className="bg-[#7c4dff]/25 text-[#7c4dff] dark:text-[#be9eff] font-bold px-1 rounded transition-all duration-300 relative border border-[#7c4dff]/30 shadow-sm animate-pulse"
+        >
+          {match}
+        </span>
+      );
+      currentText = currentText.substring(idx + snippet.length);
+    }
+    return parts;
+  };
+
+  const highlightInChildren = (children: React.ReactNode, snippet: string | undefined): React.ReactNode => {
+    if (!snippet) return children;
+    return React.Children.map(children, (child) => {
+      if (typeof child === 'string') {
+        return highlightText(child, snippet);
+      }
+      if (React.isValidElement(child)) {
+        const element = child as React.ReactElement<any>;
+        if (element.props && element.props.children) {
+          return React.cloneElement(element, {
+            ...element.props,
+            children: highlightInChildren(element.props.children, snippet)
+          });
+        }
+      }
+      return child;
+    });
+  };
 
   // Custom components mappings passed to ReactMarkdown
   const markdownComponents = useMemo(() => {
@@ -329,34 +380,40 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       // Headings inside nodes (scaled down to fit contexts)
       h1: ({ children }: any) => (
         <h1 style={{ fontSize: baseFontSize(13) }} className="font-extrabold text-zinc-950 dark:text-white mt-3.5 mb-1.5 font-display tracking-tight leading-snug">
-          {children}
+          {highlightInChildren(children, highlightSnippet)}
         </h1>
       ),
       h2: ({ children }: any) => (
         <h2 style={{ fontSize: baseFontSize(12) }} className="font-bold text-zinc-950 dark:text-white mt-3 mb-1 font-display tracking-tight leading-snug">
-          {children}
+          {highlightInChildren(children, highlightSnippet)}
         </h2>
       ),
       h3: ({ children }: any) => (
         <h3 style={{ fontSize: baseFontSize(11) }} className="font-semibold text-zinc-950 dark:text-white mt-2.5 mb-1 font-display leading-snug">
-          {children}
+          {highlightInChildren(children, highlightSnippet)}
         </h3>
       ),
 
       // Paragraph & Text layouts
       p: ({ children }: any) => (
         <p style={{ fontSize: baseFontSize(11) }} className="leading-relaxed min-h-[4px] text-zinc-700 dark:text-zinc-300 mb-1.5 break-words whitespace-pre-wrap">
-          {children}
+          {highlightInChildren(children, highlightSnippet)}
         </p>
       ),
       strong: ({ children }: any) => (
-        <strong className="font-bold text-zinc-900 dark:text-white">{children}</strong>
+        <strong className="font-bold text-zinc-900 dark:text-white">
+          {highlightInChildren(children, highlightSnippet)}
+        </strong>
       ),
       em: ({ children }: any) => (
-        <em className="italic">{children}</em>
+        <em className="italic">
+          {highlightInChildren(children, highlightSnippet)}
+        </em>
       ),
       del: ({ children }: any) => (
-        <del className="line-through opacity-60">{children}</del>
+        <del className="line-through opacity-60">
+          {highlightInChildren(children, highlightSnippet)}
+        </del>
       ),
 
       // Links: Markdown and Auto-detected
@@ -368,7 +425,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           style={{ fontSize: baseFontSize(11) }}
           className="inline-flex items-center gap-0.5 text-[#7c4dff] dark:text-[#9c75ff] hover:underline font-semibold break-all"
         >
-          <span>{children}</span>
+          <span>{highlightInChildren(children, highlightSnippet)}</span>
           <ExternalLink className="w-2.5 h-2.5 inline-block opacity-75 shrink-0" />
         </a>
       ),
@@ -406,7 +463,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       code: ({ className, children, ...props }: any) => {
         return (
           <code className="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5 text-[#7c4dff] dark:text-[#be9eff] font-mono text-[9.5px] break-words" {...props}>
-            {children}
+            {highlightInChildren(children, highlightSnippet)}
           </code>
         );
       },
@@ -436,12 +493,12 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       ),
       th: ({ children }: any) => (
         <th style={{ fontSize: baseFontSize(10.5) }} className="px-3 py-2 text-left font-semibold border-r border-zinc-200 dark:border-zinc-800/50 last:border-r-0">
-          {children}
+          {highlightInChildren(children, highlightSnippet)}
         </th>
       ),
       td: ({ children }: any) => (
         <td style={{ fontSize: baseFontSize(10.5) }} className="px-3 py-2 text-left border-r border-zinc-200 dark:border-zinc-800/50 last:border-r-0 max-w-[200px] break-words whitespace-normal">
-          {children}
+          {highlightInChildren(children, highlightSnippet)}
         </td>
       ),
 
@@ -468,7 +525,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             className={`${isTask ? 'list-none -ml-5 flex items-start gap-2 my-1' : ''} text-zinc-700 dark:text-zinc-300 break-words`} 
             {...props}
           >
-            {children}
+            {highlightInChildren(children, highlightSnippet)}
           </li>
         );
       },
@@ -487,7 +544,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         return <input type={type} {...props} />;
       }
     };
-  }, [textScale, isLoading]);
+  }, [textScale, isLoading, highlightSnippet]);
 
   return (
     <div className="markdown-content w-full h-full text-zinc-700 dark:text-zinc-300 leading-relaxed font-sans select-text">

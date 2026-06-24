@@ -157,6 +157,19 @@ interface CanvasStore {
   broadcastCursor: (x: number, y: number) => void;
   organizeCanvas: () => Promise<void>;
   clerkTokenFetcher: (() => Promise<string | null>) | null;
+
+  // Dual-mode state
+  currentMode: 'canvas' | 'chat';
+  setMode: (mode: 'canvas' | 'chat') => void;
+  activeParentChatId: string | null;
+  setActiveParentChatId: (id: string | null) => void;
+  openBranchTabs: Array<{ id: string; parentMessageId: string; textSnippet: string; history: any[] }>;
+  activeBranchTabId: string | null;
+  setActiveBranchTabId: (id: string | null) => void;
+  hoveredBranchTabId: string | null;
+  setHoveredBranchTabId: (id: string | null) => void;
+  removeBranchTab: (id: string) => void;
+  createBranchFromChat: (parentNodeId: string, parentMessageIndex: number, textSnippet: string, operation: 'explain' | 'expand' | 'shorten') => Promise<string>;
 }
 
 // Helpers
@@ -229,7 +242,7 @@ const buildContextAwareSystemPrompt = (
   selectedText: string
 ): string => {
   if (!contextChain || contextChain.length === 0) {
-    return "You are a concise thinking partner. Respond clearly and directly. Do not use unnecessary preamble.";
+    return "You are an expert technical AI partner. Provide high-density technical descriptions containing specific components, specifications, architectures, and concrete examples. Focus purely on technical details. Do NOT output any XML tags, drafting steps, multiple drafts, or self-check lists (like 'Concise? Yes', 'Single sentence? Yes'). Start directly with the technical answer.";
   }
 
   const contextDescription = contextChain
@@ -244,33 +257,26 @@ const buildContextAwareSystemPrompt = (
   const wordCount = selectedText.trim().split(/\s+/).length;
 
   if (wordCount > 8) {
-    return `You are a concise thinking partner operating inside a specific knowledge context.
-
+    return `You are an expert technical AI partner operating inside a specific technical knowledge context.
+ 
 CONTEXT INHERITED FROM PARENT NODES:
 ${contextDescription}
 
-Note: this query was selected from content about the above topic. Answer the query as stated, using the context only if relevant. Respond clearly and directly. Do not use unnecessary preamble.`;
+CRITICAL INSTRUCTIONS:
+1. Provide a high-density, technically rich response containing specific spec details, architectural components, and concrete examples. Avoid generic, broad, or bland explanations.
+2. Focus purely on technical information.
+3. Do NOT output any reasoning steps, drafts, multiple iterations, or self-check lists (e.g. do not output lines like "Concise? Yes", "Single sentence? Yes", "Draft 1: ..."). Go straight to the final answer.`;
   }
 
-  return `You are a concise thinking partner operating inside a specific knowledge context.
+  return `You are an expert technical AI partner operating inside a specific technical knowledge context.
 
 CONTEXT INHERITED FROM PARENT NODES:
 ${contextDescription}
 
-CRITICAL INSTRUCTION: The user has selected the term "${selectedText}" from content 
-about the above topic. Your response MUST interpret "${selectedText}" within this 
-specific context, NOT in its general everyday meaning.
-
-For example: if the context is about computer networking and the user selected 
-"physical", answer about the Physical Layer (Layer 1) of the OSI model — not about 
-physical matter, physical fitness, or any other meaning of the word.
-
-If the selected term has a specific technical meaning within the inherited context, 
-use that meaning exclusively. If the term appears in the context's key entities list, 
-anchor your answer to that exact usage.
-
-Respond clearly and directly. Start your answer with the term defined in context, 
-then expand. Do not use unnecessary preamble. Do not ask for clarification.`;
+CRITICAL INSTRUCTIONS:
+1. Interpret the selected term "${selectedText}" strictly within the technical context provided above (e.g., if the context is about networking and the term is "physical", interpret it as Layer 1 Physical Layer).
+2. Provide a high-density, rich explanation containing specific architectural components, protocols, and concrete specifications. Avoid generic, broad, or bland explanations.
+3. Do NOT output any reasoning steps, drafts, multiple iterations, or self-check lists (e.g. do not output lines like "Concise? Yes", "Single sentence? Yes", "Draft 1: ..."). Go straight to the final answer.`;
 };
 
 const mapDbNodeToReactFlow = (dbNode: DbNode, messages: DbMessage[] = []): Node<NodeData> => {
@@ -548,6 +554,306 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     set({ selectedModel: model });
   },
   setNewlyCreatedNodeId: (nodeId: string | null) => set({ newlyCreatedNodeId: nodeId }),
+
+  // Dual-mode state initialization
+  currentMode: 'canvas',
+  setMode: (mode) => set({ currentMode: mode }),
+  activeParentChatId: null,
+  setActiveParentChatId: (id) => set({ activeParentChatId: id }),
+  openBranchTabs: [],
+  activeBranchTabId: null,
+  setActiveBranchTabId: (id) => set({ activeBranchTabId: id }),
+  hoveredBranchTabId: null,
+  setHoveredBranchTabId: (id) => set({ hoveredBranchTabId: id }),
+  removeBranchTab: (id) => set(state => {
+    const nextTabs = state.openBranchTabs.filter(t => t.id !== id);
+    let nextActive = state.activeBranchTabId;
+    if (state.activeBranchTabId === id) {
+      nextActive = nextTabs.length > 0 ? nextTabs[nextTabs.length - 1].id : null;
+    }
+    return {
+      openBranchTabs: nextTabs,
+      activeBranchTabId: nextActive
+    };
+  }),
+
+  createBranchFromChat: async (parentNodeId: string, parentMessageIndex: number, textSnippet: string, operation: 'explain' | 'expand' | 'shorten') => {
+    const parentNode = get().nodes.find(n => n.id === parentNodeId);
+    if (!parentNode) return '';
+
+    const parentGen = parentNode.data.generation ?? 0;
+    const childGen = parentGen + 1;
+
+    const preferredPosition: XYPosition = {
+      x: parentNode.position.x + 360,
+      y: parentNode.position.y + (Math.random() - 0.5) * 120
+    };
+    const position = getNonOverlappingPosition(preferredPosition, get().nodes);
+
+    // Build context chain
+    const parentContextChain = parentNode.data.contextChain ?? [];
+    const parentContextSummary = parentNode.data.contextSummary;
+
+    let childContextChain: ContextEntry[] = [];
+    if (parentContextSummary) {
+      childContextChain = [...parentContextChain, { nodeId: parentNodeId, summary: parentContextSummary }].slice(-3);
+    } else {
+      const parentRawContent = parentNode.data.content || '';
+      const cleaned = parentRawContent.slice(0, 300).replace(/[*#_`\[\]()]/g, '').trim();
+      childContextChain = [...parentContextChain, { nodeId: parentNodeId, summary: `Context from parent: "${cleaned}"` }].slice(-3);
+    }
+
+    const inheritedHistory = parentNode.data.conversationHistory.slice(0, parentMessageIndex + 1);
+
+    // Build operation prompt & title
+    let opPrompt = '';
+    let opTitle = '';
+    switch (operation) {
+      case 'explain':
+        opPrompt = `Explain the concept of "${textSnippet}" clearly and thoroughly. Focus on core architectural details, mechanical components, and concrete examples.`;
+        opTitle = `Explanation: ${textSnippet}`;
+        break;
+      case 'expand':
+        opPrompt = `Provide an exhaustive technical breakdown of "${textSnippet}". Detail the underlying mechanics, architectural/protocol specs, and specific implementation details.`;
+        opTitle = `Expansion: ${textSnippet}`;
+        break;
+      case 'shorten':
+        opPrompt = `Summarize "${textSnippet}" concisely in a single sentence, packing in high-density technical signal details (e.g. key mechanics, technologies, or specifications) so that the summary is rich and precise.`;
+        opTitle = `Summary: ${textSnippet}`;
+        break;
+    }
+
+    const branchUserMsg = {
+      role: 'user' as const,
+      content: opPrompt,
+      senderId: get().currentUserInfo?.userId,
+      sender: get().currentUserInfo ? {
+        username: get().currentUserInfo!.username,
+        avatarColor: get().currentUserInfo!.avatarColor
+      } : null
+    };
+
+    const initialHistory = [...inheritedHistory, branchUserMsg];
+
+    const boardId = get().boardId;
+    const supabase = get().supabaseClient;
+    const childId = `node_${Date.now()}`;
+    const nextZIndex = get().maxZIndex + 1;
+
+    const childNode: Node<NodeData> = {
+      id: childId,
+      type: 'llmNode',
+      position,
+      zIndex: nextZIndex,
+      data: {
+        type: 'branch',
+        title: opTitle,
+        content: '',
+        generation: childGen,
+        isLoading: true,
+        isCollapsed: false,
+        parentNodeId,
+        createdAt: new Date().toISOString(),
+        conversationHistory: initialHistory,
+        isBranchSelection: false,
+        contextSummary: null,
+        contextChain: childContextChain
+      }
+    };
+
+    if (boardId && boardId !== 'sample-board' && supabase) {
+      try {
+        const { data: dbNode } = await supabase
+          .from('nodes')
+          .insert({
+            id: childId,
+            canvas_id: boardId,
+            type: 'branch',
+            position_x: position.x,
+            position_y: position.y,
+            title: opTitle.slice(0, 100),
+            content: '',
+            parent_node_id: parentNodeId,
+            context_chain: childContextChain,
+            context_summary: null
+          })
+          .select()
+          .single();
+
+        if (dbNode) {
+          await supabase.from('edges').insert({
+            canvas_id: boardId,
+            source_node_id: parentNodeId,
+            target_node_id: childId
+          });
+
+          // Insert inherited messages + operation user query into DB
+          for (const msg of initialHistory) {
+            await supabase.from('node_messages').insert({
+              node_id: childId,
+              role: msg.role,
+              content: msg.content,
+              sender_id: msg.senderId
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Error inserting branch to Supabase:', err);
+      }
+    }
+
+    set(state => {
+      const nextNodes = computeGenerations([...state.nodes, childNode]);
+      const newEdge = {
+        id: `edge_${parentNodeId}_to_${childId}`,
+        source: parentNodeId,
+        target: childId,
+        animated: true,
+        style: {
+          stroke: getEdgeColorForGen(childGen),
+          strokeWidth: 2.5
+        }
+      };
+      const nextEdges = updateEdgesColor([...state.edges, newEdge], nextNodes);
+      
+      const newTab = {
+        id: childId,
+        parentMessageId: `${parentNodeId}_${parentMessageIndex}`,
+        textSnippet,
+        history: inheritedHistory
+      };
+      
+      return {
+        nodes: nextNodes,
+        edges: nextEdges,
+        maxZIndex: nextZIndex,
+        openBranchTabs: [...state.openBranchTabs.filter(t => t.id !== childId), newTab],
+        activeBranchTabId: childId
+      };
+    });
+
+    // Start streaming the AI's explanation/expansion/brief response
+    const fetcher = get().clerkTokenFetcher;
+    const token = fetcher ? await fetcher() : null;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const systemPrompt = buildContextAwareSystemPrompt(childContextChain, textSnippet);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          messages: initialHistory,
+          systemPrompt,
+          model: get().selectedModel
+        })
+      });
+
+      if (!response.ok) {
+        const errorJson = await response.json().catch(() => ({}));
+        throw new Error(errorJson.error || `API failed with status ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let content = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          content += decoder.decode(value, { stream: true });
+
+          set(state => ({
+            nodes: state.nodes.map(n => {
+              if (n.id === childId) {
+                return {
+                  ...n,
+                  data: { 
+                    ...n.data, 
+                    content,
+                    conversationHistory: [
+                      ...initialHistory,
+                      { role: 'assistant', content }
+                    ]
+                  }
+                };
+              }
+              return n;
+            })
+          }));
+        }
+      }
+
+      if (boardId && boardId !== 'sample-board' && supabase) {
+        await supabase.from('node_messages').insert({
+          node_id: childId,
+          role: 'assistant',
+          content
+        });
+        await supabase.from('nodes').update({ content }).eq('id', childId);
+      }
+
+      // Extract context summary
+      let extractedSummary: string | null = null;
+      try {
+        if (content.trim().length >= 60) {
+          extractedSummary = await extractContextSummary(content, opTitle, token, get().selectedModel);
+        }
+      } catch (e) {
+        console.error('Failed to extract context summary for branch:', e);
+      }
+
+      if (extractedSummary && boardId && boardId !== 'sample-board' && supabase) {
+        await supabase.from('nodes').update({ context_summary: extractedSummary }).eq('id', childId);
+      }
+
+      set(state => ({
+        nodes: state.nodes.map(n => {
+          if (n.id === childId) {
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                isLoading: false,
+                contextSummary: extractedSummary || n.data.contextSummary,
+                content,
+                conversationHistory: [
+                  ...initialHistory,
+                  { role: 'assistant', content }
+                ]
+              }
+            };
+          }
+          return n;
+        })
+      }));
+
+    } catch (err) {
+      console.error('Error generating branch content:', err);
+      set(state => ({
+        nodes: state.nodes.map(n => {
+          if (n.id === childId) {
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                isLoading: false,
+                content: 'Failed to generate response.'
+              }
+            };
+          }
+          return n;
+        })
+      }));
+    }
+
+    return childId;
+  },
 
   updateNodeContextSummary: async (nodeId: string, summary: string) => {
     set(state => ({
@@ -2234,15 +2540,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
     switch (operation) {
       case 'explain':
-        prompt = `Explain this concept in simple terms: "${selectedText}"`;
+        prompt = `Explain the concept of "${selectedText}" clearly and thoroughly. Focus on core architectural details, mechanical components, and concrete examples.`;
         promptTitle = `Explanation: ${selectedText}`;
         break;
       case 'expand':
-        prompt = `Expand on this in detail, providing key aspects: "${selectedText}"`;
+        prompt = `Provide an exhaustive technical breakdown of "${selectedText}". Detail the underlying mechanics, architectural/protocol specs, and specific implementation details.`;
         promptTitle = `Expansion: ${selectedText}`;
         break;
       case 'shorten':
-        prompt = `Summarize this concept concisely in a single sentence: "${selectedText}"`;
+        prompt = `Summarize "${selectedText}" concisely in a single sentence, packing in high-density technical signal details (e.g. key mechanics, technologies, or specifications) so that the summary is rich and precise.`;
         promptTitle = `Summary: ${selectedText}`;
         break;
     }

@@ -49,15 +49,56 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Gemini API key is not configured' }, { status: 500 });
       }
 
-      // Map roles: 'assistant' -> 'model', 'user' -> 'user'
-      // Gemini expects role/parts array
-      const geminiMessages = messages.map((msg: any) => ({
+      // Map roles and sanitize for Gemini's strict requirements:
+      // 1. Alternating user and model roles.
+      // 2. Must start with a user message.
+      // 3. Clean up empty/whitespace-only messages.
+      const rawMapped = messages.map((msg: any) => ({
         role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content }]
+        text: msg.content || ''
       }));
 
+      const sanitizedMessages: { role: 'user' | 'model'; parts: { text: string }[] }[] = [];
+
+      for (const msg of rawMapped) {
+        if (!msg.text.trim()) continue; // skip empty messages
+
+        if (sanitizedMessages.length === 0) {
+          // First message must be 'user'
+          if (msg.role === 'model') {
+            sanitizedMessages.push({
+              role: 'user',
+              parts: [{ text: 'Here is the context of our conversation:' }]
+            });
+          }
+          sanitizedMessages.push({
+            role: msg.role as 'user' | 'model',
+            parts: [{ text: msg.text }]
+          });
+        } else {
+          const lastMsg = sanitizedMessages[sanitizedMessages.length - 1];
+          if (lastMsg.role === msg.role) {
+            // Merge consecutive messages of the same role
+            lastMsg.parts[0].text += '\n\n' + msg.text;
+          } else {
+            sanitizedMessages.push({
+              role: msg.role as 'user' | 'model',
+              parts: [{ text: msg.text }]
+            });
+          }
+        }
+      }
+
+      // Safe fallback if empty
+      if (sanitizedMessages.length === 0) {
+        sanitizedMessages.push({
+          role: 'user',
+          parts: [{ text: 'Hello' }]
+        });
+      }
+
       const payload: any = {
-        contents: geminiMessages
+        contents: sanitizedMessages
       };
 
       if (activeSystemPrompt) {

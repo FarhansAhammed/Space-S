@@ -7,6 +7,7 @@ import LeftSidebar from '@/components/UI/LeftSidebar';
 import RightSidebar from '@/components/UI/RightSidebar';
 import BoardCanvas from '@/components/Canvas/BoardCanvas';
 import SelectionMenu from '@/components/UI/SelectionMenu';
+import ChatWorkspace from '@/components/UI/ChatWorkspace';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { ReactFlowProvider } from 'reactflow';
 import { useParams } from 'next/navigation';
@@ -24,7 +25,7 @@ export default function BoardPage() {
   const { boardId } = useParams() as { boardId: string };
   const { getToken } = useAuth();
   const { user, isLoaded } = useUser();
-  const { subscribeToCanvas, unsubscribeFromCanvas, theme } = useCanvasStore();
+  const { subscribeToCanvas, unsubscribeFromCanvas, theme, currentMode } = useCanvasStore();
 
   const getTokenRef = useRef(getToken);
   useEffect(() => {
@@ -69,21 +70,27 @@ export default function BoardPage() {
         <TopHeader />
 
         {/* Main Container Layout */}
-        <div className="w-full h-full flex relative">
-          {/* Left Toolbar Sidebar (Fixed w-18, top-16) */}
-          <LeftSidebar />
+        {currentMode === 'canvas' ? (
+          <div className="w-full h-full flex relative">
+            {/* Left Toolbar Sidebar (Fixed w-18, top-16) */}
+            <LeftSidebar />
 
-          {/* Board Canvas Workspace */}
-          <div className="flex-1 w-full h-full pl-0 md:pl-[72px]">
-            <BoardCanvas />
+            {/* Board Canvas Workspace */}
+            <div className="flex-1 w-full h-full pl-0 md:pl-[72px]">
+              <BoardCanvas />
+            </div>
+
+            {/* Right Isolated Detail & Chat Sidebar */}
+            <RightSidebar />
           </div>
-
-          {/* Right Isolated Detail & Chat Sidebar */}
-          <RightSidebar />
-        </div>
+        ) : (
+          <div className="w-full h-[calc(100vh-64px)] mt-16 flex relative overflow-hidden bg-[#f8f5f0] dark:bg-[#121110]">
+            <ChatWorkspace />
+          </div>
+        )}
 
         {/* Floating inline selection branching menu */}
-        <SelectionMenu />
+        {currentMode === 'canvas' && <SelectionMenu />}
       </main>
     </ReactFlowProvider>
   );
