@@ -60,6 +60,7 @@ export const ChatWorkspace = () => {
   const [selectedText, setSelectedText] = useState('');
   const [selectedMsgIndex, setSelectedMsgIndex] = useState<number | null>(null);
   const [selectionPosition, setSelectionPosition] = useState<{ x: number; y: number } | null>(null);
+  // 0 = original chat, 1 = branch panel
   const [mobilePanelIndex, setMobilePanelIndex] = useState(0);
 
   const parentScrollRef = useRef<HTMLDivElement>(null);
@@ -119,11 +120,19 @@ export const ChatWorkspace = () => {
     branchScrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [activeBranchNode?.data.conversationHistory, activeBranchNode?.data.isLoading]);
 
+  // When branch workspace closes, always go back to parent panel
   useEffect(() => {
     if (!hasBranchWorkspace) {
       setMobilePanelIndex(0);
     }
   }, [hasBranchWorkspace]);
+
+  // When a new branch is created, automatically navigate to branch panel on mobile
+  useEffect(() => {
+    if (hasBranchWorkspace && typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
+      setMobilePanelIndex(1);
+    }
+  }, [openBranchTabs.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const handleSelectionChange = () => {
@@ -194,7 +203,7 @@ export const ChatWorkspace = () => {
 
     window.getSelection()?.removeAllRanges();
     setSelectionPosition(null);
-    setMobilePanelIndex(1);
+    // Mobile navigation to branch handled by the openBranchTabs.length effect above
   };
 
   const handleSendParent = (e: React.FormEvent) => {
@@ -234,9 +243,12 @@ export const ChatWorkspace = () => {
 
     if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY)) return;
 
+    // Swipe left → go to branch (panel 1), only if branch exists
     if (deltaX < 0 && hasBranchWorkspace) {
       setMobilePanelIndex(1);
-    } else if (deltaX > 0) {
+    }
+    // Swipe right → go back to original chat (panel 0)
+    if (deltaX > 0) {
       setMobilePanelIndex(0);
     }
   };
@@ -497,34 +509,63 @@ export const ChatWorkspace = () => {
 
       {sidebar}
 
-      <section className="relative flex min-w-0 flex-1 flex-col">
-        <div className="md:hidden flex h-12 shrink-0 items-center justify-between border-b border-white/45 bg-white/58 px-3 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/58">
+      <section className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+
+        {/* ── Mobile top bar ── */}
+        <div className="md:hidden flex h-12 shrink-0 items-center border-b border-white/45 bg-white/70 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/70 relative z-10 px-2 gap-2">
+          {/* Left: sidebar toggle */}
           <button
             type="button"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/75 text-zinc-600 shadow-sm dark:bg-zinc-900/75 dark:text-zinc-300"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/75 text-zinc-600 shadow-sm dark:bg-zinc-900/75 dark:text-zinc-300"
             title="Chat history"
           >
             <PanelLeftOpen className="h-4 w-4" />
           </button>
-          <div className="flex items-center gap-1.5 rounded-full bg-white/75 px-2 py-1 text-[10px] font-bold text-zinc-500 shadow-sm dark:bg-zinc-900/75 dark:text-zinc-400">
-            <span className={`h-1.5 w-1.5 rounded-full ${mobilePanelIndex === 0 ? 'bg-[#7c4dff]' : 'bg-zinc-300'}`} />
-            <span className={`h-1.5 w-1.5 rounded-full ${mobilePanelIndex === 1 ? 'bg-[#7c4dff]' : 'bg-zinc-300'}`} />
+
+          {/* Center: page dots or branch back-button */}
+          <div className="flex flex-1 items-center justify-center gap-1.5 min-w-0">
+            {hasBranchWorkspace ? (
+              mobilePanelIndex === 1 ? (
+                /* Branch panel header – shows branch tab name */
+                <div className="flex items-center gap-1.5 min-w-0 max-w-full overflow-hidden">
+                  <GitBranch className="h-3.5 w-3.5 shrink-0 text-[#7c4dff]" />
+                  <span className="truncate text-[11px] font-bold text-[#6d28d9] dark:text-[#c4b5fd]">
+                    {activeBranchTab?.textSnippet || 'Branch'}
+                  </span>
+                </div>
+              ) : (
+                /* On parent panel, show dot indicators */
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-[#7c4dff]" />
+                  <span className="h-2 w-2 rounded-full bg-zinc-300 dark:bg-zinc-600" />
+                </div>
+              )
+            ) : (
+              /* No branch – show current chat title */
+              <span className="truncate text-[11px] font-bold text-zinc-600 dark:text-zinc-300">
+                {activeParentNode?.data.title || 'Chat'}
+              </span>
+            )}
           </div>
+
+          {/* Right: back button when on branch panel */}
           {mobilePanelIndex === 1 ? (
             <button
               type="button"
               onClick={() => setMobilePanelIndex(0)}
-              className="flex h-9 items-center gap-1 rounded-xl bg-white/75 px-3 text-[11px] font-bold text-zinc-600 shadow-sm dark:bg-zinc-900/75 dark:text-zinc-300"
+              className="flex h-9 shrink-0 items-center gap-1 rounded-xl bg-white/75 px-3 text-[11px] font-bold text-zinc-600 shadow-sm dark:bg-zinc-900/75 dark:text-zinc-300"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Chat
             </button>
           ) : (
-            <div className="h-9 w-16" />
+            /* Placeholder to keep layout balanced */
+            <div className="h-9 w-[68px] shrink-0" />
           )}
         </div>
 
+        {/* Mobile sidebar overlay */}
         {sidebarOpen && (
           <div className="md:hidden absolute left-3 top-14 z-40 w-[min(320px,calc(100%-24px))] rounded-[28px] border border-white/60 bg-white/90 p-3 shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/90">
             <div className="mb-3 flex items-center justify-between">
@@ -587,15 +628,142 @@ export const ChatWorkspace = () => {
           </div>
         )}
 
+        {/* ─────────────────────────────────────────────
+            DESKTOP: side-by-side panels
+            MOBILE:  full-width swipeable carousel
+        ───────────────────────────────────────────── */}
+
+        {/* Desktop layout */}
+        <div className="hidden md:flex min-h-0 flex-1 overflow-hidden">
+          {/* Parent chat panel */}
+          <div className={`${hasBranchWorkspace ? 'w-[52%]' : 'w-full'} flex min-h-0 shrink-0 flex-col border-r border-white/35 dark:border-white/10 transition-all duration-300`}>
+            <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/40 bg-white/40 px-4 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/40">
+              <div className="relative min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setShowThreadDropdown(!showThreadDropdown)}
+                  className="flex max-w-[56vw] items-center gap-2 rounded-2xl border border-white/60 bg-white/70 px-3 py-2 text-xs font-bold text-zinc-700 shadow-sm transition-all hover:bg-white/90 dark:border-white/10 dark:bg-zinc-900/70 dark:text-zinc-300"
+                >
+                  <MessageSquare className="h-4 w-4 shrink-0 text-[#7c4dff]" />
+                  <span className="truncate">{activeParentNode?.data.title || 'Chat'}</span>
+                  <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                </button>
+                {showThreadDropdown && parentThreads.length > 1 && (
+                  <>
+                    <div className="fixed inset-0 z-30" onClick={() => setShowThreadDropdown(false)} />
+                    <div className="absolute left-0 top-full z-40 mt-2 w-72 overflow-hidden rounded-2xl border border-white/60 bg-white/90 py-2 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/90">
+                      {parentThreads.map(thread => (
+                        <button
+                          key={thread.id}
+                          onClick={() => selectThread(thread.id)}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-zinc-700 hover:bg-[#7c4dff]/10 dark:text-zinc-300 dark:hover:bg-white/5"
+                        >
+                          {pinnedChatIds.includes(thread.id) ? <Pin className="h-3.5 w-3.5 text-[#7c4dff]" /> : <MessageSquare className="h-3.5 w-3.5 text-zinc-400" />}
+                          <span className="truncate">{thread.data.title || 'Untitled chat'}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              <span className="rounded-full bg-white/60 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-zinc-400 shadow-sm dark:bg-white/5">
+                Main chat
+              </span>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto select-text">
+              {renderMessageList(activeParentNode, parentScrollRef)}
+            </div>
+            {chatInput(parentInput, setParentInput, handleSendParent, 'Message Space-S...', activeParentNode?.data.isLoading)}
+          </div>
+
+          {/* Branch panel – desktop */}
+          {hasBranchWorkspace && (
+            <div className="flex w-[48%] shrink-0 flex-col">
+              <div className="flex h-14 shrink-0 items-center gap-2 overflow-x-auto border-b border-white/40 bg-white/40 px-3 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/40">
+                <div className="flex items-center gap-2">
+                  {openBranchTabs.map(tab => {
+                    const isActive = tab.id === activeBranchTabId;
+                    const nodeState = nodes.find(n => n.id === tab.id);
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveBranchTabId(tab.id)}
+                        onMouseEnter={() => setHoveredBranchTabId(tab.id)}
+                        onMouseLeave={() => setHoveredBranchTabId(null)}
+                        className={`group flex h-9 min-w-[132px] max-w-[200px] items-center gap-2 rounded-2xl border px-3 text-xs font-bold transition-all ${
+                          isActive
+                            ? 'border-[#7c4dff]/30 bg-[#7c4dff]/10 text-[#6d28d9] shadow-sm dark:text-[#c4b5fd]'
+                            : 'border-transparent bg-white/50 text-zinc-500 hover:bg-white/80 dark:bg-white/5 dark:text-zinc-400 dark:hover:bg-white/10'
+                        }`}
+                      >
+                        <GitBranch className={`h-4 w-4 shrink-0 ${nodeState?.data.isLoading ? 'animate-pulse text-[#7c4dff]' : ''}`} />
+                        <span className="truncate">{tab.textSnippet}</span>
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeBranchTab(tab.id);
+                          }}
+                          className="ml-auto rounded-lg p-0.5 text-zinc-400 transition-colors hover:bg-black/10 hover:text-zinc-800 dark:hover:bg-white/10 dark:hover:text-zinc-100"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {activeBranchNode ? (
+                <>
+                  <div className="flex h-11 shrink-0 items-center justify-between border-b border-[#7c4dff]/10 bg-[#7c4dff]/10 px-4 text-[11px] font-bold text-[#6d28d9] dark:text-[#c4b5fd]">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <Layers className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">Branch tab: {activeBranchTab?.textSnippet || activeBranchNode.data.title}</span>
+                    </span>
+                    <span className="rounded-full border border-[#7c4dff]/20 bg-white/50 px-2 py-0.5 text-[9px] uppercase tracking-wide dark:bg-white/5">
+                      Inherited
+                    </span>
+                  </div>
+                  <div className="min-h-0 flex-1 overflow-y-auto select-text">
+                    {renderMessageList(activeBranchNode, branchScrollRef, { branchTab: activeBranchTab })}
+                  </div>
+                  {chatInput(branchInput, setBranchInput, handleSendBranch, 'Message this branch...', activeBranchNode.data.isLoading)}
+                </>
+              ) : (
+                <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-6 text-center select-none">
+                  <GitBranch className="mb-4 h-10 w-10 text-[#7c4dff]/50" />
+                  <h2 className="text-4xl font-semibold tracking-normal text-zinc-900 dark:text-zinc-50">Chat</h2>
+                  <p className="mt-3 max-w-sm text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+                    Select text in the main response to open a branch here.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ─── Mobile swipeable carousel ─── */}
         <div
-          className="flex min-h-0 flex-1 overflow-hidden"
+          className="md:hidden flex min-h-0 flex-1 overflow-hidden"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
+          {/*
+            Outer track: always full-width, clips content.
+            Inner slider: 200% wide when branch exists (two full-width panels side by side).
+            translate-x moves the whole track so the correct panel is visible.
+          */}
           <div
-            className={`flex min-h-0 transition-transform duration-300 ease-out md:w-full md:translate-x-0 ${hasBranchWorkspace ? 'w-[200%]' : 'w-full'} ${mobilePanelIndex === 1 ? '-translate-x-1/2' : 'translate-x-0'}`}
+            className={`flex h-full transition-transform duration-300 ease-out ${
+              hasBranchWorkspace ? 'w-[200%]' : 'w-full'
+            } ${mobilePanelIndex === 1 ? '-translate-x-1/2' : 'translate-x-0'}`}
           >
-            <div className={`${hasBranchWorkspace ? 'w-1/2 md:w-[52%]' : 'w-full'} flex min-h-0 shrink-0 flex-col border-r border-white/35 dark:border-white/10`}>
+            {/* Panel 0 – Original chat (always full viewport width on mobile) */}
+            <div className={`${hasBranchWorkspace ? 'w-1/2' : 'w-full'} flex h-full shrink-0 flex-col`}>
+              {/* Panel header */}
               <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/40 bg-white/40 px-4 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/40">
                 <div className="relative min-w-0">
                   <button
@@ -625,9 +793,16 @@ export const ChatWorkspace = () => {
                     </>
                   )}
                 </div>
-                <span className="hidden rounded-full bg-white/60 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-zinc-400 shadow-sm dark:bg-white/5 sm:block">
-                  Main chat
-                </span>
+                {hasBranchWorkspace && (
+                  <button
+                    type="button"
+                    onClick={() => setMobilePanelIndex(1)}
+                    className="flex items-center gap-1.5 rounded-xl border border-[#7c4dff]/20 bg-[#7c4dff]/10 px-3 py-1.5 text-[11px] font-bold text-[#6d28d9] dark:text-[#c4b5fd]"
+                  >
+                    <GitBranch className="h-3.5 w-3.5" />
+                    Branch
+                  </button>
+                )}
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto select-text">
                 {renderMessageList(activeParentNode, parentScrollRef)}
@@ -635,46 +810,41 @@ export const ChatWorkspace = () => {
               {chatInput(parentInput, setParentInput, handleSendParent, 'Message Space-S...', activeParentNode?.data.isLoading)}
             </div>
 
+            {/* Panel 1 – Branch chat (only rendered when branch exists) */}
             {hasBranchWorkspace && (
-              <div className="flex w-1/2 shrink-0 flex-col md:w-[48%]">
+              <div className="w-1/2 flex h-full shrink-0 flex-col">
+                {/* Branch tab strip */}
                 <div className="flex h-14 shrink-0 items-center gap-2 overflow-x-auto border-b border-white/40 bg-white/40 px-3 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/40">
-                  <div className="flex items-center gap-2">
-                    {openBranchTabs.map(tab => {
-                      const isActive = tab.id === activeBranchTabId;
-                      const nodeState = nodes.find(n => n.id === tab.id);
-                      return (
-                        <button
-                          key={tab.id}
-                          type="button"
-                          onClick={() => {
-                            setActiveBranchTabId(tab.id);
-                            setMobilePanelIndex(1);
+                  {openBranchTabs.map(tab => {
+                    const isActive = tab.id === activeBranchTabId;
+                    const nodeState = nodes.find(n => n.id === tab.id);
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveBranchTabId(tab.id)}
+                        className={`group flex h-9 min-w-[120px] max-w-[180px] items-center gap-2 rounded-2xl border px-3 text-xs font-bold transition-all shrink-0 ${
+                          isActive
+                            ? 'border-[#7c4dff]/30 bg-[#7c4dff]/10 text-[#6d28d9] shadow-sm dark:text-[#c4b5fd]'
+                            : 'border-transparent bg-white/50 text-zinc-500 hover:bg-white/80 dark:bg-white/5 dark:text-zinc-400'
+                        }`}
+                      >
+                        <GitBranch className={`h-4 w-4 shrink-0 ${nodeState?.data.isLoading ? 'animate-pulse text-[#7c4dff]' : ''}`} />
+                        <span className="truncate">{tab.textSnippet}</span>
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeBranchTab(tab.id);
                           }}
-                          onMouseEnter={() => setHoveredBranchTabId(tab.id)}
-                          onMouseLeave={() => setHoveredBranchTabId(null)}
-                          className={`group flex h-9 min-w-[132px] max-w-[200px] items-center gap-2 rounded-2xl border px-3 text-xs font-bold transition-all ${
-                            isActive
-                              ? 'border-[#7c4dff]/30 bg-[#7c4dff]/10 text-[#6d28d9] shadow-sm dark:text-[#c4b5fd]'
-                              : 'border-transparent bg-white/50 text-zinc-500 hover:bg-white/80 dark:bg-white/5 dark:text-zinc-400 dark:hover:bg-white/10'
-                          }`}
+                          className="ml-auto rounded-lg p-0.5 text-zinc-400"
                         >
-                          <GitBranch className={`h-4 w-4 shrink-0 ${nodeState?.data.isLoading ? 'animate-pulse text-[#7c4dff]' : ''}`} />
-                          <span className="truncate">{tab.textSnippet}</span>
-                          <span
-                            role="button"
-                            tabIndex={0}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeBranchTab(tab.id);
-                            }}
-                            className="ml-auto rounded-lg p-0.5 text-zinc-400 transition-colors hover:bg-black/10 hover:text-zinc-800 dark:hover:bg-white/10 dark:hover:text-zinc-100"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                          <X className="h-3.5 w-3.5" />
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {activeBranchNode ? (
@@ -682,7 +852,7 @@ export const ChatWorkspace = () => {
                     <div className="flex h-11 shrink-0 items-center justify-between border-b border-[#7c4dff]/10 bg-[#7c4dff]/10 px-4 text-[11px] font-bold text-[#6d28d9] dark:text-[#c4b5fd]">
                       <span className="flex min-w-0 items-center gap-2">
                         <Layers className="h-3.5 w-3.5 shrink-0" />
-                        <span className="truncate">Branch tab: {activeBranchTab?.textSnippet || activeBranchNode.data.title}</span>
+                        <span className="truncate">Branch: {activeBranchTab?.textSnippet || activeBranchNode.data.title}</span>
                       </span>
                       <span className="rounded-full border border-[#7c4dff]/20 bg-white/50 px-2 py-0.5 text-[9px] uppercase tracking-wide dark:bg-white/5">
                         Inherited
@@ -696,9 +866,8 @@ export const ChatWorkspace = () => {
                 ) : (
                   <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-6 text-center select-none">
                     <GitBranch className="mb-4 h-10 w-10 text-[#7c4dff]/50" />
-                    <h2 className="text-4xl font-semibold tracking-normal text-zinc-900 dark:text-zinc-50">Chat</h2>
                     <p className="mt-3 max-w-sm text-sm leading-6 text-zinc-500 dark:text-zinc-400">
-                      Select text in the main response to open a branch here.
+                      Select text in the main chat to open a branch here.
                     </p>
                   </div>
                 )}
@@ -706,6 +875,7 @@ export const ChatWorkspace = () => {
             )}
           </div>
         </div>
+
       </section>
     </div>
   );

@@ -217,7 +217,7 @@ export const TopHeader = () => {
 
   return (
     <>
-      <header className="h-[64px] border-b border-white/20 dark:border-zinc-900/50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-3 sm:px-6 z-50 fixed top-0 left-0 right-0 transition-colors duration-200">
+      <header className="h-[64px] border-b border-white/20 dark:border-zinc-900/50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-3 sm:px-6 z-50 fixed top-0 left-0 right-0 transition-colors duration-200 overflow-hidden">
       
       {/* Brand & Left Navigation */}
       <div className="flex items-center gap-4">
@@ -407,7 +407,7 @@ export const TopHeader = () => {
           <div className="flex items-center gap-3">
             {/* Live Presence Avatar Stack */}
             {presenceUsers.length > 0 && (
-              <div className="flex items-center -space-x-2 mr-1">
+              <div className="hidden sm:flex items-center -space-x-2 mr-1">
                 {presenceUsers.slice(0, 4).map(u => (
                   <div
                     key={u.userId}
@@ -429,7 +429,8 @@ export const TopHeader = () => {
             {boardId && boardId !== 'sample-board' && (
               <button 
                 onClick={() => setShowInviteModal(true)}
-                className="h-9 px-3.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 text-white font-semibold text-xs hover:bg-zinc-850 dark:hover:bg-zinc-200 shadow hover:shadow-md transition-all flex items-center gap-1.5"
+                title="Invite collaborators"
+                className="h-9 w-9 sm:w-auto sm:px-3.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 text-white font-semibold text-xs hover:bg-zinc-850 dark:hover:bg-zinc-200 shadow hover:shadow-md transition-all flex items-center justify-center gap-1.5"
               >
                 <Users className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Invite</span>
