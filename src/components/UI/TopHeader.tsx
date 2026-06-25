@@ -217,10 +217,10 @@ export const TopHeader = () => {
 
   return (
     <>
-      <header className="h-[64px] border-b border-white/20 dark:border-zinc-900/50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-3 sm:px-6 z-50 fixed top-0 left-0 right-0 transition-colors duration-200 overflow-hidden">
+      <header className="h-[64px] border-b border-white/20 dark:border-zinc-900/50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-3 sm:px-6 z-50 fixed top-0 left-0 right-0 transition-colors duration-200">
       
       {/* Brand & Left Navigation */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         <Link 
           href="/" 
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer border border-transparent hover:border-white/15 dark:hover:border-zinc-850/50 transition-all"
@@ -337,12 +337,12 @@ export const TopHeader = () => {
           <LayoutGrid className="w-4 h-4" />
         </Link>
 
-        {/* Model Selector Dropdown */}
+        {/* Model Selector Trigger – dropdown rendered outside header (see below) */}
         <div className="relative">
           <button
             type="button"
             onClick={() => setShowModelDropdown(!showModelDropdown)}
-            className="h-9 px-3 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-zinc-900/70 hover:bg-black/5 dark:hover:bg-white/5 text-zinc-700 dark:text-zinc-300 font-semibold text-xs transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+            className="h-9 px-2.5 sm:px-3 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-zinc-900/70 hover:bg-black/5 dark:hover:bg-white/5 text-zinc-700 dark:text-zinc-300 font-semibold text-xs transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
           >
             {(() => {
               const cfg = (MODEL_CONFIGS as any)[selectedModel] || MODEL_CONFIGS['poolside'];
@@ -350,42 +350,12 @@ export const TopHeader = () => {
                 <>
                   <span className={selectedModel !== 'poolside' ? 'animate-pulse' : ''}>{cfg.icon}</span>
                   <span className="hidden sm:inline">{cfg.label}</span>
-                  <span className="inline sm:hidden">{cfg.shortLabel}</span>
+                  <span className="inline sm:hidden text-[10px]">{cfg.shortLabel}</span>
                 </>
               );
             })()}
             <ChevronDown className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
           </button>
-
-          {showModelDropdown && (
-            <>
-              {/* Backing overlay to close dropdown on click outside */}
-              <div 
-                className="fixed inset-0 z-40 cursor-default" 
-                onClick={() => setShowModelDropdown(false)} 
-              />
-              
-              <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-50 flex flex-col animate-in fade-in slide-in-from-top-1 duration-100">
-                {Object.entries(MODEL_CONFIGS).map(([key, cfg]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => {
-                      setSelectedModel(key as any);
-                      setShowModelDropdown(false);
-                    }}
-                    className={`w-full px-3.5 py-2 text-left text-xs font-semibold flex items-center justify-between hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${selectedModel === key ? cfg.colorClass : 'text-zinc-650 dark:text-zinc-300'}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {cfg.icon}
-                      <span>{cfg.label}</span>
-                    </div>
-                    {selectedModel === key && <Check className={`w-3.5 h-3.5 ${cfg.colorClass}`} />}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
         </div>
 
         {/* Theme Toggler Button */}
@@ -430,10 +400,10 @@ export const TopHeader = () => {
               <button 
                 onClick={() => setShowInviteModal(true)}
                 title="Invite collaborators"
-                className="h-9 w-9 sm:w-auto sm:px-3.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 text-white font-semibold text-xs hover:bg-zinc-850 dark:hover:bg-zinc-200 shadow hover:shadow-md transition-all flex items-center justify-center gap-1.5"
+                className="hidden sm:flex h-9 px-3.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 text-white font-semibold text-xs hover:bg-zinc-850 dark:hover:bg-zinc-200 shadow hover:shadow-md transition-all items-center gap-1.5"
               >
                 <Users className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Invite</span>
+                <span>Invite</span>
               </button>
             )}
             
@@ -460,6 +430,35 @@ export const TopHeader = () => {
         </Show>
       </div>
     </header>
+
+    {/* ── Model dropdown – rendered OUTSIDE header to escape backdrop-filter stacking context ── */}
+    {showModelDropdown && (
+      <>
+        <div
+          className="fixed inset-0 z-[190] cursor-default"
+          onClick={() => setShowModelDropdown(false)}
+        />
+        <div className="fixed top-[64px] right-3 sm:right-6 z-[200] w-52 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl py-1.5 flex flex-col animate-in fade-in slide-in-from-top-1 duration-100">
+          {Object.entries(MODEL_CONFIGS).map(([key, cfg]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => {
+                setSelectedModel(key as any);
+                setShowModelDropdown(false);
+              }}
+              className={`w-full px-3.5 py-2.5 text-left text-xs font-semibold flex items-center justify-between hover:bg-black/5 dark:hover:bg-white/5 transition-colors ${selectedModel === key ? cfg.colorClass : 'text-zinc-700 dark:text-zinc-300'}`}
+            >
+              <div className="flex items-center gap-2">
+                {cfg.icon}
+                <span>{cfg.label}</span>
+              </div>
+              {selectedModel === key && <Check className={`w-3.5 h-3.5 ${cfg.colorClass}`} />}
+            </button>
+          ))}
+        </div>
+      </>
+    )}
 
     {/* Invite Modal Overlay - Rendered outside header to avoid backdrop-blur filter clipping */}
     {showInviteModal && (
