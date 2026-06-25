@@ -661,6 +661,36 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       }
     };
 
+    set(state => {
+      const nextNodes = computeGenerations([...state.nodes, childNode]);
+      const newEdge = {
+        id: `edge_${parentNodeId}_to_${childId}`,
+        source: parentNodeId,
+        target: childId,
+        animated: true,
+        style: {
+          stroke: getEdgeColorForGen(childGen),
+          strokeWidth: 2.5
+        }
+      };
+      const nextEdges = updateEdgesColor([...state.edges, newEdge], nextNodes);
+
+      const newTab = {
+        id: childId,
+        parentMessageId: `${parentNodeId}_${parentMessageIndex}`,
+        textSnippet,
+        history: inheritedHistory
+      };
+
+      return {
+        nodes: nextNodes,
+        edges: nextEdges,
+        maxZIndex: nextZIndex,
+        openBranchTabs: [...state.openBranchTabs.filter(t => t.id !== childId), newTab],
+        activeBranchTabId: childId
+      };
+    });
+
     if (boardId && boardId !== 'sample-board' && supabase) {
       try {
         const { data: dbNode } = await supabase
@@ -701,36 +731,6 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         console.error('Error inserting branch to Supabase:', err);
       }
     }
-
-    set(state => {
-      const nextNodes = computeGenerations([...state.nodes, childNode]);
-      const newEdge = {
-        id: `edge_${parentNodeId}_to_${childId}`,
-        source: parentNodeId,
-        target: childId,
-        animated: true,
-        style: {
-          stroke: getEdgeColorForGen(childGen),
-          strokeWidth: 2.5
-        }
-      };
-      const nextEdges = updateEdgesColor([...state.edges, newEdge], nextNodes);
-      
-      const newTab = {
-        id: childId,
-        parentMessageId: `${parentNodeId}_${parentMessageIndex}`,
-        textSnippet,
-        history: inheritedHistory
-      };
-      
-      return {
-        nodes: nextNodes,
-        edges: nextEdges,
-        maxZIndex: nextZIndex,
-        openBranchTabs: [...state.openBranchTabs.filter(t => t.id !== childId), newTab],
-        activeBranchTabId: childId
-      };
-    });
 
     // Start streaming the AI's explanation/expansion/brief response
     const fetcher = get().clerkTokenFetcher;

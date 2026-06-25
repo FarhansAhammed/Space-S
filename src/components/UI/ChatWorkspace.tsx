@@ -1,24 +1,49 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Send, X, Sparkles, GitBranch, ArrowLeft, ChevronDown, 
-  MessageSquare, Layers, HelpCircle, FileText, StickyNote 
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ArrowLeft,
+  ChevronDown,
+  FileText,
+  GitBranch,
+  Layers,
+  MessageSquare,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Pin,
+  PinOff,
+  Search,
+  Send,
+  Sparkles,
+  X
 } from 'lucide-react';
-import { useCanvasStore } from '@/store/canvasStore';
 import { useUser } from '@clerk/nextjs';
+import { useCanvasStore } from '@/store/canvasStore';
 import { MarkdownRenderer } from './MarkdownRenderer';
+
+type BranchOperation = 'explain' | 'expand' | 'shorten';
+
+const getInitialPinnedChats = () => {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const saved = window.localStorage.getItem('spaceS_pinnedChatIds');
+    return saved ? JSON.parse(saved) as string[] : [];
+  } catch {
+    return [];
+  }
+};
 
 export const ChatWorkspace = () => {
   const user = useUser().user;
-  const { 
-    nodes, 
-    activeParentChatId, 
+  const {
+    nodes,
+    activeParentChatId,
     setActiveParentChatId,
-    openBranchTabs, 
-    activeBranchTabId, 
+    openBranchTabs,
+    activeBranchTabId,
     setActiveBranchTabId,
-    hoveredBranchTabId, 
+    hoveredBranchTabId,
     setHoveredBranchTabId,
     removeBranchTab,
     createBranchFromChat,
@@ -26,84 +51,80 @@ export const ChatWorkspace = () => {
     addLLMNodeFromSearch
   } = useCanvasStore();
 
-  // Resize state
-  const [rightPanelWidth, setRightPanelWidth] = useState(50); // percentage
-  const [isResizing, setIsResizing] = useState(false);
-
-  // Selector state
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [threadSearch, setThreadSearch] = useState('');
   const [showThreadDropdown, setShowThreadDropdown] = useState(false);
-
-  // Message inputs
+  const [pinnedChatIds, setPinnedChatIds] = useState<string[]>(getInitialPinnedChats);
   const [parentInput, setParentInput] = useState('');
   const [branchInput, setBranchInput] = useState('');
-
-  // Floating selection menu state
   const [selectedText, setSelectedText] = useState('');
   const [selectedMsgIndex, setSelectedMsgIndex] = useState<number | null>(null);
   const [selectionPosition, setSelectionPosition] = useState<{ x: number; y: number } | null>(null);
+  const [mobilePanelIndex, setMobilePanelIndex] = useState(0);
 
-  // Mobile layout state
-  const [mobileActivePanel, setMobileActivePanel] = useState<'parent' | 'branch'>('parent');
-
-  // Scroll references
   const parentScrollRef = useRef<HTMLDivElement>(null);
   const branchScrollRef = useRef<HTMLDivElement>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  // Find root nodes for thread switching
-  const parentThreads = nodes.filter(n => !n.data.parentNodeId && n.data.type === 'llm');
+  const parentThreads = useMemo(() => (
+    nodes
+      .filter(n => !n.data.parentNodeId && n.data.type === 'llm')
+      .sort((a, b) => {
+        const aPinned = pinnedChatIds.includes(a.id) ? 1 : 0;
+        const bPinned = pinnedChatIds.includes(b.id) ? 1 : 0;
+        if (aPinned !== bPinned) return bPinned - aPinned;
+        const timeA = a.data.createdAt ? new Date(a.data.createdAt).getTime() : 0;
+        const timeB = b.data.createdAt ? new Date(b.data.createdAt).getTime() : 0;
+        return timeB - timeA;
+      })
+  ), [nodes, pinnedChatIds]);
+
+  const filteredThreads = useMemo(() => {
+    const query = threadSearch.trim().toLowerCase();
+    if (!query) return parentThreads;
+
+    return parentThreads.filter(thread => {
+      const title = thread.data.title?.toLowerCase() || '';
+      const content = thread.data.content?.toLowerCase() || '';
+      return title.includes(query) || content.includes(query);
+    });
+  }, [parentThreads, threadSearch]);
+
   const activeParentNode = nodes.find(n => n.id === activeParentChatId) || parentThreads[0];
+  const activeBranchTab = openBranchTabs.find(t => t.id === activeBranchTabId);
+  const activeBranchNode = nodes.find(n => n.id === activeBranchTabId);
+  const hasBranchWorkspace = openBranchTabs.length > 0;
 
-  // Sync activeParentChatId if null
   useEffect(() => {
     if (!activeParentChatId && activeParentNode) {
       setActiveParentChatId(activeParentNode.id);
     }
   }, [activeParentChatId, activeParentNode, setActiveParentChatId]);
 
-  // Find active branch tab and node
-  const activeBranchTab = openBranchTabs.find(t => t.id === activeBranchTabId);
-  const activeBranchNode = nodes.find(n => n.id === activeBranchTabId);
-
-  // Auto-scroll on loading/new messages
   useEffect(() => {
-    parentScrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+    window.localStorage.setItem('spaceS_pinnedChatIds', JSON.stringify(pinnedChatIds));
+  }, [pinnedChatIds]);
+
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      setSidebarOpen(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    parentScrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [activeParentNode?.data.conversationHistory, activeParentNode?.data.isLoading]);
 
   useEffect(() => {
-    branchScrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+    branchScrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [activeBranchNode?.data.conversationHistory, activeBranchNode?.data.isLoading]);
 
-  // Resize logic
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsResizing(true);
-  };
-
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing) return;
-      const newWidth = ((window.innerWidth - e.clientX) / window.innerWidth) * 100;
-      if (newWidth > 25 && newWidth < 75) {
-        setRightPanelWidth(newWidth);
-      }
-    };
-
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
-
-    if (isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+    if (!hasBranchWorkspace) {
+      setMobilePanelIndex(0);
     }
+  }, [hasBranchWorkspace]);
 
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isResizing]);
-
-  // Highlight selection listener
   useEffect(() => {
     const handleSelectionChange = () => {
       const selection = window.getSelection();
@@ -120,14 +141,8 @@ export const ChatWorkspace = () => {
         return;
       }
 
-      const anchorNode = selection.anchorNode;
-      if (!anchorNode) return;
-
-      const anchorElement = anchorNode.parentElement;
-      if (!anchorElement) return;
-
-      // Ensure selection is inside Left Panel AI response message
-      const messageContainer = anchorElement.closest('.ai-response-message');
+      const anchorElement = selection.anchorNode?.parentElement;
+      const messageContainer = anchorElement?.closest('.ai-response-message');
       if (!messageContainer) {
         setSelectionPosition(null);
         return;
@@ -135,76 +150,74 @@ export const ChatWorkspace = () => {
 
       const msgIndexAttr = messageContainer.getAttribute('data-message-index');
       if (msgIndexAttr === null) return;
-      const messageIndex = parseInt(msgIndexAttr, 10);
 
       try {
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        
-        const isMobile = window.innerWidth < 768;
-        
+        const rect = selection.getRangeAt(0).getBoundingClientRect();
+        const isMobile = window.matchMedia('(max-width: 767px)').matches;
         setSelectionPosition({
           x: rect.left + rect.width / 2 + window.scrollX,
-          y: isMobile 
-            ? rect.bottom + 8 + window.scrollY 
-            : rect.top - 44 + window.scrollY
+          y: (isMobile ? rect.bottom + 10 : rect.top - 46) + window.scrollY
         });
         setSelectedText(text);
-        setSelectedMsgIndex(messageIndex);
+        setSelectedMsgIndex(parseInt(msgIndexAttr, 10));
       } catch {
         setSelectionPosition(null);
       }
     };
 
     document.addEventListener('selectionchange', handleSelectionChange);
-    return () => {
-      document.removeEventListener('selectionchange', handleSelectionChange);
-    };
+    return () => document.removeEventListener('selectionchange', handleSelectionChange);
   }, []);
 
-  // Action handlers
-  const handleAskInNewBranch = async (e: React.MouseEvent, operation: 'explain' | 'expand' | 'shorten') => {
+  const togglePinnedChat = (chatId: string) => {
+    setPinnedChatIds(current =>
+      current.includes(chatId)
+        ? current.filter(id => id !== chatId)
+        : [chatId, ...current]
+    );
+  };
+
+  const selectThread = (threadId: string) => {
+    setActiveParentChatId(threadId);
+    setShowThreadDropdown(false);
+    setMobilePanelIndex(0);
+  };
+
+  const handleAskInNewBranch = (e: React.MouseEvent, operation: BranchOperation) => {
     e.preventDefault();
     e.stopPropagation();
     if (!activeParentNode || selectedMsgIndex === null || !selectedText) return;
 
-    // Create the branch node & tab with the selected operation
-    const branchId = await createBranchFromChat(activeParentNode.id, selectedMsgIndex, selectedText, operation);
-    
-    // Clear selection
+    createBranchFromChat(activeParentNode.id, selectedMsgIndex, selectedText, operation).catch(err => {
+      console.error('Failed to create branch from chat:', err);
+    });
+
     window.getSelection()?.removeAllRanges();
     setSelectionPosition(null);
-
-    // Switch to branch view on mobile
-    if (window.innerWidth < 768) {
-      setMobileActivePanel('branch');
-    }
+    setMobilePanelIndex(1);
   };
 
   const handleSendParent = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!parentInput.trim()) return;
+    const prompt = parentInput.trim();
+    if (!prompt) return;
 
     if (activeParentNode) {
-      continueNodeConversation(activeParentNode.id, parentInput.trim());
-      setParentInput('');
+      continueNodeConversation(activeParentNode.id, prompt);
     } else {
-      // First node fallback
-      addLLMNodeFromSearch(parentInput.trim());
-      setParentInput('');
+      addLLMNodeFromSearch(prompt);
     }
+    setParentInput('');
   };
 
   const handleSendBranch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!branchInput.trim() || !activeBranchNode || activeBranchNode.data.isLoading) return;
+    const prompt = branchInput.trim();
+    if (!prompt || !activeBranchNode || activeBranchNode.data.isLoading) return;
 
-    continueNodeConversation(activeBranchNode.id, branchInput.trim());
+    continueNodeConversation(activeBranchNode.id, prompt);
     setBranchInput('');
   };
-
-  // Mobile Swipe Physics
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -213,30 +226,249 @@ export const ChatWorkspace = () => {
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (!touchStartRef.current) return;
+
     const touch = e.changedTouches[0];
     const deltaX = touch.clientX - touchStartRef.current.x;
     const deltaY = touch.clientY - touchStartRef.current.y;
-    
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 60) {
-      if (deltaX < 0) {
-        // Swipe left -> Show Branch Workspace
-        if (openBranchTabs.length > 0) {
-          setMobileActivePanel('branch');
-        }
-      } else {
-        // Swipe right -> Show Parent Chat Workspace
-        setMobileActivePanel('parent');
-      }
-    }
     touchStartRef.current = null;
+
+    if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY)) return;
+
+    if (deltaX < 0 && hasBranchWorkspace) {
+      setMobilePanelIndex(1);
+    } else if (deltaX > 0) {
+      setMobilePanelIndex(0);
+    }
   };
 
+  const renderMessageList = (
+    node: typeof activeParentNode,
+    endRef: React.RefObject<HTMLDivElement>,
+    options?: { branchTab?: typeof activeBranchTab }
+  ) => {
+    if (!node || node.data.conversationHistory.length === 0) {
+      return (
+        <div className="flex min-h-full flex-col items-center justify-center text-center select-none px-6">
+          <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-3xl border border-white/50 bg-white/70 text-[#7c4dff] shadow-[0_18px_44px_-20px_rgba(124,77,255,0.55)] backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900/70">
+            <MessageSquare className="h-6 w-6" />
+          </div>
+          <h1 className="text-4xl font-semibold tracking-normal text-zinc-900 dark:text-zinc-50 sm:text-5xl">
+            Chat
+          </h1>
+          <p className="mt-3 max-w-md text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+            Ask a question, then highlight any AI response to open a branch beside the original chat.
+          </p>
+        </div>
+      );
+    }
+
+    const inheritedCount = options?.branchTab?.history.length ?? 0;
+
+    return (
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
+        {node.data.conversationHistory.map((msg, index) => {
+          const isUser = msg.role === 'user';
+          const isInherited = index < inheritedCount;
+          const highlightSnippet = !options?.branchTab && hoveredBranchTabId
+            ? openBranchTabs.find(t => t.id === hoveredBranchTabId && t.parentMessageId === `${node.id}_${index}`)?.textSnippet
+            : undefined;
+
+          return (
+            <div
+              key={`${node.id}_${index}`}
+              data-message-index={index}
+              className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start ai-response-message'} ${isInherited ? 'opacity-60' : ''}`}
+            >
+              {!isUser && (
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl border border-[#7c4dff]/20 bg-[#7c4dff]/10 text-[#7c4dff] shadow-sm">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+              )}
+
+              <div className={`flex max-w-[84%] flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+                <span className="mb-1.5 text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">
+                  {isInherited ? 'Inherited context' : isUser ? 'You' : 'Space-S AI'}
+                </span>
+                <div
+                  className={`rounded-[24px] border px-4 py-3 text-sm leading-6 shadow-sm backdrop-blur-xl ${
+                    isUser
+                      ? 'rounded-tr-lg border-[#7c4dff]/20 bg-[#7c4dff]/10 text-zinc-900 dark:bg-[#7c4dff]/20 dark:text-zinc-100'
+                      : 'rounded-tl-lg border-white/60 bg-white/75 text-zinc-700 dark:border-white/10 dark:bg-zinc-900/70 dark:text-zinc-300'
+                  }`}
+                >
+                  <MarkdownRenderer
+                    content={msg.content}
+                    isLoading={node.data.isLoading && index === node.data.conversationHistory.length - 1}
+                    highlightSnippet={highlightSnippet}
+                  />
+                </div>
+              </div>
+
+              {isUser && (
+                <div className="mt-1 h-8 w-8 shrink-0 overflow-hidden rounded-2xl border border-white/70 bg-zinc-100 shadow-sm dark:border-white/10 dark:bg-zinc-800">
+                  <img
+                    src={user?.imageUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=60'}
+                    alt="Avatar"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {node.data.isLoading && (
+          <div className="flex items-start gap-3 select-none">
+            <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl border border-[#7c4dff]/20 bg-[#7c4dff]/10 text-[#7c4dff] shadow-sm">
+              <Sparkles className="h-4 w-4 animate-pulse" />
+            </div>
+            <div className="rounded-[24px] rounded-tl-lg border border-white/60 bg-white/75 px-4 py-3 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900/70">
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 animate-bounce rounded-full bg-[#7c4dff]" style={{ animationDelay: '0ms' }} />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-[#7c4dff]" style={{ animationDelay: '150ms' }} />
+                <span className="h-2 w-2 animate-bounce rounded-full bg-[#7c4dff]" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={endRef} />
+      </div>
+    );
+  };
+
+  const chatInput = (
+    value: string,
+    setValue: (value: string) => void,
+    onSubmit: (e: React.FormEvent) => void,
+    placeholder: string,
+    disabled?: boolean
+  ) => (
+    <form onSubmit={onSubmit} className="mx-auto w-full max-w-3xl px-4 pb-5 sm:px-6">
+      <div className="flex min-h-[58px] items-center gap-2 rounded-[28px] border border-white/60 bg-white/80 p-2.5 shadow-[0_24px_80px_-38px_rgba(24,24,27,0.45)] backdrop-blur-2xl transition-all focus-within:border-[#7c4dff]/40 dark:border-white/10 dark:bg-zinc-950/70">
+        <input
+          type="text"
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          disabled={disabled}
+          className="h-10 min-w-0 flex-1 bg-transparent px-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 disabled:cursor-wait dark:text-zinc-100 dark:placeholder:text-zinc-500"
+        />
+        <button
+          type="submit"
+          disabled={!value.trim() || disabled}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-950 text-white shadow-lg shadow-zinc-950/15 transition-all hover:-translate-y-0.5 hover:bg-[#7c4dff] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-35 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-[#a080ff]"
+          title="Send"
+        >
+          <Send className="h-4 w-4" />
+        </button>
+      </div>
+    </form>
+  );
+
+  const sidebar = (
+    <aside className={`${sidebarOpen ? 'w-[292px]' : 'w-[82px]'} hidden shrink-0 border-r border-white/40 bg-white/50 backdrop-blur-2xl transition-all duration-300 dark:border-white/10 dark:bg-zinc-950/50 md:flex md:flex-col`}>
+      <div className="flex h-[72px] items-center justify-between px-4">
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/60 bg-white/70 text-zinc-600 shadow-sm transition-all hover:text-zinc-950 dark:border-white/10 dark:bg-zinc-900/70 dark:text-zinc-400 dark:hover:text-zinc-100"
+          title={sidebarOpen ? 'Collapse sidebar' : 'Open sidebar'}
+        >
+          {sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+        </button>
+        {sidebarOpen && (
+          <div className="text-right">
+            <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">Chat history</p>
+            <p className="text-[10px] font-medium text-zinc-400">{parentThreads.length} threads</p>
+          </div>
+        )}
+      </div>
+
+      {sidebarOpen && (
+        <div className="px-4 pb-3">
+          <div className="flex h-10 items-center gap-2 rounded-2xl border border-white/60 bg-white/70 px-3 text-zinc-500 shadow-inner dark:border-white/10 dark:bg-zinc-900/70">
+            <Search className="h-4 w-4 shrink-0" />
+            <input
+              value={threadSearch}
+              onChange={(e) => setThreadSearch(e.target.value)}
+              placeholder="Search chats"
+              className="min-w-0 flex-1 bg-transparent text-xs font-medium text-zinc-800 outline-none placeholder:text-zinc-400 dark:text-zinc-200"
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto px-3 pb-4">
+        {filteredThreads.map(thread => {
+          const isActive = activeParentNode?.id === thread.id;
+          const isPinned = pinnedChatIds.includes(thread.id);
+
+          return (
+            <div
+              key={thread.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => selectThread(thread.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  selectThread(thread.id);
+                }
+              }}
+              className={`group mb-1.5 flex w-full items-center gap-2 rounded-2xl border p-2.5 text-left transition-all ${
+                isActive
+                  ? 'border-[#7c4dff]/25 bg-[#7c4dff]/10 shadow-sm'
+                  : 'border-transparent hover:border-white/50 hover:bg-white/50 dark:hover:border-white/10 dark:hover:bg-white/5'
+              }`}
+              title={thread.data.title || 'Untitled chat'}
+            >
+              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ${isActive ? 'bg-[#7c4dff] text-white' : 'bg-white/75 text-zinc-500 dark:bg-zinc-900/80 dark:text-zinc-400'}`}>
+                {isPinned ? <Pin className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
+              </div>
+              {sidebarOpen && (
+                <>
+                  <div className="min-w-0 flex-1">
+                    <p className={`truncate text-xs font-bold ${isActive ? 'text-zinc-950 dark:text-zinc-50' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                      {thread.data.title || 'Untitled chat'}
+                    </p>
+                    <p className="truncate text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
+                      {thread.data.conversationHistory.length} messages
+                    </p>
+                  </div>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePinnedChat(thread.id);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        togglePinnedChat(thread.id);
+                      }
+                    }}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-zinc-400 opacity-100 transition-all hover:bg-white/70 hover:text-[#7c4dff] dark:hover:bg-white/10"
+                    title={isPinned ? 'Unpin chat' : 'Pin chat'}
+                  >
+                    {isPinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+                  </span>
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </aside>
+  );
+
   return (
-    <div className="w-full h-full flex flex-col relative text-zinc-800 dark:text-zinc-200">
-      
-      {/* Selection Floating Tooltip */}
+    <div className="relative flex h-full w-full overflow-hidden text-zinc-900 dark:text-zinc-200">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(124,77,255,0.18),transparent_28%),radial-gradient(circle_at_78%_12%,rgba(14,165,233,0.14),transparent_24%),linear-gradient(135deg,#f7f4ee_0%,#eef7f6_48%,#f7f1ff_100%)] dark:bg-[radial-gradient(circle_at_20%_15%,rgba(124,77,255,0.20),transparent_28%),radial-gradient(circle_at_78%_12%,rgba(20,184,166,0.13),transparent_24%),linear-gradient(135deg,#11100f_0%,#111827_48%,#171021_100%)]" />
+
       {selectionPosition && (
-        <div 
+        <div
           style={{
             position: 'fixed',
             left: selectionPosition.x,
@@ -244,399 +476,237 @@ export const ChatWorkspace = () => {
             transform: 'translateX(-50%)',
             zIndex: 9999
           }}
-          className="animate-in fade-in slide-in-from-bottom-1 duration-150 flex items-center bg-zinc-950/95 dark:bg-zinc-900/95 text-white rounded-xl border border-white/10 dark:border-zinc-800/80 shadow-2xl p-1 select-none backdrop-blur-md"
+          className="flex animate-in items-center rounded-2xl border border-white/15 bg-zinc-950/90 p-1 text-white shadow-2xl backdrop-blur-xl duration-150 fade-in slide-in-from-bottom-1"
         >
-          <button
-            onMouseDown={(e) => handleAskInNewBranch(e, 'explain')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/10 dark:hover:bg-zinc-800 text-[10px] font-bold uppercase tracking-wide transition-all active:scale-95 duration-100 whitespace-nowrap text-zinc-200"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[#a080ff]" />
-            <span>Explain</span>
-          </button>
-          <div className="w-px h-4 bg-white/10 dark:bg-zinc-800" />
-          <button
-            onMouseDown={(e) => handleAskInNewBranch(e, 'expand')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/10 dark:hover:bg-zinc-800 text-[10px] font-bold uppercase tracking-wide transition-all active:scale-95 duration-100 whitespace-nowrap text-zinc-200"
-          >
-            <GitBranch className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Expand</span>
-          </button>
-          <div className="w-px h-4 bg-white/10 dark:bg-zinc-800" />
-          <button
-            onMouseDown={(e) => handleAskInNewBranch(e, 'shorten')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/10 dark:hover:bg-zinc-800 text-[10px] font-bold uppercase tracking-wide transition-all active:scale-95 duration-100 whitespace-nowrap text-zinc-200"
-          >
-            <FileText className="w-3.5 h-3.5 text-amber-400" />
-            <span>Brief</span>
-          </button>
+          {[
+            { label: 'Explain', icon: Sparkles, op: 'explain' as const, color: 'text-[#a080ff]' },
+            { label: 'Expand', icon: GitBranch, op: 'expand' as const, color: 'text-cyan-300' },
+            { label: 'Brief', icon: FileText, op: 'shorten' as const, color: 'text-amber-300' }
+          ].map((item) => (
+            <button
+              key={item.op}
+              onMouseDown={(e) => handleAskInNewBranch(e, item.op)}
+              className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-zinc-200 transition-all hover:bg-white/10 active:scale-95"
+            >
+              <item.icon className={`h-3.5 w-3.5 ${item.color}`} />
+              <span>{item.label}</span>
+            </button>
+          ))}
         </div>
       )}
 
-      {/* Mobile Breadcrumb Rail */}
-      <div className="md:hidden flex items-center justify-between px-4 h-10 border-b border-black/10 dark:border-zinc-800/60 bg-zinc-50 dark:bg-zinc-950 z-30 select-none">
-        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 font-sans tracking-wide truncate pr-4">
-          <span className="truncate max-w-[120px]">{activeParentNode?.data.title || 'Untitled Thread'}</span>
-          {mobileActivePanel === 'branch' && activeBranchTab && (
-            <>
-              <span className="text-zinc-400">&gt;</span>
-              <span className="text-[#7c4dff] dark:text-[#a080ff] truncate max-w-[120px]">{activeBranchTab.textSnippet}</span>
-            </>
+      {sidebar}
+
+      <section className="relative flex min-w-0 flex-1 flex-col">
+        <div className="md:hidden flex h-12 shrink-0 items-center justify-between border-b border-white/45 bg-white/58 px-3 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/58">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/75 text-zinc-600 shadow-sm dark:bg-zinc-900/75 dark:text-zinc-300"
+            title="Chat history"
+          >
+            <PanelLeftOpen className="h-4 w-4" />
+          </button>
+          <div className="flex items-center gap-1.5 rounded-full bg-white/75 px-2 py-1 text-[10px] font-bold text-zinc-500 shadow-sm dark:bg-zinc-900/75 dark:text-zinc-400">
+            <span className={`h-1.5 w-1.5 rounded-full ${mobilePanelIndex === 0 ? 'bg-[#7c4dff]' : 'bg-zinc-300'}`} />
+            <span className={`h-1.5 w-1.5 rounded-full ${mobilePanelIndex === 1 ? 'bg-[#7c4dff]' : 'bg-zinc-300'}`} />
+          </div>
+          {mobilePanelIndex === 1 ? (
+            <button
+              type="button"
+              onClick={() => setMobilePanelIndex(0)}
+              className="flex h-9 items-center gap-1 rounded-xl bg-white/75 px-3 text-[11px] font-bold text-zinc-600 shadow-sm dark:bg-zinc-900/75 dark:text-zinc-300"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Chat
+            </button>
+          ) : (
+            <div className="h-9 w-16" />
           )}
         </div>
-        {mobileActivePanel === 'branch' && (
-          <button 
-            onClick={() => setMobileActivePanel('parent')}
-            className="flex items-center gap-1 text-[9px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide px-2 py-1 bg-black/5 dark:bg-white/5 rounded-lg border border-black/10 dark:border-white/10 active:bg-black/10"
-          >
-            <ArrowLeft className="w-3 h-3" />
-            <span>Back</span>
-          </button>
-        )}
-      </div>
 
-      {/* Desktop Panel Workspace Wrapper */}
-      <div 
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        className="flex-1 w-full h-[calc(100%-40px)] md:h-full relative overflow-hidden flex"
-      >
-        {/* Dynamic viewport layout for mobile vs desktop */}
-        <div 
-          className={`flex w-[200%] md:w-full h-full transition-transform duration-300 ease-out md:translate-x-0 ${
-            mobileActivePanel === 'branch' ? '-translate-x-1/2' : 'translate-x-0'
-          }`}
-        >
-          {/* LEFT PANEL: Main Thread (50% to 100% depending on resizing / mobile state) */}
-          <div 
-            style={{ width: window.innerWidth >= 768 ? `${100 - (openBranchTabs.length > 0 ? rightPanelWidth : 0)}%` : '50%' }}
-            className="h-full flex flex-col border-r border-black/10 dark:border-zinc-800/60 bg-[#f8f5f0] dark:bg-[#121110] relative transition-all duration-300"
-          >
-            {/* Header: Selector / Thread meta */}
-            <div className="h-[52px] border-b border-black/10 dark:border-zinc-800/60 flex items-center justify-between px-5 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-md z-20">
-              <div className="relative">
-                <button
-                  onClick={() => setShowThreadDropdown(!showThreadDropdown)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-zinc-900/70 hover:bg-black/5 dark:hover:bg-white/5 text-zinc-700 dark:text-zinc-300 text-xs font-semibold font-sans transition-all active:scale-95 shadow-sm"
-                >
-                  <MessageSquare className="w-3.5 h-3.5 text-[#7c4dff]" />
-                  <span className="max-w-[200px] truncate">{activeParentNode?.data.title || 'Start a Chat...'}</span>
-                  <ChevronDown className="w-3 h-3 text-zinc-400" />
-                </button>
-
-                {showThreadDropdown && parentThreads.length > 1 && (
-                  <>
-                    <div className="fixed inset-0 z-40 cursor-default" onClick={() => setShowThreadDropdown(false)} />
-                    <div className="absolute left-0 mt-2 w-64 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg py-1.5 z-50 flex flex-col animate-in fade-in slide-in-from-top-1 duration-100 max-h-60 overflow-y-auto">
-                      <div className="px-3 py-1.5 text-[9px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide border-b border-black/5 dark:border-white/5 mb-1">
-                        Select Main Thread
-                      </div>
-                      {parentThreads.map(thread => (
-                        <button
-                          key={thread.id}
-                          onClick={() => {
-                            setActiveParentChatId(thread.id);
-                            setShowThreadDropdown(false);
-                          }}
-                          className={`w-full px-3.5 py-2 text-left text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/5 transition-colors truncate ${
-                            activeParentChatId === thread.id ? 'text-[#7c4dff] bg-[#7c4dff]/5' : 'text-zinc-700 dark:text-zinc-300'
-                          }`}
-                        >
-                          {thread.data.title}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider font-sans select-none">
-                Main Thread
-              </div>
-            </div>
-
-            {/* Message Area */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-5 select-text">
-              {!activeParentNode || activeParentNode.data.conversationHistory.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center text-zinc-400 dark:text-zinc-500 select-none">
-                  <Sparkles className="w-10 h-10 text-[#7c4dff]/40 mb-3 animate-pulse" />
-                  <p className="text-xs font-bold text-zinc-650 dark:text-zinc-450">Welcome to Chat View</p>
-                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1 max-w-[240px] leading-relaxed">
-                    Type a prompt below to start a linear thread. Highlighting any AI response will allow you to ask in a new branch tab!
-                  </p>
-                </div>
-              ) : (
-                activeParentNode.data.conversationHistory.map((msg, index) => {
-                  const isUser = msg.role === 'user';
-                  const highlightSnippet = hoveredBranchTabId && openBranchTabs.find(t => t.id === hoveredBranchTabId)?.parentMessageId === `${activeParentNode.id}_${index}`
-                    ? openBranchTabs.find(t => t.id === hoveredBranchTabId)?.textSnippet
-                    : undefined;
-
-                  if (isUser) {
-                    const isMe = !msg.senderId || msg.senderId === user?.id;
-                    return (
-                      <div key={index} className="flex flex-row-reverse items-start gap-2.5 max-w-[85%] self-end">
-                        <div className="w-6 h-6 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-800 shrink-0 select-none shadow-sm">
-                          <img src={user?.imageUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=60"} alt="Avatar" className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex flex-col items-end">
-                          <span className="text-[9px] font-semibold text-zinc-400 mb-1 select-none">You</span>
-                          <div className="rounded-xl px-3.5 py-2.5 text-[11px] leading-relaxed shadow-sm border bg-[#7c4dff]/5 dark:bg-[#7c4dff]/10 border-[#7c4dff]/15 dark:border-[#7c4dff]/30 text-zinc-850 dark:text-zinc-200 rounded-tr-none">
-                            <MarkdownRenderer content={msg.content} />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  } else {
-                    return (
-                      <div key={index} className="flex flex-row items-start gap-2.5 max-w-[85%] self-start ai-response-message" data-message-index={index}>
-                        <div className="w-6 h-6 rounded-full bg-[#7c4dff]/10 flex items-center justify-center text-[#7c4dff] shrink-0 select-none shadow-sm">
-                          <Sparkles className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="flex flex-col items-start">
-                          <span className="text-[9px] font-semibold text-zinc-400 mb-1 select-none font-sans">Space-S AI</span>
-                          <div className="rounded-xl px-3.5 py-2.5 text-[11px] leading-relaxed shadow-sm border bg-zinc-50/70 dark:bg-zinc-900/60 border-zinc-200/80 dark:border-zinc-850/50 text-zinc-700 dark:text-zinc-300 rounded-tl-none transition-all duration-300">
-                            <MarkdownRenderer 
-                              content={msg.content} 
-                              isLoading={activeParentNode.data.isLoading && index === activeParentNode.data.conversationHistory.length - 1} 
-                              highlightSnippet={highlightSnippet}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-                })
-              )}
-
-              {/* Loader */}
-              {activeParentNode?.data.isLoading && (
-                <div className="flex flex-row items-start gap-2.5 max-w-[85%] self-start select-none">
-                  <div className="w-6 h-6 rounded-full bg-[#7c4dff]/10 flex items-center justify-center text-[#7c4dff] shrink-0 shadow-sm">
-                    <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                  </div>
-                  <div className="flex flex-col items-start">
-                    <span className="text-[9px] font-semibold text-zinc-400 mb-1">Space-S AI</span>
-                    <div className="rounded-xl rounded-tl-none px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-850/50 flex items-center gap-1.5 shadow-sm">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#7c4dff] animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#7c4dff] animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#7c4dff] animate-bounce" style={{ animationDelay: '300ms' }} />
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div ref={parentScrollRef} />
-            </div>
-
-            {/* Input area */}
-            <form 
-              onSubmit={handleSendParent}
-              className="p-4 border-t border-black/10 dark:border-zinc-800/60 bg-white/70 dark:bg-zinc-950/40 flex items-center gap-2"
-            >
-              <input 
-                type="text" 
-                placeholder="Ask or search topic..."
-                value={parentInput}
-                onChange={(e) => setParentInput(e.target.value)}
-                disabled={activeParentNode?.data.isLoading}
-                className="flex-1 h-9 px-3.5 border border-black/10 dark:border-white/10 rounded-xl outline-none focus:border-[#7c4dff] dark:focus:border-[#7c4dff] text-xs bg-black/5 dark:bg-white/5 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-zinc-200 transition-all placeholder-zinc-400 dark:placeholder-zinc-500 shadow-inner"
-              />
-              <button 
-                type="submit"
-                disabled={!parentInput.trim() || activeParentNode?.data.isLoading}
-                className="w-9 h-9 rounded-xl bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 text-white flex items-center justify-center hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow active:scale-95"
-              >
-                <Send className="w-3.5 h-3.5" />
+        {sidebarOpen && (
+          <div className="md:hidden absolute left-3 top-14 z-40 w-[min(320px,calc(100%-24px))] rounded-[28px] border border-white/60 bg-white/90 p-3 shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/90">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">Chat history</span>
+              <button onClick={() => setSidebarOpen(false)} className="rounded-xl p-2 text-zinc-400 hover:bg-black/5 dark:hover:bg-white/10">
+                <X className="h-4 w-4" />
               </button>
-            </form>
+            </div>
+            <div className="mb-3 flex h-10 items-center gap-2 rounded-2xl bg-zinc-100/70 px-3 dark:bg-white/5">
+              <Search className="h-4 w-4 text-zinc-400" />
+              <input
+                value={threadSearch}
+                onChange={(e) => setThreadSearch(e.target.value)}
+                placeholder="Search chats"
+                className="min-w-0 flex-1 bg-transparent text-xs outline-none dark:text-zinc-100"
+              />
+            </div>
+            <div className="max-h-[56vh] overflow-y-auto">
+              {filteredThreads.map(thread => (
+                <div
+                  key={thread.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    selectThread(thread.id);
+                    setSidebarOpen(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      selectThread(thread.id);
+                      setSidebarOpen(false);
+                    }
+                  }}
+                  className="mb-1.5 flex w-full items-center gap-2 rounded-2xl p-2 text-left hover:bg-black/5 dark:hover:bg-white/5"
+                >
+                  <MessageSquare className="h-4 w-4 shrink-0 text-[#7c4dff]" />
+                  <span className="min-w-0 flex-1 truncate text-xs font-bold text-zinc-700 dark:text-zinc-300">{thread.data.title || 'Untitled chat'}</span>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePinnedChat(thread.id);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        togglePinnedChat(thread.id);
+                      }
+                    }}
+                    className="rounded-lg p-1.5 text-zinc-400"
+                  >
+                    {pinnedChatIds.includes(thread.id) ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
+        )}
 
-          {/* DRAGGABLE DIVIDER (Desktop only, if branches exist) */}
-          {openBranchTabs.length > 0 && (
-            <div 
-              onMouseDown={handleMouseDown}
-              className={`hidden md:block w-1.5 h-full cursor-col-resize hover:bg-[#7c4dff] transition-all relative z-40 ${
-                isResizing ? 'bg-[#7c4dff]' : 'bg-black/10 dark:bg-zinc-850/50'
-              }`}
-            />
-          )}
-
-          {/* RIGHT PANEL: Branch Workspace (0% to 50% depending on branches) */}
-          <div 
-            style={{ 
-              width: window.innerWidth >= 768 
-                ? (openBranchTabs.length > 0 ? `${rightPanelWidth}%` : '0px') 
-                : '50%',
-              display: openBranchTabs.length > 0 ? 'flex' : 'none'
-            }}
-            className="h-full flex-col bg-white dark:bg-zinc-950 relative overflow-hidden transition-all duration-300"
+        <div
+          className="flex min-h-0 flex-1 overflow-hidden"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div
+            className={`flex min-h-0 transition-transform duration-300 ease-out md:w-full md:translate-x-0 ${hasBranchWorkspace ? 'w-[200%]' : 'w-full'} ${mobilePanelIndex === 1 ? '-translate-x-1/2' : 'translate-x-0'}`}
           >
-            {/* Header: Browser horizontal tab bar */}
-            <div className="h-[52px] border-b border-black/10 dark:border-zinc-800/60 bg-zinc-50/50 dark:bg-zinc-950/50 backdrop-blur-md flex items-center px-2 select-none overflow-x-auto no-scrollbar scroll-smooth">
-              <div className="flex items-center gap-1.5 h-full py-2">
-                {openBranchTabs.map(tab => {
-                  const isActive = tab.id === activeBranchTabId;
-                  const nodeState = nodes.find(n => n.id === tab.id);
-                  const isTabLoading = nodeState?.data.isLoading;
-                  return (
-                    <div
-                      key={tab.id}
-                      onClick={() => {
-                        setActiveBranchTabId(tab.id);
-                        if (window.innerWidth < 768) {
-                          setMobileActivePanel('branch');
-                        }
-                      }}
-                      onMouseEnter={() => setHoveredBranchTabId(tab.id)}
-                      onMouseLeave={() => setHoveredBranchTabId(null)}
-                      className={`h-8 px-3 rounded-lg flex items-center gap-2 cursor-pointer transition-all border text-xs font-semibold ${
-                        isActive 
-                          ? 'bg-[#7c4dff]/10 border-[#7c4dff]/30 text-[#7c4dff] dark:text-[#be9eff] dark:bg-[#7c4dff]/15'
-                          : 'bg-transparent border-transparent hover:bg-black/5 dark:hover:bg-white/5 text-zinc-500 dark:text-zinc-400'
-                      }`}
-                    >
-                      <GitBranch className={`w-3.5 h-3.5 shrink-0 ${isTabLoading ? 'animate-pulse text-[#7c4dff]' : ''}`} />
-                      <span className="truncate max-w-[80px] font-sans">{tab.textSnippet}</span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeBranchTab(tab.id);
-                        }}
-                        className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 hover:text-zinc-700 dark:hover:text-zinc-200 text-zinc-400"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  );
-                })}
+            <div className={`${hasBranchWorkspace ? 'w-1/2 md:w-[52%]' : 'w-full'} flex min-h-0 shrink-0 flex-col border-r border-white/35 dark:border-white/10`}>
+              <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/40 bg-white/40 px-4 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/40">
+                <div className="relative min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowThreadDropdown(!showThreadDropdown)}
+                    className="flex max-w-[56vw] items-center gap-2 rounded-2xl border border-white/60 bg-white/70 px-3 py-2 text-xs font-bold text-zinc-700 shadow-sm transition-all hover:bg-white/90 dark:border-white/10 dark:bg-zinc-900/70 dark:text-zinc-300"
+                  >
+                    <MessageSquare className="h-4 w-4 shrink-0 text-[#7c4dff]" />
+                    <span className="truncate">{activeParentNode?.data.title || 'Chat'}</span>
+                    <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                  </button>
+                  {showThreadDropdown && parentThreads.length > 1 && (
+                    <>
+                      <div className="fixed inset-0 z-30" onClick={() => setShowThreadDropdown(false)} />
+                      <div className="absolute left-0 top-full z-40 mt-2 w-72 overflow-hidden rounded-2xl border border-white/60 bg-white/90 py-2 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/90">
+                        {parentThreads.map(thread => (
+                          <button
+                            key={thread.id}
+                            onClick={() => selectThread(thread.id)}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold text-zinc-700 hover:bg-[#7c4dff]/10 dark:text-zinc-300 dark:hover:bg-white/5"
+                          >
+                            {pinnedChatIds.includes(thread.id) ? <Pin className="h-3.5 w-3.5 text-[#7c4dff]" /> : <MessageSquare className="h-3.5 w-3.5 text-zinc-400" />}
+                            <span className="truncate">{thread.data.title || 'Untitled chat'}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+                <span className="hidden rounded-full bg-white/60 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-zinc-400 shadow-sm dark:bg-white/5 sm:block">
+                  Main chat
+                </span>
               </div>
+              <div className="min-h-0 flex-1 overflow-y-auto select-text">
+                {renderMessageList(activeParentNode, parentScrollRef)}
+              </div>
+              {chatInput(parentInput, setParentInput, handleSendParent, 'Message Space-S...', activeParentNode?.data.isLoading)}
             </div>
 
-            {/* Tab content - Isolated chat box session */}
-            {activeBranchNode ? (
-              <div className="flex-1 flex flex-col h-[calc(100%-52px)] overflow-hidden">
-                {/* Inherited context header */}
-                <div className="bg-[#7c4dff]/5 dark:bg-[#7c4dff]/10 border-b border-[#7c4dff]/10 px-5 py-2 flex items-center justify-between text-[10px] font-semibold text-[#7c4dff] dark:text-[#a080ff] select-none shadow-sm">
-                  <span className="flex items-center gap-1">
-                    <Layers className="w-3 h-3" />
-                    <span>Context Inherited (Up to branch point)</span>
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded bg-[#7c4dff]/15 text-[8.5px] uppercase tracking-wide border border-[#7c4dff]/20">
-                    Badge
-                  </span>
+            {hasBranchWorkspace && (
+              <div className="flex w-1/2 shrink-0 flex-col md:w-[48%]">
+                <div className="flex h-14 shrink-0 items-center gap-2 overflow-x-auto border-b border-white/40 bg-white/40 px-3 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-950/40">
+                  <div className="flex items-center gap-2">
+                    {openBranchTabs.map(tab => {
+                      const isActive = tab.id === activeBranchTabId;
+                      const nodeState = nodes.find(n => n.id === tab.id);
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => {
+                            setActiveBranchTabId(tab.id);
+                            setMobilePanelIndex(1);
+                          }}
+                          onMouseEnter={() => setHoveredBranchTabId(tab.id)}
+                          onMouseLeave={() => setHoveredBranchTabId(null)}
+                          className={`group flex h-9 min-w-[132px] max-w-[200px] items-center gap-2 rounded-2xl border px-3 text-xs font-bold transition-all ${
+                            isActive
+                              ? 'border-[#7c4dff]/30 bg-[#7c4dff]/10 text-[#6d28d9] shadow-sm dark:text-[#c4b5fd]'
+                              : 'border-transparent bg-white/50 text-zinc-500 hover:bg-white/80 dark:bg-white/5 dark:text-zinc-400 dark:hover:bg-white/10'
+                          }`}
+                        >
+                          <GitBranch className={`h-4 w-4 shrink-0 ${nodeState?.data.isLoading ? 'animate-pulse text-[#7c4dff]' : ''}`} />
+                          <span className="truncate">{tab.textSnippet}</span>
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeBranchTab(tab.id);
+                            }}
+                            className="ml-auto rounded-lg p-0.5 text-zinc-400 transition-colors hover:bg-black/10 hover:text-zinc-800 dark:hover:bg-white/10 dark:hover:text-zinc-100"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                {/* Conversation area */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-4 select-text bg-[#faf9f6] dark:bg-zinc-950/30">
-                  {activeBranchNode.data.conversationHistory.map((msg, index) => {
-                    const isUser = msg.role === 'user';
-                    // We mark inherited messages as those matching the index and count from the tab's history.
-                    const isInherited = index < activeBranchTab!.history.length;
-                    
-                    if (isUser) {
-                      const isMe = !msg.senderId || msg.senderId === user?.id;
-                      return (
-                        <div 
-                          key={index} 
-                          className={`flex flex-row-reverse items-start gap-2.5 max-w-[85%] self-end ${
-                            isInherited ? 'opacity-70' : ''
-                          }`}
-                        >
-                          <div className="w-6 h-6 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-800 shrink-0 select-none shadow-sm">
-                            <img src={user?.imageUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=60"} alt="Avatar" className="w-full h-full object-cover" />
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <span className="text-[9px] font-semibold text-zinc-400 mb-1 select-none">
-                              {isInherited ? 'Inherited Context' : 'You'}
-                            </span>
-                            <div className={`rounded-xl px-3.5 py-2.5 text-[11px] leading-relaxed shadow-sm border rounded-tr-none ${
-                              isInherited 
-                                ? 'bg-zinc-100 dark:bg-zinc-900 border-zinc-200/80 dark:border-zinc-850/50 text-zinc-550 dark:text-zinc-450' 
-                                : 'bg-[#7c4dff]/5 dark:bg-[#7c4dff]/10 border-[#7c4dff]/15 dark:border-[#7c4dff]/30 text-zinc-850 dark:text-zinc-200'
-                            }`}>
-                              <MarkdownRenderer content={msg.content} />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    } else {
-                      return (
-                        <div 
-                          key={index} 
-                          className={`flex flex-row items-start gap-2.5 max-w-[85%] self-start ${
-                            isInherited ? 'opacity-70' : ''
-                          }`}
-                        >
-                          <div className="w-6 h-6 rounded-full bg-[#7c4dff]/10 flex items-center justify-center text-[#7c4dff] shrink-0 select-none shadow-sm">
-                            <Sparkles className="w-3.5 h-3.5" />
-                          </div>
-                          <div className="flex flex-col items-start">
-                            <span className="text-[9px] font-semibold text-zinc-400 mb-1 select-none">
-                              {isInherited ? 'Inherited Response' : 'Space-S AI'}
-                            </span>
-                            <div className="rounded-xl px-3.5 py-2.5 text-[11px] leading-relaxed shadow-sm border bg-zinc-50/70 dark:bg-zinc-900/60 border-zinc-250 dark:border-zinc-850/50 text-zinc-700 dark:text-zinc-300 rounded-tl-none">
-                              <MarkdownRenderer 
-                                content={msg.content} 
-                                isLoading={activeBranchNode.data.isLoading && index === activeBranchNode.data.conversationHistory.length - 1} 
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-                  })}
-
-                  {activeBranchNode.data.isLoading && (
-                    <div className="flex flex-row items-start gap-2.5 max-w-[85%] self-start select-none">
-                      <div className="w-6 h-6 rounded-full bg-[#7c4dff]/10 flex items-center justify-center text-[#7c4dff] shrink-0 shadow-sm">
-                        <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                      </div>
-                      <div className="flex flex-col items-start">
-                        <span className="text-[9px] font-semibold text-zinc-400 mb-1">Space-S AI</span>
-                        <div className="rounded-xl rounded-tl-none px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-850 flex items-center gap-1.5 shadow-sm">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#7c4dff] animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#7c4dff] animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#7c4dff] animate-bounce" style={{ animationDelay: '300ms' }} />
-                        </div>
-                      </div>
+                {activeBranchNode ? (
+                  <>
+                    <div className="flex h-11 shrink-0 items-center justify-between border-b border-[#7c4dff]/10 bg-[#7c4dff]/10 px-4 text-[11px] font-bold text-[#6d28d9] dark:text-[#c4b5fd]">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Layers className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">Branch tab: {activeBranchTab?.textSnippet || activeBranchNode.data.title}</span>
+                      </span>
+                      <span className="rounded-full border border-[#7c4dff]/20 bg-white/50 px-2 py-0.5 text-[9px] uppercase tracking-wide dark:bg-white/5">
+                        Inherited
+                      </span>
                     </div>
-                  )}
-                  <div ref={branchScrollRef} />
-                </div>
-
-                {/* Input area */}
-                <form 
-                  onSubmit={handleSendBranch}
-                  className="p-4 border-t border-black/10 dark:border-zinc-800/60 bg-white/70 dark:bg-zinc-950/40 flex items-center gap-2"
-                >
-                  <input 
-                    type="text" 
-                    placeholder="Ask about this branch..."
-                    value={branchInput}
-                    onChange={(e) => setBranchInput(e.target.value)}
-                    disabled={activeBranchNode.data.isLoading}
-                    className="flex-1 h-9 px-3.5 border border-black/10 dark:border-white/10 rounded-xl outline-none focus:border-[#7c4dff] dark:focus:border-[#7c4dff] text-xs bg-black/5 dark:bg-white/5 focus:bg-white dark:focus:bg-zinc-900 text-zinc-800 dark:text-zinc-200 transition-all placeholder-zinc-400 dark:placeholder-zinc-500 shadow-inner"
-                  />
-                  <button 
-                    type="submit"
-                    disabled={!branchInput.trim() || activeBranchNode.data.isLoading}
-                    className="w-9 h-9 rounded-xl bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 text-white flex items-center justify-center hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow active:scale-95"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                  </button>
-                </form>
-              </div>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-zinc-400 dark:text-zinc-500 select-none">
-                <GitBranch className="w-10 h-10 text-zinc-350 dark:text-zinc-700 mb-3" />
-                <p className="text-xs font-semibold text-zinc-650 dark:text-zinc-400">Select or Create a Branch</p>
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1 max-w-[200px] leading-relaxed">
-                  Click on an open tab above or highlight AI responses in the left panel to branch off.
-                </p>
+                    <div className="min-h-0 flex-1 overflow-y-auto select-text">
+                      {renderMessageList(activeBranchNode, branchScrollRef, { branchTab: activeBranchTab })}
+                    </div>
+                    {chatInput(branchInput, setBranchInput, handleSendBranch, 'Message this branch...', activeBranchNode.data.isLoading)}
+                  </>
+                ) : (
+                  <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-6 text-center select-none">
+                    <GitBranch className="mb-4 h-10 w-10 text-[#7c4dff]/50" />
+                    <h2 className="text-4xl font-semibold tracking-normal text-zinc-900 dark:text-zinc-50">Chat</h2>
+                    <p className="mt-3 max-w-sm text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+                      Select text in the main response to open a branch here.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 };
