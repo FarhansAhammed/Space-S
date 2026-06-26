@@ -547,7 +547,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   }, [textScale, isLoading, highlightSnippet]);
 
   return (
-    <div className="markdown-content w-full h-full text-zinc-700 dark:text-zinc-300 leading-relaxed font-sans select-text">
+    <div className="markdown-content w-full h-full text-zinc-700 dark:text-zinc-300 leading-relaxed font-sans select-text break-words">
       <ReactMarkdown 
         remarkPlugins={[remarkGfm, remarkMath]} 
         rehypePlugins={[rehypeKatex]}

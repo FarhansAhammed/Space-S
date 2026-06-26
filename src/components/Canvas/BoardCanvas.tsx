@@ -72,26 +72,24 @@ const OtherUsersCursors = () => {
 
 export const BoardCanvas = () => {
   const router = useRouter();
-  const { 
-    nodes, 
-    edges, 
-    onNodesChange, 
-    onEdgesChange, 
-    onConnect,
-    addLLMNodeFromSearch,
-    addMergeNode,
-    deleteNode,
-    undoDeleteNode,
-    theme,
-    broadcastCursor,
-    newlyCreatedNodeId,
-    setNewlyCreatedNodeId,
-    isLoadingCanvas,
-    selectNode,
-    organizeCanvas,
-    selectedModel,
-    addDocNode
-  } = useCanvasStore();
+  const nodes = useCanvasStore(state => state.nodes);
+  const edges = useCanvasStore(state => state.edges);
+  const onNodesChange = useCanvasStore(state => state.onNodesChange);
+  const onEdgesChange = useCanvasStore(state => state.onEdgesChange);
+  const onConnect = useCanvasStore(state => state.onConnect);
+  const addLLMNodeFromSearch = useCanvasStore(state => state.addLLMNodeFromSearch);
+  const addMergeNode = useCanvasStore(state => state.addMergeNode);
+  const deleteNode = useCanvasStore(state => state.deleteNode);
+  const undoDeleteNode = useCanvasStore(state => state.undoDeleteNode);
+  const theme = useCanvasStore(state => state.theme);
+  const broadcastCursor = useCanvasStore(state => state.broadcastCursor);
+  const newlyCreatedNodeId = useCanvasStore(state => state.newlyCreatedNodeId);
+  const setNewlyCreatedNodeId = useCanvasStore(state => state.setNewlyCreatedNodeId);
+  const isLoadingCanvas = useCanvasStore(state => state.isLoadingCanvas);
+  const selectNode = useCanvasStore(state => state.selectNode);
+  const organizeCanvas = useCanvasStore(state => state.organizeCanvas);
+  const selectedModel = useCanvasStore(state => state.selectedModel);
+  const addDocNode = useCanvasStore(state => state.addDocNode);
  
   const [contextMenu, setContextMenu] = useState<{
     x: number;

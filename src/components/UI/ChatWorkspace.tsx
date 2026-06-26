@@ -112,11 +112,19 @@ export const ChatWorkspace = () => {
   }, []);
 
   useEffect(() => {
-    parentScrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    const isParentLoading = activeParentNode?.data.isLoading;
+    parentScrollRef.current?.scrollIntoView({ 
+      behavior: isParentLoading ? 'auto' : 'smooth', 
+      block: 'end' 
+    });
   }, [activeParentNode?.data.conversationHistory, activeParentNode?.data.isLoading]);
 
   useEffect(() => {
-    branchScrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    const isBranchLoading = activeBranchNode?.data.isLoading;
+    branchScrollRef.current?.scrollIntoView({ 
+      behavior: isBranchLoading ? 'auto' : 'smooth', 
+      block: 'end' 
+    });
   }, [activeBranchNode?.data.conversationHistory, activeBranchNode?.data.isLoading]);
 
   // When branch workspace closes, return to parent panel
@@ -294,7 +302,7 @@ export const ChatWorkspace = () => {
                 <span className="mb-1.5 text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">
                   {isInherited ? 'Inherited context' : isUser ? 'You' : 'Space-S AI'}
                 </span>
-                <div className={`w-full min-w-0 rounded-[24px] border px-4 py-3 text-sm leading-6 shadow-sm backdrop-blur-xl ${
+                <div className={`w-full min-w-0 break-words rounded-[24px] border px-4 py-3 text-sm leading-6 shadow-sm backdrop-blur-xl ${
                   isUser
                     ? 'rounded-tr-lg border-[#7c4dff]/20 bg-[#7c4dff]/10 text-zinc-900 dark:bg-[#7c4dff]/20 dark:text-zinc-100'
                     : 'rounded-tl-lg border-white/60 bg-white/75 text-zinc-700 dark:border-white/10 dark:bg-zinc-900/70 dark:text-zinc-300'
@@ -498,16 +506,43 @@ export const ChatWorkspace = () => {
           <div className="flex flex-1 items-center justify-center min-w-0">
             {hasBranchWorkspace ? (
               mobilePanelIndex === 1 ? (
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <GitBranch className="h-3.5 w-3.5 shrink-0 text-[#7c4dff]" />
-                  <span className="truncate text-[11px] font-bold text-[#6d28d9] dark:text-[#c4b5fd]">
-                    {activeBranchTab?.textSnippet || 'Branch'}
-                  </span>
+                <div className="flex flex-col items-center justify-center gap-0.5 min-w-0 w-full">
+                  <div className="flex items-center gap-1 min-w-0">
+                    <GitBranch className="h-3 w-3 shrink-0 text-[#7c4dff]" />
+                    <span className="truncate text-[10px] font-bold text-[#6d28d9] dark:text-[#c4b5fd]">
+                      {activeBranchTab?.textSnippet || 'Branch'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 select-none">
+                    <button 
+                      onClick={() => setMobilePanelIndex(0)}
+                      className="h-1.5 w-1.5 rounded-full bg-zinc-300 dark:bg-zinc-600 transition-all cursor-pointer" 
+                      title="Main Chat"
+                    />
+                    <button 
+                      onClick={() => setMobilePanelIndex(1)}
+                      className="h-1.5 w-1.5 rounded-full bg-[#7c4dff] transition-all cursor-pointer" 
+                      title="Branch Chat"
+                    />
+                  </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[#7c4dff]" />
-                  <span className="h-2 w-2 rounded-full bg-zinc-300 dark:bg-zinc-600" />
+                <div className="flex flex-col items-center justify-center gap-0.5 min-w-0 w-full">
+                  <span className="truncate text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
+                    {activeParentNode?.data.title || 'Chat'}
+                  </span>
+                  <div className="flex items-center gap-1 select-none">
+                    <button 
+                      onClick={() => setMobilePanelIndex(0)}
+                      className="h-1.5 w-1.5 rounded-full bg-[#7c4dff] transition-all cursor-pointer" 
+                      title="Main Chat"
+                    />
+                    <button 
+                      onClick={() => setMobilePanelIndex(1)}
+                      className="h-1.5 w-1.5 rounded-full bg-zinc-300 dark:bg-zinc-600 transition-all cursor-pointer" 
+                      title="Branch Chat"
+                    />
+                  </div>
                 </div>
               )
             ) : (
