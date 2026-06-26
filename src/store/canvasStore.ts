@@ -17,6 +17,17 @@ import { getSupabaseClient } from '@/lib/supabaseClient';
 import { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
 import { extractContextSummary } from '@/lib/extractContext';
 
+const generateUUID = (): string => {
+  if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
 export type NodeType = 'llm' | 'branch' | 'merge' | 'image' | 'doc' | 'question' | 'note';
 
 export interface ContextEntry {
@@ -639,7 +650,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
     const boardId = get().boardId;
     const supabase = get().supabaseClient;
-    const childId = `node_${Date.now()}`;
+    const childId = generateUUID();
     const nextZIndex = get().maxZIndex + 1;
 
     const childNode: Node<NodeData> = {
