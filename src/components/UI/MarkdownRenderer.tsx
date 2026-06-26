@@ -462,7 +462,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
       code: ({ className, children, ...props }: any) => {
         return (
-          <code className="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5 text-[#7c4dff] dark:text-[#be9eff] font-mono text-[9.5px] break-words" {...props}>
+          <code className="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/5 text-[#7c4dff] dark:text-[#be9eff] font-mono text-[9.5px] break-all whitespace-pre-wrap" {...props}>
             {highlightInChildren(children, highlightSnippet)}
           </code>
         );

@@ -242,7 +242,7 @@ const buildContextAwareSystemPrompt = (
   selectedText: string
 ): string => {
   if (!contextChain || contextChain.length === 0) {
-    return "You are an expert technical AI partner. Provide high-density technical descriptions containing specific components, specifications, architectures, and concrete examples. Focus purely on technical details. Do NOT output any XML tags, drafting steps, multiple drafts, or self-check lists (like 'Concise? Yes', 'Single sentence? Yes'). Start directly with the technical answer.";
+    return "You are an expert technical AI partner. Provide high-density technical descriptions containing specific components, specifications, architectures, and concrete examples. Focus purely on technical details. Always format code snippets using triple-backtick code blocks (e.g. ```php ... ```) with the appropriate language identifier, rather than inline single backticks, so that they render in a clean, copyable block. Do NOT output any XML tags, drafting steps, multiple drafts, or self-check lists (like 'Concise? Yes', 'Single sentence? Yes'). Start directly with the technical answer.";
   }
 
   const contextDescription = contextChain
@@ -265,7 +265,8 @@ ${contextDescription}
 CRITICAL INSTRUCTIONS:
 1. Provide a high-density, technically rich response containing specific spec details, architectural components, and concrete examples. Avoid generic, broad, or bland explanations.
 2. Focus purely on technical information.
-3. Do NOT output any reasoning steps, drafts, multiple iterations, or self-check lists (e.g. do not output lines like "Concise? Yes", "Single sentence? Yes", "Draft 1: ..."). Go straight to the final answer.`;
+3. Always format code snippets using triple-backtick code blocks (e.g. \`\`\`php ... \`\`\`) with the appropriate language identifier, rather than inline single backticks, so that they render in a clean, copyable block. Never output multiple lines of code inside inline single backticks.
+4. Do NOT output any reasoning steps, drafts, multiple iterations, or self-check lists (e.g. do not output lines like "Concise? Yes", "Single sentence? Yes", "Draft 1: ..."). Go straight to the final answer.`;
   }
 
   return `You are an expert technical AI partner operating inside a specific technical knowledge context.
@@ -276,7 +277,8 @@ ${contextDescription}
 CRITICAL INSTRUCTIONS:
 1. Interpret the selected term "${selectedText}" strictly within the technical context provided above (e.g., if the context is about networking and the term is "physical", interpret it as Layer 1 Physical Layer).
 2. Provide a high-density, rich explanation containing specific architectural components, protocols, and concrete specifications. Avoid generic, broad, or bland explanations.
-3. Do NOT output any reasoning steps, drafts, multiple iterations, or self-check lists (e.g. do not output lines like "Concise? Yes", "Single sentence? Yes", "Draft 1: ..."). Go straight to the final answer.`;
+3. Always format code snippets using triple-backtick code blocks (e.g. \`\`\`php ... \`\`\`) with the appropriate language identifier, rather than inline single backticks, so that they render in a clean, copyable block. Never output multiple lines of code inside inline single backticks.
+4. Do NOT output any reasoning steps, drafts, multiple iterations, or self-check lists (e.g. do not output lines like "Concise? Yes", "Single sentence? Yes", "Draft 1: ..."). Go straight to the final answer.`;
 };
 
 const mapDbNodeToReactFlow = (dbNode: DbNode, messages: DbMessage[] = []): Node<NodeData> => {
