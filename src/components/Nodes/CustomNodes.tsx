@@ -20,28 +20,25 @@ import {
 import { NodeData, useCanvasStore, NodeType } from '@/store/canvasStore';
  
 export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
-  const { 
-    deleteNode, 
-    deriveNode, 
-    collapseNode, 
-    expandNode, 
-    selectNode,
-    triggerNodeOperation,
-    updateNodeSizeLocally,
-    updateNodeSize
-  } = useCanvasStore();
+  const deleteNode = useCanvasStore(state => state.deleteNode);
+  const deriveNode = useCanvasStore(state => state.deriveNode);
+  const collapseNode = useCanvasStore(state => state.collapseNode);
+  const expandNode = useCanvasStore(state => state.expandNode);
+  const selectNode = useCanvasStore(state => state.selectNode);
+  const triggerNodeOperation = useCanvasStore(state => state.triggerNodeOperation);
+  const updateNodeSizeLocally = useCanvasStore(state => state.updateNodeSizeLocally);
+  const updateNodeSize = useCanvasStore(state => state.updateNodeSize);
 
   const theme = useCanvasStore(state => state.theme);
-  const nodes = useCanvasStore(state => state.nodes);
 
-  const nodeIndex = React.useMemo(() => {
+  // Compute creation order index using a Zustand selector to prevent re-rendering when other nodes are dragged
+  const nodeIndex = useCanvasStore(state => {
     const getCreationTime = (node: Node<NodeData>): number => {
       const dateStr = node.data.createdAt;
       if (dateStr) {
         const parsed = new Date(dateStr).getTime();
         if (!isNaN(parsed)) return parsed;
       }
-      // Fallback: Try to parse timestamp from id if it starts with 'node_' followed by digits
       if (node.id && node.id.startsWith('node_')) {
         const parts = node.id.split('_');
         const ts = parseInt(parts[1], 10);
@@ -50,17 +47,18 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
       return 0;
     };
 
-    const sorted = [...nodes].sort((a, b) => {
+    const sorted = [...state.nodes].sort((a, b) => {
       const timeA = getCreationTime(a);
       const timeB = getCreationTime(b);
       if (timeA !== timeB) return timeA - timeB;
       return (a.id || '').localeCompare(b.id || '');
     });
     return sorted.findIndex(n => n.id === id) + 1;
-  }, [nodes, id]);
+  });
 
-
-  const rfStyle = useCanvasStore(state => state.nodes.find(n => n.id === id)?.style);
+  // Select width and height separately (primitive values) to avoid re-rendering on other node style/position updates
+  const rfWidth = useCanvasStore(state => state.nodes.find(n => n.id === id)?.style?.width);
+  const rfHeight = useCanvasStore(state => state.nodes.find(n => n.id === id)?.style?.height);
   
   // Local state for size during active resize dragging to ensure smooth performance without canvas re-renders
   const [localSize, setLocalSize] = useState<{ width: number; height: number | undefined } | null>(null);
@@ -68,8 +66,8 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
   // Compute a text scale factor proportional to the node's current width
   // Base width is 260px — scale grows up to 2× at ~520px+
   const DEFAULT_WIDTH = 260;
-  const nodeWidth = localSize?.width ?? (rfStyle?.width as number | undefined) ?? DEFAULT_WIDTH;
-  const nodeHeight = data.isCollapsed ? undefined : (localSize?.height ?? (rfStyle?.height as number | undefined));
+  const nodeWidth = localSize?.width ?? (rfWidth as number | undefined) ?? DEFAULT_WIDTH;
+  const nodeHeight = data.isCollapsed ? undefined : (localSize?.height ?? (rfHeight as number | undefined));
   const textScale = Math.min(2, Math.max(1, nodeWidth / DEFAULT_WIDTH));
   
   const [showPromptInput, setShowPromptInput] = useState(false);
@@ -283,7 +281,7 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
  
           {/* Node content area */}
           <div
-            className={`nodrag no-canvas-wheel overflow-y-auto break-words whitespace-normal leading-relaxed text-zinc-600 dark:text-zinc-300 pr-1 select-text ${rfStyle?.height ? 'flex-1' : 'max-h-48'}`}
+            className={`nodrag no-canvas-wheel overflow-y-auto break-words whitespace-normal leading-relaxed text-zinc-600 dark:text-zinc-300 pr-1 select-text ${rfHeight ? 'flex-1' : 'max-h-48'}`}
             style={{ fontSize: `${Math.round(11 * textScale)}px` }}
           >
             {data.isLoading ? (

@@ -65,7 +65,7 @@ export default function BoardPage() {
 
   return (
     <ReactFlowProvider>
-      <main className="w-screen h-screen relative bg-[#f8f5f0] dark:bg-[#121110] overflow-hidden">
+      <main className="w-screen h-dvh relative bg-[#f8f5f0] dark:bg-[#121110] overflow-hidden">
         {/* Top Header Panel (Fixed h-16) */}
         <TopHeader />
 
@@ -84,7 +84,7 @@ export default function BoardPage() {
             <RightSidebar />
           </div>
         ) : (
-          <div className="w-full h-[calc(100vh-64px)] mt-16 flex relative overflow-hidden bg-[#f8f5f0] dark:bg-[#121110]">
+          <div className="w-full h-[calc(100dvh-64px)] mt-16 flex relative overflow-hidden bg-[#f8f5f0] dark:bg-[#121110]">
             <ChatWorkspace />
           </div>
         )}

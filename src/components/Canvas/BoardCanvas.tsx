@@ -24,6 +24,52 @@ const nodeTypes = {
   llmNode: CustomNode
 };
 
+// Sub-component to render live cursors to avoid re-rendering BoardCanvas at 60fps on viewport pan/zoom
+const OtherUsersCursors = () => {
+  const otherUsersCursors = useCanvasStore(state => state.otherUsersCursors);
+  const { x: vpX, y: vpY, zoom: vpZoom } = useViewport();
+
+  return (
+    <>
+      {Object.keys(otherUsersCursors).map(userId => {
+        const cursor = otherUsersCursors[userId];
+        const screenX = cursor.x * vpZoom + vpX;
+        const screenY = cursor.y * vpZoom + vpY;
+        return (
+          <div
+            key={userId}
+            className="absolute pointer-events-none z-50 flex flex-col items-start transition-all duration-75"
+            style={{
+              left: screenX,
+              top: screenY,
+            }}
+          >
+            <svg 
+              className="w-5 h-5 drop-shadow" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              style={{ color: cursor.avatarColor }}
+            >
+              <path 
+                d="M5.5 3.21V20.21L10.18 15.53L16.29 21.64L19.14 18.79L13.03 12.68L18.79 12.68L5.5 3.21Z" 
+                fill="currentColor" 
+                stroke="white" 
+                strokeWidth="1.5" 
+              />
+            </svg>
+            <div 
+              className="px-2 py-0.5 rounded text-[10px] font-bold text-white shadow-sm whitespace-nowrap mt-1 select-none"
+              style={{ backgroundColor: cursor.avatarColor }}
+            >
+              {cursor.username}
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
+};
+
 export const BoardCanvas = () => {
   const router = useRouter();
   const { 
@@ -38,7 +84,6 @@ export const BoardCanvas = () => {
     undoDeleteNode,
     theme,
     broadcastCursor,
-    otherUsersCursors,
     newlyCreatedNodeId,
     setNewlyCreatedNodeId,
     isLoadingCanvas,
@@ -129,7 +174,6 @@ export const BoardCanvas = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [nodes, deleteNode, undoDeleteNode]);
-  const { x: vpX, y: vpY, zoom: vpZoom } = useViewport();
 
   const lastBroadcast = React.useRef(0);
 
@@ -261,7 +305,7 @@ export const BoardCanvas = () => {
   return (
     <div 
       className="w-full h-full relative" 
-      style={{ height: 'calc(100vh - 64px)', marginTop: '64px' }}
+      style={{ height: 'calc(100dvh - 64px)', marginTop: '64px' }}
       onMouseMove={handleMouseMove}
     >
       <ReactFlow
@@ -572,41 +616,7 @@ export const BoardCanvas = () => {
       </div>
 
       {/* Other users live cursors */}
-      {Object.keys(otherUsersCursors).map(userId => {
-        const cursor = otherUsersCursors[userId];
-        const screenX = cursor.x * vpZoom + vpX;
-        const screenY = cursor.y * vpZoom + vpY;
-        return (
-          <div
-            key={userId}
-            className="absolute pointer-events-none z-50 flex flex-col items-start transition-all duration-75"
-            style={{
-              left: screenX,
-              top: screenY,
-            }}
-          >
-            <svg 
-              className="w-5 h-5 drop-shadow" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              style={{ color: cursor.avatarColor }}
-            >
-              <path 
-                d="M5.5 3.21V20.21L10.18 15.53L16.29 21.64L19.14 18.79L13.03 12.68L18.79 12.68L5.5 3.21Z" 
-                fill="currentColor" 
-                stroke="white" 
-                strokeWidth="1.5" 
-              />
-            </svg>
-            <div 
-              className="px-2 py-0.5 rounded text-[10px] font-bold text-white shadow-sm whitespace-nowrap mt-1 select-none"
-              style={{ backgroundColor: cursor.avatarColor }}
-            >
-              {cursor.username}
-            </div>
-          </div>
-        );
-      })}
+      <OtherUsersCursors />
 
       {contextMenu && (
         <ContextMenu

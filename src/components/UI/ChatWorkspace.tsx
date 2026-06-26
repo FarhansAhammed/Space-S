@@ -58,6 +58,7 @@ export const ChatWorkspace = () => {
   const [branchInput, setBranchInput] = useState('');
   const [selectedText, setSelectedText] = useState('');
   const [selectedMsgIndex, setSelectedMsgIndex] = useState<number | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectionPosition, setSelectionPosition] = useState<{ x: number; y: number } | null>(null);
   // 0 = original chat panel, 1 = branch panel
   const [mobilePanelIndex, setMobilePanelIndex] = useState(0);
@@ -144,21 +145,25 @@ export const ChatWorkspace = () => {
         setSelectionPosition(null);
         setSelectedText('');
         setSelectedMsgIndex(null);
+        setSelectedNodeId(null);
         return;
       }
       const text = selection.toString().trim();
       if (!text || text.length > 500) {
         setSelectionPosition(null);
+        setSelectedNodeId(null);
         return;
       }
       const anchorElement = selection.anchorNode?.parentElement;
       const messageContainer = anchorElement?.closest('.ai-response-message');
       if (!messageContainer) {
         setSelectionPosition(null);
+        setSelectedNodeId(null);
         return;
       }
       const msgIndexAttr = messageContainer.getAttribute('data-message-index');
-      if (msgIndexAttr === null) return;
+      const nodeIdAttr = messageContainer.getAttribute('data-node-id');
+      if (msgIndexAttr === null || nodeIdAttr === null) return;
       try {
         const rect = selection.getRangeAt(0).getBoundingClientRect();
         const isMobile = window.matchMedia('(max-width: 767px)').matches;
@@ -168,8 +173,10 @@ export const ChatWorkspace = () => {
         });
         setSelectedText(text);
         setSelectedMsgIndex(parseInt(msgIndexAttr, 10));
+        setSelectedNodeId(nodeIdAttr);
       } catch {
         setSelectionPosition(null);
+        setSelectedNodeId(null);
       }
     };
     document.addEventListener('selectionchange', handleSelectionChange);
@@ -193,12 +200,14 @@ export const ChatWorkspace = () => {
   const handleAskInNewBranch = (e: React.MouseEvent, operation: BranchOperation) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!activeParentNode || selectedMsgIndex === null || !selectedText) return;
-    createBranchFromChat(activeParentNode.id, selectedMsgIndex, selectedText, operation).catch(err => {
+    const nodeIdToUse = selectedNodeId || activeParentNode?.id;
+    if (!nodeIdToUse || selectedMsgIndex === null || !selectedText) return;
+    createBranchFromChat(nodeIdToUse, selectedMsgIndex, selectedText, operation).catch(err => {
       console.error('Failed to create branch from chat:', err);
     });
     window.getSelection()?.removeAllRanges();
     setSelectionPosition(null);
+    setSelectedNodeId(null);
   };
 
   const handleSendParent = (e: React.FormEvent) => {
@@ -273,6 +282,7 @@ export const ChatWorkspace = () => {
             <div
               key={`${node.id}_${index}`}
               data-message-index={index}
+              data-node-id={node.id}
               className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start ai-response-message'} ${isInherited ? 'opacity-60' : ''}`}
             >
               {!isUser && (
@@ -280,11 +290,11 @@ export const ChatWorkspace = () => {
                   <Sparkles className="h-4 w-4" />
                 </div>
               )}
-              <div className={`flex max-w-[84%] flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+              <div className={`flex max-w-[84%] min-w-0 flex-col ${isUser ? 'items-end' : 'items-start'}`}>
                 <span className="mb-1.5 text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">
                   {isInherited ? 'Inherited context' : isUser ? 'You' : 'Space-S AI'}
                 </span>
-                <div className={`rounded-[24px] border px-4 py-3 text-sm leading-6 shadow-sm backdrop-blur-xl ${
+                <div className={`w-full min-w-0 rounded-[24px] border px-4 py-3 text-sm leading-6 shadow-sm backdrop-blur-xl ${
                   isUser
                     ? 'rounded-tr-lg border-[#7c4dff]/20 bg-[#7c4dff]/10 text-zinc-900 dark:bg-[#7c4dff]/20 dark:text-zinc-100'
                     : 'rounded-tl-lg border-white/60 bg-white/75 text-zinc-700 dark:border-white/10 dark:bg-zinc-900/70 dark:text-zinc-300'
@@ -600,7 +610,7 @@ export const ChatWorkspace = () => {
                 Main chat
               </span>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto select-text">
+            <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden select-text">
               {renderMessageList(activeParentNode, parentScrollRef)}
             </div>
             {chatInput(parentInput, setParentInput, handleSendParent, 'Message Space-S...', activeParentNode?.data.isLoading)}
@@ -644,7 +654,7 @@ export const ChatWorkspace = () => {
                     </span>
                     <span className="rounded-full border border-[#7c4dff]/20 bg-white/50 px-2 py-0.5 text-[9px] uppercase tracking-wide dark:bg-white/5">Inherited</span>
                   </div>
-                  <div className="min-h-0 flex-1 overflow-y-auto select-text">
+                  <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden select-text">
                     {renderMessageList(activeBranchNode, branchScrollRef, { branchTab: activeBranchTab })}
                   </div>
                   {chatInput(branchInput, setBranchInput, handleSendBranch, 'Message this branch...', activeBranchNode.data.isLoading)}
@@ -666,13 +676,13 @@ export const ChatWorkspace = () => {
             This avoids ALL h-full / flex-1 height-propagation issues.
         */}
         <div
-          className="md:hidden relative flex-1 overflow-hidden"
+          className="md:hidden relative flex-1 w-full min-w-0 overflow-hidden"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
           {/* ── Panel 0: Original chat ── */}
           <div
-            className={`absolute inset-0 flex flex-col transition-transform duration-300 ease-out ${
+            className={`absolute inset-0 w-full flex flex-col transition-transform duration-300 ease-out ${
               mobilePanelIndex === 0 ? 'translate-x-0' : '-translate-x-full'
             }`}
           >
@@ -715,7 +725,7 @@ export const ChatWorkspace = () => {
             </div>
 
             {/* Message list */}
-            <div className="flex-1 overflow-y-auto select-text">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden select-text">
               {renderMessageList(activeParentNode, parentScrollRef)}
             </div>
 
@@ -726,7 +736,7 @@ export const ChatWorkspace = () => {
           {/* ── Panel 1: Branch chat ── */}
           {hasBranchWorkspace && (
             <div
-              className={`absolute inset-0 flex flex-col transition-transform duration-300 ease-out ${
+              className={`absolute inset-0 w-full flex flex-col transition-transform duration-300 ease-out ${
                 mobilePanelIndex === 1 ? 'translate-x-0' : 'translate-x-full'
               }`}
             >
@@ -765,7 +775,7 @@ export const ChatWorkspace = () => {
                     </span>
                     <span className="rounded-full border border-[#7c4dff]/20 bg-white/50 px-2 py-0.5 text-[9px] uppercase tracking-wide dark:bg-white/5">Inherited</span>
                   </div>
-                  <div className="flex-1 overflow-y-auto select-text">
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden select-text">
                     {renderMessageList(activeBranchNode, branchScrollRef, { branchTab: activeBranchTab })}
                   </div>
                   {chatInput(branchInput, setBranchInput, handleSendBranch, 'Message this branch...', activeBranchNode.data.isLoading)}
