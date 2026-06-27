@@ -3695,6 +3695,9 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     const user = get().currentUserInfo;
     if (!channel || !user || channel.state !== 'joined') return;
 
+    // Only broadcast cursor position if there are other active users on the board
+    if (get().presenceUsers.length <= 1) return;
+
     channel.send({
       type: 'broadcast',
       event: 'cursor-move',

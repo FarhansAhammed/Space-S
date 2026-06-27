@@ -89,6 +89,7 @@ export const BoardCanvas = () => {
   const undoDeleteNode = useCanvasStore(state => state.undoDeleteNode);
   const theme = useCanvasStore(state => state.theme);
   const broadcastCursor = useCanvasStore(state => state.broadcastCursor);
+  const presenceUsers = useCanvasStore(state => state.presenceUsers);
   const newlyCreatedNodeId = useCanvasStore(state => state.newlyCreatedNodeId);
   const setNewlyCreatedNodeId = useCanvasStore(state => state.setNewlyCreatedNodeId);
   const isLoadingCanvas = useCanvasStore(state => state.isLoadingCanvas);
@@ -182,6 +183,9 @@ export const BoardCanvas = () => {
   const lastBroadcast = React.useRef(0);
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    // Only perform calculations and broadcast if there are other collaborators on the board
+    if (presenceUsers.length <= 1) return;
+
     const now = Date.now();
     if (now - lastBroadcast.current > 150) { // ~6fps throttle (optimized to save Realtime messages)
       const flowCoords = screenToFlowPosition({
