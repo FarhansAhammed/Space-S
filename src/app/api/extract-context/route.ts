@@ -61,6 +61,14 @@ ENTITIES: [entity1, entity2, entity3]`;
       'gemma-4-31b': 'gemma-4-31b-it',
     };
 
+    const MISTRAL_MODELS: Record<string, string> = {
+      'mistral-large': 'mistral-large-latest',
+      'mistral-small': 'mistral-small-latest',
+      'codestral': 'codestral-latest'
+    };
+
+
+
     if (model && model in GEMINI_MODELS) {
       const geminiModelId = GEMINI_MODELS[model];
       const geminiApiKey = process.env.GEMINI_API_KEY;
@@ -95,6 +103,40 @@ ENTITIES: [entity1, entity2, entity3]`;
 
       const data = await response.json();
       rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } else if (model && model in MISTRAL_MODELS) {
+      const mistralModelId = MISTRAL_MODELS[model];
+      const mistralApiKey = process.env.MISTRAL_API_KEY;
+      if (!mistralApiKey) {
+        console.error('Missing MISTRAL_API_KEY environment variable');
+        return NextResponse.json({ contextSummary: `General context: ${title || 'Untitled'}` });
+      }
+
+      const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${mistralApiKey}`
+        },
+        body: JSON.stringify({
+          model: mistralModelId,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMessageContent }
+          ],
+          stream: false,
+          max_tokens: 150
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Mistral context extraction failed:', errorText);
+        return NextResponse.json({ contextSummary: `General context: ${title || 'Untitled'}` });
+      }
+
+      const data = await response.json();
+      rawText = data.choices?.[0]?.message?.content || '';
+
     } else {
       const apiKey = process.env.POOLSIDE_API_KEY;
       if (!apiKey) {

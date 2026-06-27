@@ -19,10 +19,16 @@ import ContextMenu from '../UI/ContextMenu';
 // Floating canvas bottom bar
 import { Plus, Image as ImageIcon, FileText, ArrowUp, Link2, Sparkles, X } from 'lucide-react';
 
-// Map custom node types outside the component to avoid React Flow performance warning
 const nodeTypes = {
   llmNode: CustomNode
 };
+
+const TEXT_ONLY_MODELS = [
+  'poolside',
+  'mistral-large',
+  'mistral-small',
+  'codestral'
+];
 
 // Sub-component to render live cursors to avoid re-rendering BoardCanvas at 60fps on viewport pan/zoom
 const OtherUsersCursors = () => {
@@ -232,7 +238,7 @@ export const BoardCanvas = () => {
   };
 
   const handleUploadClick = (label: string) => {
-    if (selectedModel === 'poolside') {
+    if (TEXT_ONLY_MODELS.includes(selectedModel)) {
       triggerError("Uploading not supported in this model.");
       return;
     }
@@ -575,8 +581,12 @@ export const BoardCanvas = () => {
               placeholder={
                 isLoadingCanvas 
                   ? 'Loading canvas...' 
-                  : selectedModel === 'poolside'
-                    ? 'Ask anything or create a new node... (Poolside)'
+                  : TEXT_ONLY_MODELS.includes(selectedModel)
+                    ? `Ask anything or create a new node... (${
+                        selectedModel === 'poolside' ? 'Poolside' :
+                        selectedModel === 'mistral-large' ? 'Mistral Large' :
+                        selectedModel === 'mistral-small' ? 'Mistral Small' : 'Codestral'
+                      })`
                     : `Ask anything or upload a file... (${
                         selectedModel === 'gemini' ? 'Gemini 2.5 Flash' :
                         selectedModel === 'gemini-3.1-flash-lite' ? 'Gemini 3.1 Flash Lite' :

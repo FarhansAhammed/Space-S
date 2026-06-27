@@ -47,8 +47,11 @@ export const ChatWorkspace = () => {
     removeBranchTab,
     createBranchFromChat,
     continueNodeConversation,
-    addLLMNodeFromSearch
+    addLLMNodeFromSearch,
+    isLoadingCanvas
   } = useCanvasStore();
+
+  const loadedParentChatIdRef = useRef<string | null>(null);
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [threadSearch, setThreadSearch] = useState('');
@@ -100,6 +103,52 @@ export const ChatWorkspace = () => {
       setActiveParentChatId(activeParentNode.id);
     }
   }, [activeParentChatId, activeParentNode, setActiveParentChatId]);
+
+  // Auto-populate openBranchTabs with existing child nodes of activeParentChatId on canvas when entering the thread
+  useEffect(() => {
+    if (isLoadingCanvas) return;
+    if (!activeParentChatId) {
+      useCanvasStore.setState({ openBranchTabs: [], activeBranchTabId: null });
+      loadedParentChatIdRef.current = null;
+      return;
+    }
+
+    if (loadedParentChatIdRef.current === activeParentChatId) {
+      return;
+    }
+
+    // Find all child nodes connected to activeParentChatId on the canvas
+    const childNodes = nodes.filter(n => n.data.parentNodeId === activeParentChatId);
+    const nextTabs = childNodes.map(child => ({
+      id: child.id,
+      parentMessageId: `${activeParentChatId}_0`, // Fallback parent message reference
+      textSnippet: child.data.title || 'Untitled Branch',
+      history: child.data.conversationHistory || []
+    }));
+
+    useCanvasStore.setState({
+      openBranchTabs: nextTabs,
+      activeBranchTabId: nextTabs.length > 0 ? nextTabs[0].id : null
+    });
+
+    loadedParentChatIdRef.current = activeParentChatId;
+  }, [activeParentChatId, nodes, isLoadingCanvas]);
+
+  // Clean up any branch tabs whose underlying nodes no longer exist in the nodes array
+  useEffect(() => {
+    const existingNodeIds = new Set(nodes.map(n => n.id));
+    const activeTabs = openBranchTabs.filter(t => existingNodeIds.has(t.id));
+    if (activeTabs.length !== openBranchTabs.length) {
+      let nextActiveId = activeBranchTabId;
+      if (activeBranchTabId && !existingNodeIds.has(activeBranchTabId)) {
+        nextActiveId = activeTabs.length > 0 ? activeTabs[activeTabs.length - 1].id : null;
+      }
+      useCanvasStore.setState({
+        openBranchTabs: activeTabs,
+        activeBranchTabId: nextActiveId
+      });
+    }
+  }, [nodes, openBranchTabs, activeBranchTabId]);
 
   useEffect(() => {
     window.localStorage.setItem('spaceS_pinnedChatIds', JSON.stringify(pinnedChatIds));

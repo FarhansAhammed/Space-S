@@ -42,6 +42,24 @@ const MODEL_CONFIGS = {
     icon: <Sparkles className="w-3.5 h-3.5 text-teal-500" />,
     colorClass: 'text-teal-500',
   },
+  'mistral-large': {
+    label: 'Mistral Large',
+    shortLabel: 'Mistral Large',
+    icon: <Bot className="w-3.5 h-3.5 text-orange-500" />,
+    colorClass: 'text-orange-500',
+  },
+  'mistral-small': {
+    label: 'Mistral Small',
+    shortLabel: 'Mistral Small',
+    icon: <Bot className="w-3.5 h-3.5 text-amber-500" />,
+    colorClass: 'text-amber-500',
+  },
+  'codestral': {
+    label: 'Codestral',
+    shortLabel: 'Codestral',
+    icon: <Bot className="w-3.5 h-3.5 text-orange-600" />,
+    colorClass: 'text-orange-600',
+  },
 };
 
 const getSearchTagStyles = (type: NodeType) => {

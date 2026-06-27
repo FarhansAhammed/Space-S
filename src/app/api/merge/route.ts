@@ -125,6 +125,97 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const MISTRAL_MODELS: Record<string, string> = {
+      'mistral-large': 'mistral-large-latest',
+      'mistral-small': 'mistral-small-latest',
+      'codestral': 'codestral-latest'
+    };
+
+    if (model && model in MISTRAL_MODELS) {
+      const mistralModelId = MISTRAL_MODELS[model];
+      const mistralApiKey = process.env.MISTRAL_API_KEY;
+      if (!mistralApiKey) {
+        console.error('Missing MISTRAL_API_KEY environment variable');
+        return NextResponse.json({ error: 'Mistral API key is not configured' }, { status: 500 });
+      }
+
+      const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${mistralApiKey}`
+        },
+        body: JSON.stringify({
+          model: mistralModelId,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: promptText }
+          ],
+          stream: true
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return NextResponse.json({ error: `Mistral API error: ${errorText}` }, { status: response.status });
+      }
+
+      const reader = response.body?.getReader();
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          let buffer = '';
+          if (!reader) {
+            controller.close();
+            return;
+          }
+
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+                if (trimmed.startsWith('data: ')) {
+                  const dataStr = trimmed.slice(6);
+                  if (dataStr === '[DONE]') continue;
+                  try {
+                    const parsed = JSON.parse(dataStr);
+                    const content = parsed.choices?.[0]?.delta?.content;
+                    if (content) {
+                      controller.enqueue(encoder.encode(content));
+                    }
+                  } catch {
+                    // Ignore JSON parse errors on stream metadata
+                  }
+                }
+              }
+            }
+          } catch (err) {
+            controller.error(err);
+          } finally {
+            controller.close();
+          }
+        }
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive'
+        }
+      });
+    }
+
     // Poolside implementation
     const apiKey = process.env.POOLSIDE_API_KEY;
     if (!apiKey) {
