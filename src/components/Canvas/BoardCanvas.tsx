@@ -83,6 +83,8 @@ export const BoardCanvas = () => {
   const onNodesChange = useCanvasStore(state => state.onNodesChange);
   const onEdgesChange = useCanvasStore(state => state.onEdgesChange);
   const onConnect = useCanvasStore(state => state.onConnect);
+  const boardId = useCanvasStore(state => state.boardId);
+  const queuePositionUpdate = useCanvasStore(state => state.queuePositionUpdate);
   const addLLMNodeFromSearch = useCanvasStore(state => state.addLLMNodeFromSearch);
   const addMergeNode = useCanvasStore(state => state.addMergeNode);
   const deleteNode = useCanvasStore(state => state.deleteNode);
@@ -234,6 +236,14 @@ export const BoardCanvas = () => {
       targetNodeId: node.id
     });
   };
+
+  const onNodeDragStop = React.useCallback((event: React.MouseEvent, node: any, draggedNodes: any[]) => {
+    if (boardId && boardId !== 'sample-board') {
+      draggedNodes.forEach(n => {
+        queuePositionUpdate(n.id, n.position.x, n.position.y);
+      });
+    }
+  }, [boardId, queuePositionUpdate]);
  
  
   const triggerError = (msg: string) => {
@@ -322,6 +332,7 @@ export const BoardCanvas = () => {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onNodeDragStop={onNodeDragStop}
         nodeTypes={nodeTypes}
         onPaneClick={handlePaneClick}
         onPaneContextMenu={handlePaneContextMenu}

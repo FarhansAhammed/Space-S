@@ -897,15 +897,6 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   onNodesChange: (changes: NodeChange[]) => {
     const updatedNodes = applyNodeChanges(changes, get().nodes);
     set({ nodes: updatedNodes });
-
-    const positionChanges = changes.filter(c => c.type === 'position');
-    if (positionChanges.length > 0 && get().boardId && get().boardId !== 'sample-board') {
-      positionChanges.forEach(change => {
-        if (change.type === 'position' && change.position) {
-          get().queuePositionUpdate(change.id, change.position.x, change.position.y);
-        }
-      });
-    }
   },
 
   onEdgesChange: (changes: EdgeChange[]) => {
@@ -3462,6 +3453,25 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
               };
             });
           } else if (eventType === 'UPDATE') {
+            // Find local node first to check for self-echo without triggering state updates
+            const localNode = get().nodes.find(n => n.id === dbNode.id);
+            if (localNode) {
+              const isPosSame = Math.abs(localNode.position.x - dbNode.position_x) < 1 && Math.abs(localNode.position.y - dbNode.position_y) < 1;
+              const isWidthSame = (!localNode.width && !dbNode.width) || (localNode.width && dbNode.width && Math.abs((localNode.width as number) - dbNode.width) < 1);
+              const isHeightSame = (!localNode.height && !dbNode.height) || (localNode.height && dbNode.height && Math.abs((localNode.height as number) - dbNode.height) < 1);
+              const isMetadataSame = localNode.data.type === dbNode.type && 
+                                     localNode.data.title === dbNode.title && 
+                                     localNode.data.content === dbNode.content && 
+                                     localNode.data.isCollapsed === dbNode.is_collapsed && 
+                                     localNode.data.imageUrl === dbNode.image_url && 
+                                     localNode.data.sourceFile === dbNode.source_file;
+              
+              if (isPosSame && isWidthSame && isHeightSame && isMetadataSame) {
+                // Ignore self-echo updates completely to prevent canvas lag and unnecessary re-renders
+                return;
+              }
+            }
+
             let wasSelfEcho = false;
             set(state => {
               const updatedNodes = state.nodes.map(n => {
