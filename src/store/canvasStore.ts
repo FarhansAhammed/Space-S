@@ -1896,119 +1896,122 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
     if (type === 'note') return childId;
 
-    const fetcher = get().clerkTokenFetcher;
-    const token = fetcher ? await fetcher() : null;
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    try {
-      const systemPrompt = buildContextAwareSystemPrompt(childContextChain, '');
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: prompt }],
-          systemPrompt,
-          model: get().selectedModel
-        })
-      });
-
-      if (!response.ok) {
-        const errorJson = await response.json().catch(() => ({}));
-        throw new Error(errorJson.error || `API failed with status ${response.status}`);
+    // Trigger streaming fetch in background without awaiting before resolving promise
+    (async () => {
+      const fetcher = get().clerkTokenFetcher;
+      const token = fetcher ? await fetcher() : null;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let content = '';
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          content += decoder.decode(value, { stream: true });
-
-          set(state => ({
-            nodes: state.nodes.map(n => {
-              if (n.id === childId) {
-                return {
-                  ...n,
-                  data: { ...n.data, content }
-                };
-              }
-              return n;
-            })
-          }));
-        }
-      }
-
-      if (boardId && boardId !== 'sample-board' && supabase) {
-        await supabase.from('node_messages').insert({
-          node_id: childId,
-          role: 'assistant',
-          content
-        });
-      }
-
-      // Extract context summary for the newly generated derived node
-      let extractedSummary: string | null = null;
       try {
-        if (content.trim().length >= 60) {
-          extractedSummary = await extractContextSummary(content, prompt, token, get().selectedModel);
+        const systemPrompt = buildContextAwareSystemPrompt(childContextChain, '');
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: prompt }],
+            systemPrompt,
+            model: get().selectedModel
+          })
+        });
+
+        if (!response.ok) {
+          const errorJson = await response.json().catch(() => ({}));
+          throw new Error(errorJson.error || `API failed with status ${response.status}`);
         }
-      } catch (e) {
-        console.error('Failed to extract context summary for derived node:', e);
-      }
 
-      const nodeUpdateData: any = { content };
-      if (extractedSummary) {
-        nodeUpdateData.context_summary = extractedSummary;
-      }
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        let content = '';
 
-      if (boardId && boardId !== 'sample-board' && supabase) {
-        await supabase.from('nodes').update(nodeUpdateData).eq('id', childId);
-      }
+        if (reader) {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            content += decoder.decode(value, { stream: true });
 
-      set(state => ({
-        nodes: state.nodes.map(n => {
-          if (n.id === childId) {
-            return {
-              ...n,
-              data: {
-                ...n.data,
-                isLoading: false,
-                contextSummary: extractedSummary || n.data.contextSummary,
-                conversationHistory: [
-                  ...n.data.conversationHistory,
-                  { role: 'assistant', content }
-                ]
-              }
-            };
+            set(state => ({
+              nodes: state.nodes.map(n => {
+                if (n.id === childId) {
+                  return {
+                    ...n,
+                    data: { ...n.data, content }
+                  };
+                }
+                return n;
+              })
+            }));
           }
-          return n;
-        })
-      }));
+        }
 
-    } catch (err) {
-      console.error('Error generating child node content:', err);
-      set(state => ({
-        nodes: state.nodes.map(n => {
-          if (n.id === childId) {
-            return {
-              ...n,
-              data: {
-                ...n.data,
-                content: 'Failed to generate response.',
-                isLoading: false
-              }
-            };
+        if (boardId && boardId !== 'sample-board' && supabase) {
+          await supabase.from('node_messages').insert({
+            node_id: childId,
+            role: 'assistant',
+            content
+          });
+        }
+
+        // Extract context summary for the newly generated derived node
+        let extractedSummary: string | null = null;
+        try {
+          if (content.trim().length >= 60) {
+            extractedSummary = await extractContextSummary(content, prompt, token, get().selectedModel);
           }
-          return n;
-        })
-      }));
-    }
+        } catch (e) {
+          console.error('Failed to extract context summary for derived node:', e);
+        }
+
+        const nodeUpdateData: any = { content };
+        if (extractedSummary) {
+          nodeUpdateData.context_summary = extractedSummary;
+        }
+
+        if (boardId && boardId !== 'sample-board' && supabase) {
+          await supabase.from('nodes').update(nodeUpdateData).eq('id', childId);
+        }
+
+        set(state => ({
+          nodes: state.nodes.map(n => {
+            if (n.id === childId) {
+              return {
+                ...n,
+                data: {
+                  ...n.data,
+                  isLoading: false,
+                  contextSummary: extractedSummary || n.data.contextSummary,
+                  conversationHistory: [
+                    ...n.data.conversationHistory,
+                    { role: 'assistant', content }
+                  ]
+                }
+              };
+            }
+            return n;
+          })
+        }));
+
+      } catch (err) {
+        console.error('Error generating child node content:', err);
+        set(state => ({
+          nodes: state.nodes.map(n => {
+            if (n.id === childId) {
+              return {
+                ...n,
+                data: {
+                  ...n.data,
+                  content: 'Failed to generate response.',
+                  isLoading: false
+                }
+              };
+            }
+            return n;
+          })
+        }));
+      }
+    })();
 
     return childId;
   },
