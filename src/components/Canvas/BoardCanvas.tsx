@@ -142,9 +142,22 @@ export const BoardCanvas = () => {
         } as any
       };
 
+      const tempEdge = {
+        id: `temp_edge_${parentNodeId}_to_${tempId}`,
+        source: parentNodeId,
+        target: tempId,
+        animated: true,
+        style: {
+          stroke: '#7c4dff',
+          strokeWidth: 2.5,
+          strokeDasharray: '5 5'
+        }
+      };
+
       // Push to store
       useCanvasStore.setState(state => ({
-        nodes: [...state.nodes, tempNode as any]
+        nodes: [...state.nodes, tempNode as any],
+        edges: [...state.edges, tempEdge]
       }));
     }
 

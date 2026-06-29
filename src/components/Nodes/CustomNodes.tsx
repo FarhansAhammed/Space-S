@@ -162,7 +162,7 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
     <div 
       data-node-id={id}
       onClick={() => selectNode(id)}
-      className={`relative rounded-[20px] border shadow-[0_12px_32px_rgba(45,38,32,0.07),0_2px_8px_rgba(45,38,32,0.04)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.35),0_2px_8px_rgba(0,0,0,0.2)] hover:shadow-[0_16px_36px_-6px_rgba(45,38,32,0.12),0_4px_16px_-4px_rgba(45,38,32,0.06)] dark:hover:shadow-[0_16px_36px_-6px_rgba(0,0,0,0.45),0_4px_16px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 cursor-pointer overflow-visible flex flex-col ${typeStyle.bg} ${typeStyle.border} ${selected ? 'scale-[1.01]' : ''} ${data.justUpdated ? 'ring-2 ring-indigo-500 dark:ring-indigo-400 animate-pulse border-indigo-500 dark:border-indigo-400' : ''}`}
+      className={`relative rounded-[20px] border shadow-[0_12px_32px_rgba(45,38,32,0.07),0_2px_8px_rgba(45,38,32,0.04)] dark:shadow-[0_12px_32px_rgba(0,0,0,0.35),0_2px_8px_rgba(0,0,0,0.2)] hover:shadow-[0_16px_36px_-6px_rgba(45,38,32,0.12),0_4px_16px_-4px_rgba(45,38,32,0.06)] dark:hover:shadow-[0_16px_36px_-6px_rgba(0,0,0,0.45),0_4px_16px_-4px_rgba(0,0,0,0.3)] transition-all duration-200 cursor-pointer overflow-visible flex flex-col animate-node-entrance ${typeStyle.bg} ${typeStyle.border} ${selected ? 'scale-[1.01]' : ''} ${data.justUpdated ? 'ring-2 ring-indigo-500 dark:ring-indigo-400 animate-pulse border-indigo-500 dark:border-indigo-400' : ''}`}
       style={{
          width: nodeWidth,
          height: nodeHeight ?? undefined,
