@@ -137,7 +137,7 @@ interface CanvasStore {
   selectNode: (nodeId: string | null) => Promise<void>;
   addLLMNodeFromSearch: (prompt: string) => Promise<void>;
   addNodeAtPosition: (type: NodeType, x: number, y: number, prompt: string) => Promise<void>;
-  deriveNode: (parentNodeId: string, type: NodeType, prompt: string, title?: string) => Promise<void>;
+  deriveNode: (parentNodeId: string, type: NodeType, prompt: string, title?: string, customPosition?: XYPosition) => Promise<void>;
   createSingleDerivedNode: (
     parentNodeId: string,
     type: NodeType,
@@ -1937,7 +1937,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   // Action: Derive child / grandchild from an existing node (supports multi-node expansion)
-  deriveNode: async (parentNodeId: string, type: NodeType, prompt: string, title?: string) => {
+  deriveNode: async (parentNodeId: string, type: NodeType, prompt: string, title?: string, customPosition?: XYPosition) => {
     const parentNode = get().nodes.find(n => n.id === parentNodeId);
     if (!parentNode) return;
 
@@ -2033,7 +2033,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         x: parentNode.position.x + 360,
         y: parentNode.position.y + (Math.random() - 0.5) * 160
       };
-      const position = getNonOverlappingPosition(preferredPosition, get().nodes);
+      const position = customPosition || getNonOverlappingPosition(preferredPosition, get().nodes);
       
       await get().createSingleDerivedNode(
         parentNodeId,

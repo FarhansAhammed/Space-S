@@ -174,11 +174,11 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
         position={Position.Left} 
         style={{ 
           background: typeStyle.accent, 
-          width: 8, 
-          height: 8, 
-          border: theme === 'dark' ? '2px solid #121110' : '2px solid #ffffff', 
-          boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-          left: -4
+          width: 12, 
+          height: 12, 
+          border: theme === 'dark' ? '2.5px solid #121110' : '2.5px solid #ffffff', 
+          boxShadow: '0 1.5px 4px rgba(0,0,0,0.15)',
+          left: -8
         }} 
       />
       
@@ -406,11 +406,11 @@ export const CustomNode = ({ id, data, selected }: NodeProps<NodeData>) => {
         position={Position.Right} 
         style={{ 
           background: typeStyle.accent, 
-          width: 8, 
-          height: 8, 
-          border: theme === 'dark' ? '2px solid #121110' : '2px solid #ffffff', 
-          boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-          right: -4
+          width: 12, 
+          height: 12, 
+          border: theme === 'dark' ? '2.5px solid #121110' : '2.5px solid #ffffff', 
+          boxShadow: '0 1.5px 4px rgba(0,0,0,0.15)',
+          right: -8
         }} 
       />
  

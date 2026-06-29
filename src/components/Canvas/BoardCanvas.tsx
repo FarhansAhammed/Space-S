@@ -1,6 +1,6 @@
 "use client";
  
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import ReactFlow, { 
   Background, 
   BackgroundVariant,
@@ -13,6 +13,7 @@ import 'reactflow/dist/style.css';
  
 import { useCanvasStore } from '@/store/canvasStore';
 import CustomNode from '../Nodes/CustomNodes';
+import ChatboxNode from '../Nodes/ChatboxNode';
 import { useRouter } from 'next/navigation';
 import ContextMenu from '../UI/ContextMenu';
  
@@ -20,7 +21,8 @@ import ContextMenu from '../UI/ContextMenu';
 import { Plus, Image as ImageIcon, FileText, ArrowUp, Link2, Sparkles, X } from 'lucide-react';
 
 const nodeTypes = {
-  llmNode: CustomNode
+  llmNode: CustomNode,
+  chatboxNode: ChatboxNode
 };
 
 const TEXT_ONLY_MODELS = [
@@ -99,6 +101,55 @@ export const BoardCanvas = () => {
   const organizeCanvas = useCanvasStore(state => state.organizeCanvas);
   const selectedModel = useCanvasStore(state => state.selectedModel);
   const addDocNode = useCanvasStore(state => state.addDocNode);
+  
+  const { screenToFlowPosition, setCenter, fitView } = useReactFlow();
+
+  const connectionStartRef = useRef<{ nodeId: string; handleType: string } | null>(null);
+
+  const onConnectStart = useCallback((event: any, { nodeId, handleType }: any) => {
+    connectionStartRef.current = { nodeId, handleType };
+  }, []);
+
+  const onConnectEnd = useCallback((event: any) => {
+    if (!connectionStartRef.current) return;
+
+    const target = event.target as HTMLElement;
+    const isTargetHandle = target.closest('.react-flow__handle');
+    const isTargetNode = target.closest('.react-flow__node');
+
+    if (!isTargetHandle && !isTargetNode && connectionStartRef.current.handleType === 'source') {
+      const { clientX, clientY } = event;
+      const flowCoords = screenToFlowPosition({ x: clientX, y: clientY });
+
+      // Create a temporary chatbox node
+      const parentNodeId = connectionStartRef.current.nodeId;
+      const tempId = `temp_chatbox_${Date.now()}`;
+      
+      const tempNode = {
+        id: tempId,
+        type: 'chatboxNode',
+        position: { x: flowCoords.x - 150, y: flowCoords.y - 25 },
+        data: {
+          type: 'llm' as const,
+          title: '',
+          content: '',
+          generation: 1,
+          isLoading: false,
+          isCollapsed: false,
+          conversationHistory: [],
+          parentNodeId,
+          targetPosition: { x: flowCoords.x - 150, y: flowCoords.y - 120 }
+        } as any
+      };
+
+      // Push to store
+      useCanvasStore.setState(state => ({
+        nodes: [...state.nodes, tempNode as any]
+      }));
+    }
+
+    connectionStartRef.current = null;
+  }, [screenToFlowPosition]);
  
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -134,8 +185,7 @@ export const BoardCanvas = () => {
     }));
   }, [sortedNodes]);
 
- 
-  const { screenToFlowPosition, setCenter, fitView } = useReactFlow();
+
 
   React.useEffect(() => {
     if (newlyCreatedNodeId) {
@@ -333,6 +383,8 @@ export const BoardCanvas = () => {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
         onNodeDragStop={onNodeDragStop}
         nodeTypes={nodeTypes}
         onPaneClick={handlePaneClick}
