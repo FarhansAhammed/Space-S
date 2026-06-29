@@ -138,6 +138,15 @@ interface CanvasStore {
   addLLMNodeFromSearch: (prompt: string) => Promise<void>;
   addNodeAtPosition: (type: NodeType, x: number, y: number, prompt: string) => Promise<void>;
   deriveNode: (parentNodeId: string, type: NodeType, prompt: string, title?: string) => Promise<void>;
+  createSingleDerivedNode: (
+    parentNodeId: string,
+    type: NodeType,
+    prompt: string,
+    title: string,
+    position: XYPosition,
+    childContextChain: ContextEntry[],
+    childGen: number
+  ) => Promise<string>;
   continueNodeConversation: (nodeId: string, prompt: string) => Promise<void>;
   deleteNode: (nodeId: string) => Promise<void>;
   undoDeleteNode: () => Promise<void>;
@@ -1630,52 +1639,19 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     }
   },
 
-  // Action: Derive child / grandchild from an existing node
-  deriveNode: async (parentNodeId: string, type: NodeType, prompt: string, title?: string) => {
-    const parentNode = get().nodes.find(n => n.id === parentNodeId);
-    if (!parentNode) return;
-
-    const parentGen = parentNode.data.generation ?? 0;
-    const childGen = parentGen + 1;
-
-    const preferredPosition: XYPosition = {
-      x: parentNode.position.x + 360,
-      y: parentNode.position.y + (Math.random() - 0.5) * 160
-    };
-    const position = getNonOverlappingPosition(preferredPosition, get().nodes);
-
-    // Build context chain
-    const parentContextChain = parentNode.data.contextChain ?? [];
-    const parentContextSummary = parentNode.data.contextSummary;
-
-    let childContextChain: ContextEntry[] = [];
-    if (parentContextSummary) {
-      const newEntry: ContextEntry = {
-        nodeId: parentNodeId,
-        summary: parentContextSummary
-      };
-      childContextChain = [...parentContextChain, newEntry].slice(-3);
-    } else {
-      // Fallback: parent context not extracted yet
-      const parentRawContent = parentNode.data.content || '';
-      if (parentRawContent.length > 0) {
-        const cleaned = parentRawContent
-          .slice(0, 300)
-          .replace(/[*#_`\[\]()]/g, '')
-          .trim();
-        const newEntry: ContextEntry = {
-          nodeId: parentNodeId,
-          summary: `Context from parent node: "${cleaned}"`
-        };
-        childContextChain = [...parentContextChain, newEntry].slice(-3);
-      } else {
-        childContextChain = parentContextChain;
-      }
-    }
-
+  // Action: Helper to spawn a single derived node and stream content
+  createSingleDerivedNode: async (
+    parentNodeId: string,
+    type: NodeType,
+    prompt: string,
+    title: string,
+    position: XYPosition,
+    childContextChain: ContextEntry[],
+    childGen: number
+  ): Promise<string> => {
     const boardId = get().boardId;
     const supabase = get().supabaseClient;
-    let childId = `node_${Date.now()}`;
+    let childId = `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     if (boardId && boardId !== 'sample-board' && supabase) {
       const dbType = ['llm', 'branch', 'merge', 'image', 'doc', 'question', 'note'].includes(type) ? type : 'llm';
@@ -1687,7 +1663,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           type: dbType,
           position_x: position.x,
           position_y: position.y,
-          title: title || prompt,
+          title,
           content: type === 'note' ? prompt : '',
           parent_node_id: parentNodeId,
           context_chain: childContextChain
@@ -1697,7 +1673,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
       if (nodeError || !dbNode) {
         console.error('Failed to insert child node in DB:', nodeError);
-        return;
+        return '';
       }
 
       childId = dbNode.id;
@@ -1729,7 +1705,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         zIndex: nextZIndex,
         data: {
           type,
-          title: title || prompt,
+          title,
           content: type === 'note' ? prompt : '',
           generation: childGen,
           isLoading: type !== 'note',
@@ -1786,115 +1762,6 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         };
       });
 
-      if (type === 'note') return;
-
-      const fetcher = get().clerkTokenFetcher;
-      const token = fetcher ? await fetcher() : null;
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      try {
-        const systemPrompt = buildContextAwareSystemPrompt(childContextChain, '');
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            messages: [{ role: 'user', content: prompt }],
-            systemPrompt,
-            model: get().selectedModel
-          })
-        });
-
-        if (!response.ok) throw new Error('API failed');
-
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-        let content = '';
-
-        if (reader) {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            content += decoder.decode(value, { stream: true });
-
-            set(state => ({
-              nodes: state.nodes.map(n => {
-                if (n.id === childId) {
-                  return {
-                    ...n,
-                    data: { ...n.data, content }
-                  };
-                }
-                return n;
-              })
-            }));
-          }
-        }
-
-        await supabase.from('node_messages').insert({
-          node_id: childId,
-          role: 'assistant',
-          content
-        });
-
-        // Extract context summary for the newly generated derived node
-        let extractedSummary: string | null = null;
-        try {
-          if (content.trim().length >= 60) {
-            extractedSummary = await extractContextSummary(content, prompt, token, get().selectedModel);
-          }
-        } catch (e) {
-          console.error('Failed to extract context summary for derived node:', e);
-        }
-
-        const nodeUpdateData: any = { content };
-        if (extractedSummary) {
-          nodeUpdateData.context_summary = extractedSummary;
-        }
-
-        await supabase.from('nodes').update(nodeUpdateData).eq('id', childId);
-
-        set(state => ({
-          nodes: state.nodes.map(n => {
-            if (n.id === childId) {
-              return {
-                ...n,
-                data: {
-                  ...n.data,
-                  isLoading: false,
-                  contextSummary: extractedSummary || n.data.contextSummary,
-                  conversationHistory: [
-                    ...n.data.conversationHistory,
-                    { role: 'assistant', content }
-                  ]
-                }
-              };
-            }
-            return n;
-          })
-        }));
-
-      } catch (err) {
-        console.error('Error generating child node content:', err);
-        set(state => ({
-          nodes: state.nodes.map(n => {
-            if (n.id === childId) {
-              return {
-                ...n,
-                data: {
-                  ...n.data,
-                  content: 'Failed to generate response.',
-                  isLoading: false
-                }
-              };
-            }
-            return n;
-          })
-        }));
-      }
-
     } else {
       const nextZIndex = get().maxZIndex + 1;
       const childNode: Node<NodeData> = {
@@ -1904,7 +1771,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         zIndex: nextZIndex,
         data: {
           type,
-          title: title || prompt,
+          title,
           content: type === 'note' ? prompt : '',
           generation: childGen,
           isLoading: type !== 'note',
@@ -1913,7 +1780,15 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           createdAt: new Date().toISOString(),
           contextChain: childContextChain,
           contextSummary: null,
-          conversationHistory: type === 'note' ? [] : [{ role: 'user', content: prompt }]
+          conversationHistory: type === 'note' ? [] : [{
+            role: 'user',
+            content: prompt,
+            senderId: get().currentUserInfo?.userId,
+            sender: get().currentUserInfo ? {
+              username: get().currentUserInfo!.username,
+              avatarColor: get().currentUserInfo!.avatarColor
+            } : null
+          }]
         }
       };
 
@@ -1928,110 +1803,247 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         }
       };
 
+      set(state => {
+        const updatedNodes = computeGenerations([...state.nodes, childNode]);
+        const updatedEdges = updateEdgesColor([...state.edges, newEdge], updatedNodes);
+        return {
+          nodes: updatedNodes,
+          edges: updatedEdges,
+          activeNodeId: childId,
+          newlyCreatedNodeId: childId,
+          showMobileSidebar: false,
+          maxZIndex: nextZIndex
+        };
+      });
+    }
+
+    if (type === 'note') return childId;
+
+    const fetcher = get().clerkTokenFetcher;
+    const token = fetcher ? await fetcher() : null;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    try {
+      const systemPrompt = buildContextAwareSystemPrompt(childContextChain, '');
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          systemPrompt,
+          model: get().selectedModel
+        })
+      });
+
+      if (!response.ok) {
+        const errorJson = await response.json().catch(() => ({}));
+        throw new Error(errorJson.error || `API failed with status ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let content = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          content += decoder.decode(value, { stream: true });
+
+          set(state => ({
+            nodes: state.nodes.map(n => {
+              if (n.id === childId) {
+                return {
+                  ...n,
+                  data: { ...n.data, content }
+                };
+              }
+              return n;
+            })
+          }));
+        }
+      }
+
+      if (boardId && boardId !== 'sample-board' && supabase) {
+        await supabase.from('node_messages').insert({
+          node_id: childId,
+          role: 'assistant',
+          content
+        });
+      }
+
+      // Extract context summary for the newly generated derived node
+      let extractedSummary: string | null = null;
+      try {
+        if (content.trim().length >= 60) {
+          extractedSummary = await extractContextSummary(content, prompt, token, get().selectedModel);
+        }
+      } catch (e) {
+        console.error('Failed to extract context summary for derived node:', e);
+      }
+
+      const nodeUpdateData: any = { content };
+      if (extractedSummary) {
+        nodeUpdateData.context_summary = extractedSummary;
+      }
+
+      if (boardId && boardId !== 'sample-board' && supabase) {
+        await supabase.from('nodes').update(nodeUpdateData).eq('id', childId);
+      }
+
       set(state => ({
-        nodes: [...state.nodes, childNode],
-        edges: [...state.edges, newEdge],
-        activeNodeId: childId,
-        newlyCreatedNodeId: childId,
-        showMobileSidebar: false,
-        maxZIndex: nextZIndex
+        nodes: state.nodes.map(n => {
+          if (n.id === childId) {
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                isLoading: false,
+                contextSummary: extractedSummary || n.data.contextSummary,
+                conversationHistory: [
+                  ...n.data.conversationHistory,
+                  { role: 'assistant', content }
+                ]
+              }
+            };
+          }
+          return n;
+        })
       }));
 
-      if (type === 'note') return;
+    } catch (err) {
+      console.error('Error generating child node content:', err);
+      set(state => ({
+        nodes: state.nodes.map(n => {
+          if (n.id === childId) {
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                content: 'Failed to generate response.',
+                isLoading: false
+              }
+            };
+          }
+          return n;
+        })
+      }));
+    }
 
-      const fetcher = get().clerkTokenFetcher;
-      const token = fetcher ? await fetcher() : null;
+    return childId;
+  },
+
+  // Action: Derive child / grandchild from an existing node (supports multi-node expansion)
+  deriveNode: async (parentNodeId: string, type: NodeType, prompt: string, title?: string) => {
+    const parentNode = get().nodes.find(n => n.id === parentNodeId);
+    if (!parentNode) return;
+
+    // 1. Analyze user prompt for multi-node expansion
+    let isMulti = false;
+    let subPoints: string[] = [];
+    const fetcher = get().clerkTokenFetcher;
+    const token = fetcher ? await fetcher() : null;
+
+    try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
-
-      try {
-        const systemPrompt = buildContextAwareSystemPrompt(childContextChain, '');
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            messages: [{ role: 'user', content: prompt }],
-            systemPrompt,
-            model: get().selectedModel
-          })
-        });
-
-        if (!response.ok) throw new Error('API failed');
-
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-        let content = '';
-
-        if (reader) {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            content += decoder.decode(value, { stream: true });
-
-            set(state => ({
-              nodes: state.nodes.map(n => {
-                if (n.id === childId) {
-                  return {
-                    ...n,
-                    data: { ...n.data, content }
-                  };
-                }
-                return n;
-              })
-            }));
-          }
-        }
-
-        // Extract context summary for the newly generated local derived node
-        let extractedSummary: string | null = null;
-        try {
-          if (content.trim().length >= 60) {
-            extractedSummary = await extractContextSummary(content, prompt, token, get().selectedModel);
-          }
-        } catch (e) {
-          console.error('Failed to extract context summary for local derived node:', e);
-        }
-
-        set(state => ({
-          nodes: state.nodes.map(n => {
-            if (n.id === childId) {
-              return {
-                ...n,
-                data: {
-                  ...n.data,
-                  isLoading: false,
-                  contextSummary: extractedSummary || n.data.contextSummary,
-                  conversationHistory: [
-                    ...n.data.conversationHistory,
-                    { role: 'assistant', content }
-                  ]
-                }
-              };
-            }
-            return n;
-          })
-        }));
-
-      } catch (err) {
-        console.error('Error generating child node content:', err);
-        set(state => ({
-          nodes: state.nodes.map(n => {
-            if (n.id === childId) {
-              return {
-                ...n,
-                data: {
-                  ...n.data,
-                  content: 'Failed to generate response.',
-                  isLoading: false
-                }
-              };
-            }
-            return n;
-          })
-        }));
+      const analyzeResponse = await fetch('/api/analyze-prompt', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          parentTitle: parentNode.data.title,
+          parentContent: parentNode.data.content,
+          userPrompt: prompt,
+          model: get().selectedModel
+        })
+      });
+      if (analyzeResponse.ok) {
+        const analyzeData = await analyzeResponse.json();
+        isMulti = !!analyzeData.isMultiExpansion;
+        subPoints = analyzeData.subPoints || [];
       }
+    } catch (e) {
+      console.error('Failed to analyze prompt for multi-node expansion:', e);
+    }
+
+    const parentGen = parentNode.data.generation ?? 0;
+    const childGen = parentGen + 1;
+
+    // Build context chain
+    const parentContextChain = parentNode.data.contextChain ?? [];
+    const parentContextSummary = parentNode.data.contextSummary;
+
+    let childContextChain: ContextEntry[] = [];
+    if (parentContextSummary) {
+      const newEntry: ContextEntry = {
+        nodeId: parentNodeId,
+        summary: parentContextSummary
+      };
+      childContextChain = [...parentContextChain, newEntry].slice(-3);
+    } else {
+      const parentRawContent = parentNode.data.content || '';
+      if (parentRawContent.length > 0) {
+        const cleaned = parentRawContent
+          .slice(0, 300)
+          .replace(/[*#_`\[\]()]/g, '')
+          .trim();
+        const newEntry: ContextEntry = {
+          nodeId: parentNodeId,
+          summary: `Context from parent node: "${cleaned}"`
+        };
+        childContextChain = [...parentContextChain, newEntry].slice(-3);
+      } else {
+        childContextChain = parentContextChain;
+      }
+    }
+
+    if (isMulti && subPoints.length > 0) {
+      // Multi-node expansion! Spawns child nodes in parallel
+      const N = subPoints.length;
+      const promises = subPoints.map((subPoint, i) => {
+        // Calculate clean vertical layout position on the right
+        const preferredPosition: XYPosition = {
+          x: parentNode.position.x + 360,
+          y: parentNode.position.y + (i - (N - 1) / 2) * 240
+        };
+        const position = getNonOverlappingPosition(preferredPosition, get().nodes);
+
+        const subPrompt = `Explain the sub-point "${subPoint}" in detail in the context of: "${parentNode.data.title}". Keep it focused, highly technical, and direct.`;
+        
+        return get().createSingleDerivedNode(
+          parentNodeId,
+          type,
+          subPrompt,
+          subPoint,
+          position,
+          childContextChain,
+          childGen
+        );
+      });
+
+      await Promise.all(promises);
+    } else {
+      // Normal single child node derivation
+      const preferredPosition: XYPosition = {
+        x: parentNode.position.x + 360,
+        y: parentNode.position.y + (Math.random() - 0.5) * 160
+      };
+      const position = getNonOverlappingPosition(preferredPosition, get().nodes);
+      
+      await get().createSingleDerivedNode(
+        parentNodeId,
+        type,
+        prompt,
+        title || prompt,
+        position,
+        childContextChain,
+        childGen
+      );
     }
   },
 
