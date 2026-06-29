@@ -6,6 +6,7 @@ import { Position, Handle } from 'reactflow';
 export const ChatboxNode = ({ id, data }: any) => {
   const [prompt, setPrompt] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
   const [contextVisible, setContextVisible] = useState(false);
 
   const deleteNode = useCanvasStore(state => state.deleteNode);
@@ -14,7 +15,7 @@ export const ChatboxNode = ({ id, data }: any) => {
   const contextChain = data.contextChain || [];
   const parentIds = data.parentIds || [data.parentNodeId];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim() || isSubmitting) return;
 
@@ -22,13 +23,19 @@ export const ChatboxNode = ({ id, data }: any) => {
     const parentNodeId = data.parentNodeId;
     const position = data.targetPosition;
 
-    // Trigger deriveNode at this exact flow coordinate, passing the full parentIds context list
-    deriveNode(parentNodeId, 'llm', prompt.trim(), undefined, position, parentIds);
-
-    // Wait for the exit transition to finish, then delete
-    setTimeout(() => {
-      deleteNode(id);
-    }, 300);
+    try {
+      // Trigger deriveNode and wait for database insertion & store creation to complete
+      await deriveNode(parentNodeId, 'llm', prompt.trim(), undefined, position, parentIds);
+      
+      // Node is successfully created and rendered on the canvas. Now transition the chatbox away.
+      setIsFadingOut(true);
+      setTimeout(() => {
+        deleteNode(id);
+      }, 300);
+    } catch (err) {
+      console.error('Failed to derive node:', err);
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -50,7 +57,7 @@ export const ChatboxNode = ({ id, data }: any) => {
       <form 
         onSubmit={handleSubmit}
         className={`bg-white/95 dark:bg-zinc-950/95 border border-zinc-200 dark:border-zinc-800/80 shadow-2xl rounded-2xl p-3 flex flex-col gap-2.5 nodrag transition-all duration-300 ease-out transform ${
-          isSubmitting ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
+          isFadingOut ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
         }`}
         style={{ width: 300 }}
       >
@@ -92,22 +99,28 @@ export const ChatboxNode = ({ id, data }: any) => {
             placeholder="Derive child topic here..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            className="flex-1 text-[11px] border border-black/10 dark:border-white/10 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#7c4dff] dark:focus:border-[#7c4dff] bg-white/70 dark:bg-zinc-900/70 text-zinc-800 dark:text-zinc-200 transition-colors duration-200 font-sans"
+            className="flex-1 text-[11px] border border-black/10 dark:border-white/10 rounded-lg px-2.5 py-1.5 outline-none focus:border-[#7c4dff] dark:focus:border-[#7c4dff] bg-white/70 dark:bg-zinc-900/70 text-zinc-800 dark:text-zinc-200 transition-colors duration-200 font-sans disabled:opacity-75 disabled:cursor-not-allowed"
             autoFocus
             disabled={isSubmitting}
           />
           <button 
             type="submit" 
             disabled={isSubmitting || !prompt.trim()}
-            className="p-1.5 rounded-lg bg-[#7c4dff] text-white hover:bg-[#6200ea] transition-all flex items-center justify-center shrink-0 disabled:opacity-50"
+            className="p-1.5 rounded-lg bg-[#7c4dff] text-white hover:bg-[#6200ea] transition-all flex items-center justify-center shrink-0 disabled:opacity-60"
+            title={isSubmitting ? 'Deriving node...' : 'Derive node'}
           >
-            <ArrowRight className="w-3.5 h-3.5" />
+            {isSubmitting ? (
+              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <ArrowRight className="w-3.5 h-3.5" />
+            )}
           </button>
           <button 
             onClick={() => deleteNode(id)}
             type="button" 
             disabled={isSubmitting}
             className="p-1.5 rounded-lg border border-black/10 dark:border-white/10 hover:bg-red-50 dark:hover:bg-red-950/20 text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-all flex items-center justify-center shrink-0 disabled:opacity-50"
+            title="Cancel derivation"
           >
             <X className="w-3.5 h-3.5" />
           </button>
