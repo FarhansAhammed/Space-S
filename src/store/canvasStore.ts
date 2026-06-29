@@ -61,6 +61,7 @@ export interface NodeData {
   createdAt?: string;
   contextSummary?: string | null;
   contextChain?: ContextEntry[];
+  parentIds?: string[];
 }
 
 interface DbNode {
@@ -137,7 +138,7 @@ interface CanvasStore {
   selectNode: (nodeId: string | null) => Promise<void>;
   addLLMNodeFromSearch: (prompt: string) => Promise<void>;
   addNodeAtPosition: (type: NodeType, x: number, y: number, prompt: string) => Promise<void>;
-  deriveNode: (parentNodeId: string, type: NodeType, prompt: string, title?: string, customPosition?: XYPosition) => Promise<void>;
+  deriveNode: (parentNodeId: string, type: NodeType, prompt: string, title?: string, customPosition?: XYPosition, parentIds?: string[]) => Promise<void>;
   createSingleDerivedNode: (
     parentNodeId: string,
     type: NodeType,
@@ -145,7 +146,8 @@ interface CanvasStore {
     title: string,
     position: XYPosition,
     childContextChain: ContextEntry[],
-    childGen: number
+    childGen: number,
+    parentIds?: string[]
   ) => Promise<string>;
   continueNodeConversation: (nodeId: string, prompt: string) => Promise<void>;
   deleteNode: (nodeId: string) => Promise<void>;
@@ -947,6 +949,67 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     
     if (!sourceNode || !targetNode) return;
 
+    // Handle dragging/dropping connection from a node to a temporary chatbox node
+    if (connection.target && (connection.target.startsWith('temp_') || targetNode.type === 'chatboxNode')) {
+      const parentNodeId = sourceNode.id;
+      const parentContextSummary = sourceNode.data.contextSummary;
+      let newEntry: ContextEntry;
+      if (parentContextSummary) {
+        newEntry = {
+          nodeId: parentNodeId,
+          summary: parentContextSummary
+        };
+      } else {
+        const parentRawContent = sourceNode.data.content || '';
+        const cleaned = parentRawContent
+          .slice(0, 300)
+          .replace(/[*#_`\[\]()]/g, '')
+          .trim();
+        newEntry = {
+          nodeId: parentNodeId,
+          summary: cleaned ? `Context from node: "${cleaned}"` : `Context from node: "${sourceNode.data.title}"`
+        };
+      }
+
+      const currentChain = targetNode.data.contextChain || [];
+      const exists = currentChain.some(e => e.nodeId === parentNodeId);
+      const nextChain = exists ? currentChain : [...currentChain, newEntry].slice(-3);
+
+      const currentParentIds = (targetNode.data.parentIds || [targetNode.data.parentNodeId]).filter((id): id is string => typeof id === 'string');
+      const nextParentIds = currentParentIds.includes(parentNodeId)
+        ? currentParentIds
+        : [...currentParentIds, parentNodeId];
+
+      set(state => ({
+        nodes: state.nodes.map(n => n.id === connection.target ? {
+          ...n,
+          data: {
+            ...n.data,
+            contextChain: nextChain,
+            parentIds: nextParentIds
+          }
+        } : n)
+      }));
+
+      const tempEdgeId = `temp_edge_${connection.source}_to_${connection.target}`;
+      const newEdge: Edge = {
+        ...connection,
+        id: tempEdgeId,
+        animated: true,
+        style: {
+          stroke: '#7c4dff',
+          strokeWidth: 2.5,
+          strokeDasharray: '5 5'
+        }
+      } as Edge;
+
+      set(state => ({
+        edges: addEdge(newEdge, state.edges)
+      }));
+
+      return;
+    }
+
     const targetGen = targetNode.data.generation ?? 0;
     const boardId = get().boardId;
     const supabase = get().supabaseClient;
@@ -1639,7 +1702,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     }
   },
 
-  // Action: Helper to spawn a single derived node and stream content
+  // Action: Helper to spawn a single derived node and stream content (supports multi-parent edges)
   createSingleDerivedNode: async (
     parentNodeId: string,
     type: NodeType,
@@ -1647,11 +1710,14 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     title: string,
     position: XYPosition,
     childContextChain: ContextEntry[],
-    childGen: number
+    childGen: number,
+    parentIds?: string[]
   ): Promise<string> => {
     const boardId = get().boardId;
     const supabase = get().supabaseClient;
     let childId = `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    const actualParentIds = parentIds && parentIds.length > 0 ? parentIds : [parentNodeId];
 
     if (boardId && boardId !== 'sample-board' && supabase) {
       const dbType = ['llm', 'branch', 'merge', 'image', 'doc', 'question', 'note'].includes(type) ? type : 'llm';
@@ -1678,15 +1744,19 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
       childId = dbNode.id;
 
-      const { data: dbEdge } = await supabase
-        .from('edges')
-        .insert({
-          canvas_id: boardId,
-          source_node_id: parentNodeId,
-          target_node_id: childId
-        })
-        .select()
-        .single();
+      // Insert edges for all parent IDs in parallel
+      const edgeInsertPromises = actualParentIds.map(pId => {
+        return supabase
+          .from('edges')
+          .insert({
+            canvas_id: boardId,
+            source_node_id: pId,
+            target_node_id: childId
+          })
+          .select()
+          .single();
+      });
+      const edgeResults = await Promise.all(edgeInsertPromises);
 
       if (type !== 'note') {
         await supabase.from('node_messages').insert({
@@ -1732,25 +1802,27 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
           ? state.nodes.map(n => n.id === childId ? { ...n, data: { ...n.data, isLoading: type !== 'note', conversationHistory: childNode.data.conversationHistory, contextChain: childContextChain, contextSummary: null } } : n)
           : computeGenerations([...state.nodes, childNode]);
 
-        const edgeId = dbEdge ? dbEdge.id : `edge_${parentNodeId}_to_${childId}`;
-        const existsEdge = state.edges.some(e => e.id === edgeId);
-        
         let updatedEdges = state.edges;
-        if (!existsEdge) {
-          const newLocalEdge = {
-            id: edgeId,
-            source: parentNodeId,
-            target: childId,
-            animated: true,
-            style: {
-              stroke: getEdgeColorForGen(childGen),
-              strokeWidth: 2.5
-            }
-          };
-          updatedEdges = updateEdgesColor([...state.edges, newLocalEdge], updatedNodes);
-        } else {
-          updatedEdges = updateEdgesColor(state.edges, updatedNodes);
-        }
+        actualParentIds.forEach((pId, idx) => {
+          const dbEdge = edgeResults[idx]?.data;
+          const edgeId = dbEdge ? dbEdge.id : `edge_${pId}_to_${childId}`;
+          const existsEdge = state.edges.some(e => e.id === edgeId);
+          if (!existsEdge) {
+            const newLocalEdge = {
+              id: edgeId,
+              source: pId,
+              target: childId,
+              animated: true,
+              style: {
+                stroke: getEdgeColorForGen(childGen),
+                strokeWidth: 2.5
+              }
+            };
+            updatedEdges = [...updatedEdges, newLocalEdge];
+          }
+        });
+
+        updatedEdges = updateEdgesColor(updatedEdges, updatedNodes);
 
         return {
           nodes: updatedNodes,
@@ -1792,20 +1864,25 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         }
       };
 
-      const newEdge: Edge = {
-        id: `edge_${parentNodeId}_to_${childId}`,
-        source: parentNodeId,
-        target: childId,
-        animated: true,
-        style: {
-          stroke: getEdgeColorForGen(childGen),
-          strokeWidth: 2.5
-        }
-      };
-
       set(state => {
         const updatedNodes = computeGenerations([...state.nodes, childNode]);
-        const updatedEdges = updateEdgesColor([...state.edges, newEdge], updatedNodes);
+        let updatedEdges = state.edges;
+        actualParentIds.forEach(pId => {
+          const newEdge: Edge = {
+            id: `edge_${pId}_to_${childId}`,
+            source: pId,
+            target: childId,
+            animated: true,
+            style: {
+              stroke: getEdgeColorForGen(childGen),
+              strokeWidth: 2.5
+            }
+          };
+          updatedEdges = [...updatedEdges, newEdge];
+        });
+
+        updatedEdges = updateEdgesColor(updatedEdges, updatedNodes);
+
         return {
           nodes: updatedNodes,
           edges: updatedEdges,
@@ -1937,7 +2014,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   // Action: Derive child / grandchild from an existing node (supports multi-node expansion)
-  deriveNode: async (parentNodeId: string, type: NodeType, prompt: string, title?: string, customPosition?: XYPosition) => {
+  deriveNode: async (parentNodeId: string, type: NodeType, prompt: string, title?: string, customPosition?: XYPosition, parentIds?: string[]) => {
     const parentNode = get().nodes.find(n => n.id === parentNodeId);
     if (!parentNode) return;
 
@@ -2042,7 +2119,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         title || prompt,
         position,
         childContextChain,
-        childGen
+        childGen,
+        parentIds
       );
     }
   },

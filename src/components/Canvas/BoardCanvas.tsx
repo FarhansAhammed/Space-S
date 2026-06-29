@@ -121,10 +121,39 @@ export const BoardCanvas = () => {
       const { clientX, clientY } = event;
       const flowCoords = screenToFlowPosition({ x: clientX, y: clientY });
 
-      // Create a temporary chatbox node
+      // Create a temporary chatbox node with context pre-calculation
       const parentNodeId = connectionStartRef.current.nodeId;
       const tempId = `temp_chatbox_${Date.now()}`;
       
+      const parentNode = nodes.find(n => n.id === parentNodeId);
+      let childContextChain: any[] = [];
+      if (parentNode) {
+        const parentContextChain = parentNode.data.contextChain ?? [];
+        const parentContextSummary = parentNode.data.contextSummary;
+        if (parentContextSummary) {
+          const newEntry = {
+            nodeId: parentNodeId,
+            summary: parentContextSummary
+          };
+          childContextChain = [...parentContextChain, newEntry].slice(-3);
+        } else {
+          const parentRawContent = parentNode.data.content || '';
+          if (parentRawContent.length > 0) {
+            const cleaned = parentRawContent
+              .slice(0, 300)
+              .replace(/[*#_`\[\]()]/g, '')
+              .trim();
+            const newEntry = {
+              nodeId: parentNodeId,
+              summary: `Context from parent node: "${cleaned}"`
+            };
+            childContextChain = [...parentContextChain, newEntry].slice(-3);
+          } else {
+            childContextChain = parentContextChain;
+          }
+        }
+      }
+
       const tempNode = {
         id: tempId,
         type: 'chatboxNode',
@@ -138,7 +167,9 @@ export const BoardCanvas = () => {
           isCollapsed: false,
           conversationHistory: [],
           parentNodeId,
-          targetPosition: { x: flowCoords.x - 150, y: flowCoords.y - 120 }
+          parentIds: [parentNodeId],
+          targetPosition: { x: flowCoords.x - 150, y: flowCoords.y - 120 },
+          contextChain: childContextChain
         } as any
       };
 
