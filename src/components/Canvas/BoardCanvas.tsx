@@ -329,6 +329,7 @@ export const BoardCanvas = () => {
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        proOptions={{ hideAttribution: true }}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
