@@ -2752,6 +2752,14 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
     const nodeToDelete = get().nodes.find(n => n.id === nodeId);
     if (!nodeToDelete) return;
 
+    if (nodeId.startsWith('temp_') || nodeToDelete.type === 'chatboxNode') {
+      set(state => ({
+        nodes: state.nodes.filter(n => n.id !== nodeId),
+        activeNodeId: state.activeNodeId === nodeId ? null : state.activeNodeId
+      }));
+      return;
+    }
+
     const edgesToDelete = get().edges.filter(e => e.source === nodeId || e.target === nodeId);
 
     // Save to local history before deleting
