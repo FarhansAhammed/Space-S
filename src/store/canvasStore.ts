@@ -570,7 +570,25 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
 
   // Dual-mode state initialization
   currentMode: 'canvas',
-  setMode: (mode) => set({ currentMode: mode }),
+  setMode: (mode) => {
+    set({ currentMode: mode });
+    if (mode === 'chat') {
+      const state = get();
+      const activeNode = state.nodes.find(n => n.id === state.activeNodeId);
+      if (activeNode) {
+        if (activeNode.data.parentNodeId) {
+          set({
+            activeParentChatId: activeNode.data.parentNodeId,
+            activeBranchTabId: activeNode.id
+          });
+        } else if (activeNode.data.type === 'llm') {
+          set({
+            activeParentChatId: activeNode.id
+          });
+        }
+      }
+    }
+  },
   activeParentChatId: null,
   setActiveParentChatId: (id) => set({ activeParentChatId: id }),
   openBranchTabs: [],

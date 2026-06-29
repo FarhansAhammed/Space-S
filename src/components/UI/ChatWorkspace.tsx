@@ -126,9 +126,11 @@ export const ChatWorkspace = () => {
       history: child.data.conversationHistory || []
     }));
 
+    const currentActiveId = useCanvasStore.getState().activeBranchTabId;
+    const exists = currentActiveId && nextTabs.some(t => t.id === currentActiveId);
     useCanvasStore.setState({
       openBranchTabs: nextTabs,
-      activeBranchTabId: nextTabs.length > 0 ? nextTabs[0].id : null
+      activeBranchTabId: exists ? currentActiveId : (nextTabs.length > 0 ? nextTabs[0].id : null)
     });
 
     loadedParentChatIdRef.current = activeParentChatId;
